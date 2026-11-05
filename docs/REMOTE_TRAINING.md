@@ -1,6 +1,6 @@
 # NaNLMind Remote Training (NaN16-first)
 
-Status: architecture baseline; implementation is not yet claimed.
+Status: initial implementation underway. The local NaN16 guest scanner, bounded C network byte driver, protocol frame validator, point-to-route bridge, Android GUI/CLI entry points, and runner workflow are present. Candidate merge and live gateway are not yet implemented.
 
 ## Fixed topology
 
@@ -107,10 +107,10 @@ Do not put PATs, repository write tokens, signing keys, or runner secrets in APK
 
 1. [x] Inspect current Android wrapper, NaN0S Android VM, NaNNET guest program, and existing intake boundary.
 2. [x] Define a shared NaN16-first pipeline, corpus format, protocol framing, and contribution policy.
-3. [ ] Implement and test the NaN16 corpus codec and local trainer against a tiny known corpus.
-4. [ ] Implement the C socket/file boundary driver and NaN16 protocol state machine.
-5. [ ] Add runner invocation using the same NaN16 guest program and fixed test vectors.
-6. [ ] Add Android GUI menu entry and CLI --nannet-train launch path.
+3. [x] Implement initial NaN16 corpus scanner and local test against a known corpus; full UTF-8 canonicalization remains pending.
+4. [x] Implement bounded C stream/frame byte transport and NaN16 protocol validator/route bridge; TLS gateway remains pending.
+5. [x] Add runner invocation using the shared NaN16 guest program.
+6. [x] Add Android GUI menu entry and CLI --nannet-train launch path.
 7. [ ] Add transactional intake, candidate evaluation, fair merge, and replay protection.
 8. [ ] Add APK allowlist + artifact inspection proving nannetsuite is absent.
 9. [ ] Build and install the APK; run identical corpus vectors on runner and Android and compare pipeline outputs.
