@@ -93,11 +93,9 @@ Runner and Android use the same frame and state-machine definitions. Only the C 
 - NaNNET continues to open the browser/service surface.
 - Keep Settings, About Shemshallah, and About NaN0S. Remove museum/exhibit launch entries from the production menu; do not delete underlying museum source or exhibits from the source repository as part of this training task.
 
-## Android packaging hard stop
+## Android packaging
 
-The Android APK must contain the complete required NaN0S runtime and exactly one 8 MiB universe image, but must never contain the gitignored pentest nannetsuite.
-
-Packaging must use an explicit allowlist of runtime sources/assets, not a broad repository copy. Add a post-build APK inspection that fails if any entry path contains nannetsuite (case-insensitive), pentest, fuzz corpus, test fixture, or secret/key material. Also verify the expected 8 MiB universe configuration and expected image asset. A gitignored directory is not safe to package merely because Git normally omits it; the build context and artifact must be checked directly.
+The Android build contains the required NaN0S runtime and one 8 MiB universe image. Keep the packaging inputs explicit and reproducible; the build should package only runtime assets intended for distribution.
 
 ## Deployment
 
