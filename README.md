@@ -9,7 +9,8 @@ This repository runs **one 8 MiB universe only**.
 ```text
 8 MiB universe
 256 heads
-point 1 router portal
+node point 2
+point 1 local control portal
 route-diff client
 NO 2 GiB over-bootstrap map
 ```

@@ -5,13 +5,14 @@
 ```text
 8 MiB universe
 256 palindromic heads
-point 1 control portal (0x0001)
+node point 2
+point 1 local control portal (0x0001)
 point 256 alternate (0x0100)
 NO 2 GiB over-bootstrap map
 ```
 
 Point 1 is an off-diagonal portal, not a head. It routes head requests to local
-bins and to the bootstrap ring.
+bins and to the bootstrap ring. The overbootstrap node is point 2.
 
 ## Bootstrap ring
 

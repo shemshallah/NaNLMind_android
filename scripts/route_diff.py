@@ -18,7 +18,7 @@ def main() -> int:
     args = parser.parse_args()
     payload = {
         "universe": 0,
-        "system_slot": 1,
+        "node": 2,
         "layer": 0,
         "control_point": 1,
         "base_generation": args.base,
