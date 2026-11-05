@@ -2,3 +2,5 @@
 build/
 state/
 .env.env.**.token*.patsecrets/local.properties*.keystore*.jks
+__pycache__/
+*.pyc
