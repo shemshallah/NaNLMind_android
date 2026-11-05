@@ -1,0 +1,41 @@
+name: NaN16 CPU Ring Trainer
+
+on:
+  workflow_dispatch:
+    inputs:
+      corpus_text:
+        description: Small plain-text corpus (UTF-8, maximum 1 MiB)
+        required: true
+        type: string
+        default: "NaN16 runner and Android share one corpus pipeline.\nThe NaN16 guest computes the corpus profile."
+
+permissions:
+  contents: read
+
+jobs:
+  point-1-runner:
+    name: Point 1/256 — GitHub Runner CPU Ring
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout NaNLMind Android control repository
+        uses: actions/checkout@v4
+      - name: Checkout NaN0S NaN16 runtime
+        uses: actions/checkout@v4
+        with:
+          repository: shemshallah/NaN0S
+          path: NaN0S
+      - name: Build NaN16 guest runner
+        run: |
+          make -C NaN0S/aarch64/android -s nan_cli
+          awk -f NaN0S/tools/nmk.awk -v CMD=emit NaN0S/src/training/n16_train.nas > "$RUNNER_TEMP/n16_train.nan"
+          printf '%s' "$CORPUS_TEXT" > "$RUNNER_TEMP/corpus.txt"
+        env:
+          CORPUS_TEXT: \${{ inputs.corpus_text }}
+      - name: Execute shared NaN16 corpus pipeline
+        run: |
+          NaN0S/aarch64/android/nan_cli \
+            --img "$RUNNER_TEMP/n16_train.nan" \
+            --nannet-train "$RUNNER_TEMP/corpus.txt" \
+            --serial \
+            --peek 8448:3
