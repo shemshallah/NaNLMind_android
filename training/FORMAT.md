@@ -1,6 +1,6 @@
 # N16TXT corpus format v1
 
-Status: initial NaN16 guest scanner is implemented and runner-tested. Full UTF-8 validation, Unicode noncharacter rejection, canonical stream emission, and cross-platform parity remain pending.
+Status: NaN16 guest scanner validates UTF-8 lead/continuation ranges, overlong encodings, surrogates, code-point ceiling, truncated sequences, record length, and control bytes. Unicode normalization/noncharacter policy and cross-platform parity remain pending.
 
 ## Purpose
 
