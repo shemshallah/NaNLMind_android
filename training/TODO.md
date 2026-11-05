@@ -11,6 +11,10 @@
 - No GitHub PAT or deployment secret on Android.
 - No Ed25519 dependency until the stack can implement and test it.
 
+## Current prototype boundary
+
+The current NaN16 guest validates UTF-8/record limits, computes byte-frequency and byte-bigram counts, scrubs the submitted corpus from guest memory, and saves an isolated candidate checkpoint. This is a corpus-profile/count-table prototype, not yet a neural optimizer or quality-evaluated language model. The runner workflow is intended to exercise this exact guest; candidate evaluation, contribution accounting, transactional merge, and a live authenticated gateway remain open.
+
 ## Build order
 
 1. [x] Add NaN16 guest corpus scanner, byte-frequency update table, record counters, and rolling digest.
