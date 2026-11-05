@@ -22,6 +22,7 @@ A third example.
 - LF and CRLF are accepted; NaN16 canonicalizes both to LF.
 - Empty lines are ignored.
 - A final LF is optional.
+- The current NaN16 guest validates UTF-8 scalar encoding boundaries, rejects overlong forms, surrogates, values above U+10FFFF, truncated sequences, C0 controls other than TAB, and C1 controls.
 - A record is limited to 4096 UTF-8 bytes.
 - A corpus is limited to 1,048,576 bytes after canonicalization.
 - NUL, malformed UTF-8, isolated continuation bytes, overlong encodings, UTF-16 surrogates, and Unicode noncharacters are rejected.
