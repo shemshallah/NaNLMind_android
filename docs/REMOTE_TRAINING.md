@@ -2,6 +2,8 @@
 
 Status: initial implementation underway. The local NaN16 guest scanner, bounded C network byte driver, protocol frame validator, point-to-route bridge, Android GUI/CLI entry points, and runner workflow are present. Candidate merge and live gateway are not yet implemented.
 
+**Prototype boundary:** the current guest validates and profiles corpora, updates byte-frequency and byte-bigram count tables, and emits an isolated candidate checkpoint. This is not yet a neural language-model optimizer or a quality-evaluated model update. Candidate evaluation, fair contribution accounting, transactional merge, and a live authenticated runner gateway remain unfinished.
+
 ## Fixed topology
 
 - Point 1/256: overbootstrap control/routing portal for the GitHub Runner CPU Ring.
