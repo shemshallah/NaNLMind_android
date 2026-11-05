@@ -4,3 +4,6 @@ state/
 .env.env.**.token*.patsecrets/local.properties*.keystore*.jks
 __pycache__/
 *.pyc
+NANLMIND_ANDROID.txt
+apikeys/
+Documents/

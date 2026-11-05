@@ -59,7 +59,9 @@ No 2 GiB map is created, uploaded, or cached here.
 
 `DEEPREPO_PAT` is never used here and must never be shipped in the APK or kept on
 the device. Android/community nodes use a scoped, revocable
-`NANLM_DEVICE_TOKEN` against `NANLM_INTAKE_URL`. See [SECURITY.md](SECURITY.md).
+`NANLM_DEVICE_TOKEN` against `NANLM_INTAKE_URL`. The build/CI key file in
+`Documents/apikeys/` is never copied into this repo or the APK. See
+[SECURITY.md](SECURITY.md).
 
 ## Why separate
 
