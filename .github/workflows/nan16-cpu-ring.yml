@@ -1,6 +1,10 @@
 name: NaN16 CPU Ring Trainer
 
 on:
+  push:
+    paths:
+      - ".github/workflows/nan16-cpu-ring.yml"
+      - "training/**"
   workflow_dispatch:
     inputs:
       corpus_text:
@@ -29,9 +33,13 @@ jobs:
         run: |
           make -C NaN0S/aarch64/android -s nan_cli
           awk -f NaN0S/tools/nmk.awk -v CMD=emit NaN0S/src/training/n16_train.nas > "$RUNNER_TEMP/n16_train.nan"
+          : "${CORPUS_TEXT:=NaN16 runner and Android share one corpus pipeline.}"
           printf '%s' "$CORPUS_TEXT" > "$RUNNER_TEMP/corpus.txt"
         env:
           CORPUS_TEXT: ${{ inputs.corpus_text }}
+      - name: Run NaN16 corpus regression gate
+        run: sh NaN0S/tools/n16_train_gate.sh
+
       - name: Execute shared NaN16 corpus pipeline
         run: |
           NaN0S/aarch64/android/nan_cli \
