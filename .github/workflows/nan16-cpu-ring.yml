@@ -31,7 +31,7 @@ jobs:
           awk -f NaN0S/tools/nmk.awk -v CMD=emit NaN0S/src/training/n16_train.nas > "$RUNNER_TEMP/n16_train.nan"
           printf '%s' "$CORPUS_TEXT" > "$RUNNER_TEMP/corpus.txt"
         env:
-          CORPUS_TEXT: \${{ inputs.corpus_text }}
+          CORPUS_TEXT: ${{ inputs.corpus_text }}
       - name: Execute shared NaN16 corpus pipeline
         run: |
           NaN0S/aarch64/android/nan_cli \
