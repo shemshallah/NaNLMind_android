@@ -13,10 +13,10 @@ core: $(CORE)
 	$(MAKE) -C $(CORE) -j2
 
 bootstrap: core
-	./$(CORE)/build/nanlm-universal bootstrap data/alice_full.txt 1 8
+	cd $(CORE) && ./build/nanlm-universal bootstrap data/alice_full.txt 1 8
 
 verify: core
-	./$(CORE)/build/nanlm-universal verify
+	cd $(CORE) && ./build/nanlm-universal verify
 
 route-diff: core
 	python3 scripts/route_diff.py --out state/android-route.json
