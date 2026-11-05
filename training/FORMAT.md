@@ -1,6 +1,6 @@
 # N16TXT corpus format v1
 
-Status: format specification. The NaN16 codec implementation and conformance tests are pending.
+Status: v1 guest implementation is present; UTF-8 and cross-platform conformance expansion remains in progress.
 
 ## Purpose
 
