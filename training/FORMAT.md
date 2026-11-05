@@ -1,6 +1,6 @@
 # N16TXT corpus format v1
 
-Status: v1 guest implementation is present; UTF-8 and cross-platform conformance expansion remains in progress.
+Status: initial NaN16 guest scanner is implemented and runner-tested. Full UTF-8 validation, Unicode noncharacter rejection, canonical stream emission, and cross-platform parity remain pending.
 
 ## Purpose
 
