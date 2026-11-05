@@ -1,3 +1,4 @@
 .nanlmind/
 build/
 state/
+.env.env.**.token*.patsecrets/local.properties*.keystore*.jks

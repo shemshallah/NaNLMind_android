@@ -55,6 +55,12 @@ make route-diff
 
 No 2 GiB map is created, uploaded, or cached here.
 
+## Security
+
+`DEEPREPO_PAT` is never used here and must never be shipped in the APK or kept on
+the device. Android/community nodes use a scoped, revocable
+`NANLM_DEVICE_TOKEN` against `NANLM_INTAKE_URL`. See [SECURITY.md](SECURITY.md).
+
 ## Why separate
 
 The Android build and transport are different from the x86 bootstrap ring. The
