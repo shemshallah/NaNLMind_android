@@ -6,7 +6,6 @@
 - C is limited to host I/O/network drivers and byte-buffer translation.
 - Runner point 1/256; Android point 2/256.
 - Android runtime universe: 8 MiB, exactly one.
-- APK excludes gitignored nannetsuite and all pentest material.
 - One shared pipeline and shared test vectors.
 - Intake is staged and transactional; no untrusted corpus directly mutates active weights.
 - No GitHub PAT or deployment secret on Android.
