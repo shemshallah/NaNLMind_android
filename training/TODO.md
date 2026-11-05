@@ -13,9 +13,9 @@
 
 ## Build order
 
-1. Write NaN16 .n16txt decoder + canonical stream encoder.
-2. Write local corpus test program and deterministic sample scheduler.
-3. Define trainer ABI over NaN16 state cells; use a tiny corpus and a fixed initialization image.
+1. [x] Add NaN16 guest corpus scanner, byte-frequency update table, record counters, and rolling digest.
+2. [x] Add a local NaN16 guest conformance gate using an embedded tiny corpus.
+3. [ ] Expand guest UTF-8 validation and deterministic sample scheduling; add fixed initialization/checkpoint ABI.
 4. Write protocol state machine in NaN16; keep socket operations in C drivers only.
 5. Add the same guest program to runner and Android build inputs.
 6. Wire GUI menu and CLI --nannet-train to the same guest entry point.
