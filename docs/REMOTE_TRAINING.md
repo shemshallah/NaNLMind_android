@@ -11,7 +11,7 @@ Status: initial implementation underway. The local NaN16 guest scanner, bounded 
 - Android instantiates exactly one 8 MiB NaN0S universe. It does not download or instantiate the 2 GiB bootstrap map.
 - Runner and Android execute the same NaN16 corpus decode, normalization, sample construction, training-step, and checkpoint-validation program. Hardware-specific execution is below that shared program.
 
-The runner is a remote compute peer, not a second training definition. Both peers report the same pipeline and corpus codec versions in every training proposal.
+The runner is currently a reproducible batch executor of the shared NaN16 corpus-profile guest, not yet a live remote compute peer. Android and runner use the same guest scanner/count-table prototype; deterministic scheduling, neural training steps, evaluation, and proposal/merge semantics are not implemented yet.
 
 ## Execution boundary
 
@@ -37,7 +37,7 @@ CLI: --nannet-train ───────────┤
                   NaN16 route + peer dispatch
 ~~~
 
-The training suite, codec rules, sample scheduler, update policy, merge logic, and state transitions are NaN16 guest programs. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
+The intended training suite, codec rules, sample scheduler, update policy, merge logic, and protocol state transitions belong in NaN16 guest programs. Implemented today: the corpus scanner/count tables and a frame validator with CRC, monotonic sequence check, and point routing. The full session/message state machine is still outstanding. The Android HTTPS adapter and JNI frame bridge compile, but the Android UI does not yet invoke a remote session. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
 
 The current Android VM already exposes a JNI-backed NaN16 interpreter. The GUI shell may present controls and SAF file selection, but it must not implement training policy. The guest owns those decisions.
 
@@ -47,7 +47,7 @@ The current Android VM already exposes a JNI-backed NaN16 interpreter. The GUI s
 2. The boundary driver reads bounded bytes and places them in a NaN16 intake buffer.
 3. NaN16 validates the .n16txt header, line framing, lengths, character restrictions, and corpus limits.
 4. NaN16 canonicalizes line endings and blank-line handling, then builds immutable sample records.
-5. The same NaN16 training pipeline runs locally or remotely.
+5. The same NaN16 corpus-profile prototype runs on the Android guest or GitHub runner; remote session dispatch is not connected yet.
 6. A candidate checkpoint is evaluated against a fixed local holdout plus a rotating anti-regression suite.
 7. Only an accepted candidate becomes a merge proposal. The active model is never updated directly by untrusted intake.
 
@@ -86,7 +86,7 @@ Message types: HELLO, CAPABILITIES, CORPUS_BEGIN, CORPUS_CHUNK, CORPUS_END, ACCE
 
 CRC-32 detects accidental corruption; it is not authentication. The gateway must authenticate the device credential, enforce quotas, rate limits, TLS, sequence/replay checks, and session ownership before forwarding frames to NaN16 intake. NaN16 independently checks framing, lengths, state transitions, and sequence numbers.
 
-Runner and Android use the same frame and state-machine definitions. Only the C transport driver differs by platform.
+Runner and Android are intended to use the same frame and state-machine definitions. The current guest validates frame structure, CRC, monotonic sequence numbers, and route selection; complete session ownership, per-direction sequence state, message-specific payload validation, and transition enforcement remain to be implemented. Only the C transport driver should differ by platform.
 
 ## Launch surfaces
 
