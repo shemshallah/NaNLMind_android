@@ -16,12 +16,14 @@
 1. [x] Add NaN16 guest corpus scanner, byte-frequency update table, record counters, and rolling digest.
 2. [x] Add a local NaN16 guest conformance gate using an embedded tiny corpus.
 3. [ ] Expand guest UTF-8 validation and deterministic sample scheduling; add fixed initialization/checkpoint ABI.
-4. Write protocol state machine in NaN16; keep socket operations in C drivers only.
-5. Add the same guest program to runner and Android build inputs.
-6. Wire GUI menu and CLI --nannet-train to the same guest entry point.
-7. Add candidate evaluator and transactional merge.
-8. Add explicit APK allowlist and artifact scan for forbidden paths/material.
-9. Build on GitHub Actions; run parity vectors on both targets.
+4. [x] Add NaN16 frame validation, CRC-32, replay-sequence checks, and overbootstrap route dispatch.
+5. [x] Add bounded C stream framing and NaN16 byte-buffer bridge; keep protocol policy in the guest.
+6. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
+7. [x] Add manual GitHub Runner CPU Ring workflow using the same guest and corpus format.
+8. [ ] Add candidate evaluator and transactional merge.
+9. [ ] Add explicit APK allowlist and artifact scan for runtime packaging.
+10. [ ] Add TLS gateway deployment and connect Android transport to the runner/VPS.
+11. [ ] Build APK and run identical corpus vectors on Android and runner.
 
 ## Acceptance gate
 
