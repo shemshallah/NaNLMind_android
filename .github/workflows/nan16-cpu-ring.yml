@@ -38,4 +38,13 @@ jobs:
             --img "$RUNNER_TEMP/n16_train.nan" \
             --nannet-train "$RUNNER_TEMP/corpus.txt" \
             --serial \
+            --candidate-out "$RUNNER_TEMP/candidate.nan1" \
             --peek 8448:3
+
+      - name: Publish isolated candidate checkpoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: nan16-candidate-${{ github.run_id }}
+          path: ${{ runner.temp }}/candidate.nan1
+          if-no-files-found: error
+          retention-days: 7
