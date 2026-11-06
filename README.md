@@ -32,13 +32,15 @@ The current upstream boot image is 1,474,560 bytes. It is not the full 8 MiB run
 
 ## Android desktop session
 
-The Android boot path enters the NaN16 GUI desktop directly. NSH opens as a child window on the desktop surface at startup and prints the live `--help` reference. It can be moved, minimized, maximized/restored, closed, and restored from the NSH desktop button. Closing NSH leaves the desktop running; it does not return to the museum catalog.
+The Android boot path enters the NaN16 GUI desktop directly. NSH opens as a guest child window on the desktop at startup and prints the live `--help` reference. `exit`, `quit`, or `q` closes only NSH; it does not leave the desktop or return to the museum catalog. Minimized host child windows can be restored from the desktop task strip.
 
-NSH supports file operations under the app-private `/nsh` sandbox (`pwd`, `ls`, `write`, `touch`, `cat`, `mkdir`, `rm`), guest application launch (`run lattice|monitor|hex|system`), and host desktop tools (`settings`, `nannet`, `nannet-training`, `n16t`, `browser`, `disk`, `fs`, `log`, `fit`, `scale`, `apps`, `windows`, `reset`). The complete command reference is printed by `--help`.
+Implemented NSH commands: `--help`/`h`, `c`, `v`, `w`, `l`, `m`, `x`, `t`, `u`, `s`, `n`, `b`, `f`, `files`, `write FILENAME`, `nannet-training`, `exit`, `quit`, and `q`. `s`, `n`, and `b` open the unified Settings, NaNNet manager, and Browser Launcher. `files` opens the internal app-private `/nsh` file manager; `write FILENAME` opens its text editor. The `nannet-training` command opens the same training interface as the desktop button. The full live reference is printed at boot and by `--help`.
 
-NSH, Settings, NaNNet, Training, N16T Gateway, Browser launcher, COM1 Log, filesystem utility, and applications menu use a shared internal desktop child-window layer with drag, minimize, maximize/restore, and close. Android document pickers and the external browser remain Android-owned system surfaces.
+NSH, Settings, NaNNet, Training, N16T Gateway, Browser launcher, COM1 Log, filesystem utility, and applications menu use a shared internal desktop child-window layer with drag, minimize/restore, maximize/restore, and close. Android document pickers and the external browser remain Android-owned system surfaces.
 
-Guest windows are NaN16-managed. The Android shell injects actual PC keyboard scan codes for F2/F3/F7-F10 and translates touches on guest close/enlarge controls into the corresponding guest Escape/F3 actions. See [Android desktop architecture](aarch64/android/docs/ANDROID_DESKTOP.md).
+A 12-key F1-F12 strip is rendered by NaN16 and mirrored in the Android soft-key row. F5/F7 route to the one Settings window; F6 opens NaNNet. F2/F3 are guest move/enlarge controls, while F8-F10 open guest Lattice/Monitor/Hex windows. Guest window hit-testing and z-order remain NaN16-owned.
+
+See [Android desktop architecture](aarch64/android/docs/ANDROID_DESKTOP.md).
 
 ## NaNNet host networking
 
