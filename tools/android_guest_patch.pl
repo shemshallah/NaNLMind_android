@@ -97,6 +97,8 @@ $gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 
     or die "Android VM throughput label comment missing\n";
 $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
 $gui = replace_once($gui, 's settings n browser u utils\n', 'n browser u utils\n', "remove duplicate guest settings menu");
+$gui = replace_once($gui, 'F5 SETTINGS', 'F5 HOST SETTINGS', "desktop unified settings hint");
+$gui = replace_once($gui, 'F5 SET  F6 NET', 'F5 HOST  F6 NET', "compact desktop unified settings hint");
 $gui = replace_once($gui, "tm_set:\nMOVI r1,4\nCALL \@gui_single\nJMP \@tm_done",
     "tm_set:\nJMP \@tm_done", "route settings to the single Android settings surface");
 $gui = replace_once($gui, "gk_f5:\nMOVI r2,0x105\nCMP r1,r2\nJMP[NE] \@gk_n5\nMOVI r1,4\nCALL \@gui_single\nJMP \@gk_ret\ngk_n5:",
