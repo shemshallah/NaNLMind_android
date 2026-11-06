@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
  *  - "resolution" adjust on the fly = the zoom over the current fit; integerScale snaps the
  *    base stage to whole pixels for a crisp blit (guest VGA mode is untouched).
  */
-class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit, private val onHostKey: (Int) -> Boolean = { false }) : View(context) {
+class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit, private val onHostTap: (Int, Int) -> Boolean = { _, _ -> false }, private val onHostKey: (Int) -> Boolean = { false }) : View(context) {
     companion object {
         private const val MAX_ZOOM = 8f
         private const val CELL_ASPECT = 0.5f   // VGA text cell width/height = 8/16
@@ -176,6 +176,12 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
     // ---- touch: pinch zoom / pan / double-tap fit ----
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (e.actionMasked == MotionEvent.ACTION_DOWN) requestFocus()
+        if (e.actionMasked == MotionEvent.ACTION_UP && e.pointerCount == 1 &&
+            vm.graphics() && baseW > 0f && baseH > 0f) {
+            val gx = (((e.x - panX) / (baseW * zoom)) * vm.width()).toInt()
+            val gy = (((e.y - panY) / (baseH * zoom)) * vm.height()).toInt()
+            if (onHostTap(gx, gy)) return true
+        }
         val a = scaleDetector.onTouchEvent(e)
         val b = gestures.onTouchEvent(e)
         return a || b || super.onTouchEvent(e)
