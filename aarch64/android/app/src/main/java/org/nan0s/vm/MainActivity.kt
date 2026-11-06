@@ -1069,19 +1069,26 @@ class MainActivity : Activity(), NanLoop.Listener {
             Toast.makeText(this, WifiBridge.join(this, ap.ssid, ""), Toast.LENGTH_LONG).show()
             return
         }
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            hint = "password"
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
         }
-        AlertDialog.Builder(this)
-            .setTitle(ap.ssid)
-            .setMessage("WPA password")
-            .setView(input)
-            .setPositiveButton("Join") { _, _ ->
-                Toast.makeText(this, WifiBridge.join(this, ap.ssid, input.text.toString()), Toast.LENGTH_LONG).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        panel.addView(TextView(this).apply {
+            text = "Join " + ap.ssid + "  •  " + ap.security
+            setTextColor(Color.rgb(180, 224, 220))
+            textSize = 13f
+        })
+        val password = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = "Wi-Fi password"
+            setTextColor(Color.WHITE)
+        }
+        panel.addView(password, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        panel.addView(btn("REQUEST CONNECTION") {
+            Toast.makeText(this, WifiBridge.join(this, ap.ssid, password.text.toString()), Toast.LENGTH_LONG).show()
+        })
+        showDesktopWindow("Join Wi-Fi / " + ap.ssid, panel, 220)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
