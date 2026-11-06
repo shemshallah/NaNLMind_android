@@ -54,3 +54,16 @@ The human-facing portal is `GET /portal`. Binary N16T frames use `POST /n16t` wi
 
 The Android-specific boot image is patched from the pinned NaN0S source revision by `tools/android_guest_patch.pl`, then assembled with the NaN0S AWK/NaN16 build tools. The Android APK workflow does not use Python for guest-image patching. Existing C/JNI code remains the NaN16 interpreter and narrow Android host boundary; no C training/model semantics are added. Corpus validation, protocol state, and training guest behavior are NaN16 sources.
 
+## Shared NANNET intake
+
+The endpoint publisher is compatible with the NANNET universal intake service
+in NaNLMind. Configure NANLM_INTAKE_URL to the HTTPS service origin and
+NANLM_DEVICE_TOKEN to a scoped token issued for endpoint_id=my_android with
+intake and observation scopes. The server derives endpoint identity from that
+token; the JSON observation cannot override it.
+
+The publisher sends only the evidence envelope to POST /v1/observations.
+It never includes raw prompt/response content, correctness claims, head deltas,
+or a GitHub token. A successful HTTP 202 means the observation is queued as
+unverified evidence, not that it has trained or changed the canonical model.
+The six-runner ring must retrieve, validate, fold, and acknowledge it.
