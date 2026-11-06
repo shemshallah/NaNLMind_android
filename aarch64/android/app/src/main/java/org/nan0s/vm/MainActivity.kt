@@ -1039,6 +1039,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     override fun onResume() {
         super.onResume()
         loop.paused = trainingActive; beeper.muted = false; loop.poke(); view.invalidate()
+        wifiStatusView?.text = WifiBridge.status(this)
     }
     override fun onDestroy() {
         super.onDestroy()
