@@ -40,6 +40,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var loop: NanLoop
     private lateinit var beeper: Beeper
     private lateinit var desktopSurface: FrameLayout
+    private lateinit var windowDock: LinearLayout
     private val desktopWindows = linkedMapOf<View, String>()
     private var wifiStatusView: TextView? = null
     private var wifiResultsView: LinearLayout? = null
@@ -163,6 +164,16 @@ class MainActivity : Activity(), NanLoop.Listener {
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
         desktopSurface = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 8, 18)) }
         desktopSurface.addView(view, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        windowDock = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            setPadding(dp(5), dp(3), dp(5), dp(3))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+            visibility = View.GONE
+        }
+        desktopSurface.addView(windowDock, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, dp(42), Gravity.BOTTOM
+        ))
         root.addView(desktopSurface, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(keyRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         setContentView(root)
@@ -191,7 +202,10 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         chrome.addView(caption, LinearLayout.LayoutParams(0, dp(32), 1f))
         val initialWidth = minOf(dp(760), (resources.displayMetrics.widthPixels - dp(24)).coerceAtLeast(dp(280)))
-        val minimize = btn("−") { shell.visibility = View.GONE }
+        val minimize = btn("−") {
+            shell.visibility = View.GONE
+            updateWindowDock()
+        }
         var maximized = false
         var maximizeButton: Button? = null
         val maximize = btn("□") {
@@ -220,6 +234,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 wifiResultsView = null
             }
             desktopSurface.removeView(shell)
+            updateWindowDock()
         }
         chrome.addView(minimize, LinearLayout.LayoutParams(dp(40), dp(32)))
         chrome.addView(maximize, LinearLayout.LayoutParams(dp(40), dp(32)))
@@ -255,7 +270,24 @@ class MainActivity : Activity(), NanLoop.Listener {
             }
         }
         shell.bringToFront()
+        if (windowDock.visibility == View.VISIBLE) windowDock.bringToFront()
+        updateWindowDock()
         return shell
+    }
+
+    private fun updateWindowDock() {
+        if (!::windowDock.isInitialized) return
+        windowDock.removeAllViews()
+        val hidden = desktopWindows.filter { it.key.visibility != View.VISIBLE }
+        hidden.forEach { (window, title) ->
+            windowDock.addView(btn(title.take(14)) {
+                window.visibility = View.VISIBLE
+                window.bringToFront()
+                updateWindowDock()
+            }, LinearLayout.LayoutParams(-2, dp(34)).apply { setMargins(dp(2), 0, dp(2), 0) })
+        }
+        windowDock.visibility = if (hidden.isEmpty()) View.GONE else View.VISIBLE
+        if (windowDock.visibility == View.VISIBLE) windowDock.bringToFront()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
