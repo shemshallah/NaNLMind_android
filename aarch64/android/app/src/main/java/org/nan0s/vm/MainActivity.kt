@@ -274,7 +274,22 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "fit"->{view.resetZoom();append("Display fitted to desktop.")}
                 "scale"->{view.integerScale=!view.integerScale;view.invalidate();append("Integer scaling: "+view.integerScale)}
                 "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
-                "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. F5/F6/F7 open system windows.")
+                "run"->{
+                    when(arg.lowercase()){
+                        "lattice"->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke();append("Opened Sierpinski desktop window.")}
+                        "monitor"->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke();append("Opened Monitor desktop window.")}
+                        "hex"->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke();append("Opened Hex desktop window.")}
+                        "settings"->{dialog.dismiss();showUnifiedSettings()}
+                        "nannet","wifi"->{dialog.dismiss();showWifi()}
+                        "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
+                        "training"->{dialog.dismiss();showTrainingSuite()}
+                        "gateway","n16t"->{dialog.dismiss();showRemoteGateway()}
+                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/")}
+                        else->append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
+                    }
+                }
+                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/")}}.setNegativeButton("Close",null).show()}
+                "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. Use run <app> or apps.")
                 "files"->append("Files are sandboxed in /nsh. Use ls, write, cat, mkdir and rm.")
                 "version","ver"->append("NaNLMind_ANDROID • NaN16 guest • Android host services")
                 "desktop"->append("Desktop remains active behind this NSH window.")
@@ -288,7 +303,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         dialog.show()
     }
     private fun nshHelp():String =
-        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nwindows            List desktop apps\nfiles              Show file commands\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
+        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open internal browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nrun APP            Launch a desktop application\napps               Open application menu\nwindows            List desktop apps\nfiles              Show file commands\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
     private fun nshFile(name:String):File{
         require(name.isNotBlank()&&!name.startsWith("/")&&!name.contains("\\"))
         val base=nshHome.canonicalFile;val file=File(base,name).canonicalFile
