@@ -112,6 +112,30 @@ $gui = replace_once($gui,
     "close the NSH child window without exiting the desktop");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
 $gui = replace_once($gui, '.str "MHZ"', '.str "MIPS"', "label VM instruction throughput honestly");
+my $settings_host = join "\n", "tm_set:", "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1", "MOVI r1,79", "PUTC r1",
+    "MOVI r1,83", "PUTC r1", "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,83", "PUTC r1", "MOVI r1,69", "PUTC r1", "MOVI r1,84", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,73", "PUTC r1", "MOVI r1,78", "PUTC r1",
+    "MOVI r1,71", "PUTC r1", "MOVI r1,83", "PUTC r1", "MOVI r1,10", "PUTC r1",
+    "JMP @tm_done";
+$gui = replace_once($gui, "tm_set:\nMOVI r1,4\nCALL \@gui_single\nJMP \@tm_done",
+    $settings_host, "route NSH settings command to unified Android desktop settings");
+my $wifi_host = join "\n", "tm_net:", "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1", "MOVI r1,79", "PUTC r1",
+    "MOVI r1,83", "PUTC r1", "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,87", "PUTC r1", "MOVI r1,73", "PUTC r1", "MOVI r1,70", "PUTC r1",
+    "MOVI r1,73", "PUTC r1", "MOVI r1,10", "PUTC r1", "JMP @tm_done";
+$gui = replace_once($gui, "tm_net:\nMOVI r1,7\nCALL \@gui_open_new\nJMP \@tm_done",
+    $wifi_host, "route NSH NaNNet command to Android Wi-Fi/cellular manager");
+my $browser_host = join "\n", "tm_br:", "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1", "MOVI r1,79", "PUTC r1",
+    "MOVI r1,83", "PUTC r1", "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,66", "PUTC r1", "MOVI r1,82", "PUTC r1", "MOVI r1,79", "PUTC r1",
+    "MOVI r1,87", "PUTC r1", "MOVI r1,83", "PUTC r1", "MOVI r1,69", "PUTC r1",
+    "MOVI r1,82", "PUTC r1", "MOVI r1,10", "PUTC r1", "JMP @tm_done";
+$gui = replace_once($gui, "tm_br:\nMOVI r1,7\nCALL \@gui_open_new\nJMP \@tm_done",
+    $browser_host, "route NSH browser command to isolated Android browser launcher");
 $gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 ms of TICK -> MIPS/
     or die "Android VM throughput label comment missing\n";
 $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
