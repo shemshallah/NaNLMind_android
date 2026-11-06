@@ -92,6 +92,9 @@ my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", 
 my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_open_new";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
+$gui = replace_once($gui, '.str "MHZ"', '.str "MIPS"', "label VM instruction throughput honestly");
+$gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 ms of TICK -> MIPS/
+    or die "Android VM throughput label comment missing\n";
 $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
 
 my $marker = "gk_np:\nMOVI r2,0x105";
