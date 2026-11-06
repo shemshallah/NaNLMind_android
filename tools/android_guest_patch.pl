@@ -119,7 +119,37 @@ my $help_token = join "\n",
     "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
     "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
     "MOVI r4,104", 'JMP @tk_lc',
-    "tk_firstchar:", "LD r4,r5,0";
+    "tk_firstchar:", "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r5,r13"
+    "LD r4,r6,0", "MOVI r7,97", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,45", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,114", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,97", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,105", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,105", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "LD r4,r6,0", "MOVI r7,103", "CMP r4,r7", 'JMP[NE] @tk_cmd_first',
+    "ADD r6,r6,r13"
+    "MOVI r4,256", 'JMP @tk_lc', "tk_cmd_first:", "LD r4,r5,0";
 my @training_chars = split //, "nannet-training";
 my @training_check = ("ADD r5,r1,r5", "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check');
 for my $i (1 .. $#training_chars) {
