@@ -144,6 +144,87 @@ $gui = replace_once($gui, $f5,
     join("\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \@gk_n5", "JMP \@gk_ret", "gk_n5:"),
     "F5 delegates to the single Android desktop settings surface");
 
+
+# Full nannet-training token dispatch and guest-native window kind 8.
+my $train_dispatch = "MOVI r5,104\\nCMP r4,r5\\nJMP[EQ] \\@tm_help";
+$gui = replace_once($gui, $train_dispatch,
+    "MOVI r5,256\\nCMP r4,r5\\nJMP[EQ] \\@tm_train\\n" . $train_dispatch,
+    "dispatch full nannet-training token");
+my $train_tail = "tm_br:\\nMOVI r1,7\\nCALL \\@gui_open_new\\nJMP \\@tm_done";
+$gui = replace_once($gui, $train_tail,
+    $train_tail . "\\ntm_train:\\nMOVI r1,8\\nCALL \\@gui_single\\nJMP \\@tm_done",
+    "open guest NANNET training window");
+$gui = replace_once($gui, ".word 560,340,\\@t_br,0",
+    ".word 560,340,\\@t_br,0\\n.word 520,300,\\@t_train,0",
+    "add training window geometry");
+$gui = replace_once($gui, ".word \\@br_init,\\@br_draw,\\@br_key,\\@nop_k",
+    ".word \\@br_init,\\@br_draw,\\@br_key,\\@nop_k\\n.word \\@train_init,\\@train_draw,\\@train_key,\\@nop_k",
+    "add training window dispatch");
+my $training_guest = <<'NAS';
+; NaN16 guest-owned NANNET training window. The corpus-picker/run bridge is a separate host-service task.
+t_train:
+.str "NANNET TRAINING"
+train_init:
+RET
+train_draw:
+ST r15,r14,0
+ADD r14,r14,r13
+ST r1,r0,@tr_id
+CALL @g_clr
+LD r1,r0,@tr_id
+CALL @tx_org
+MOVI r1,0
+MOVI r2,0
+MOVI r3,@s_tr_title
+MOVI r4,#C_YEL
+CALL @tx_s
+MOVI r1,0
+MOVI r2,2
+MOVI r3,@s_tr_format
+MOVI r4,#C_CY
+CALL @tx_s
+MOVI r1,0
+MOVI r2,4
+MOVI r3,@s_tr_guest
+MOVI r4,#C_TXT
+CALL @tx_s
+MOVI r1,0
+MOVI r2,6
+MOVI r3,@s_tr_candidate
+MOVI r4,#C_TXT
+CALL @tx_s
+MOVI r1,0
+MOVI r2,8
+MOVI r3,@s_tr_bridge
+MOVI r4,#C_YEL
+CALL @tx_s
+MOVI r1,0
+MOVI r2,10
+MOVI r3,@s_tr_help
+MOVI r4,#C_DIM
+CALL @tx_s
+SUB r14,r14,r13
+LD r15,r14,0
+RET
+tr_id:
+.word 0
+train_key:
+RET
+s_tr_title:
+.str "N16TXT/1  CORPUS TRAINING"
+s_tr_format:
+.str "UTF-8 LINE RECORDS  |  MAX 1 MiB"
+s_tr_guest:
+.str "NaN16 guest validates and accounts corpus bytes."
+s_tr_candidate:
+.str "Candidate snapshot remains isolated from active VM."
+s_tr_bridge:
+.str "FILE PICKER / RUN CONTROL BRIDGE: NOT YET WIRED"
+s_tr_help:
+.str "Use NSH: nannet-training   ESC closes this window."
+NAS
+$gui .= "\\n" . $training_guest;
+
 write_file($gui_path, $gui);
 
 my $check_shell = read_file($shell_path);
