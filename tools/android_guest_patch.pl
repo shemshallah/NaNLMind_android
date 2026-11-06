@@ -156,33 +156,38 @@ my $insert = join "\n",
     "gk_f5:", "MOVI r2,0x105";
 $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
 
-my $f7 = join "\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_n7", "MOVI r1,6";
+
+my $f7 = join "\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7", "MOVI r1,6";
 $gui = replace_once($gui, $f7,
-    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_n7", "JMP \@gk_ret"),
-    "F7 delegates to the single Android desktop settings surface");
-my $f5 = join "\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \@gk_n5", "MOVI r1,4", "CALL \@gui_single", "JMP \@gk_ret", "gk_n5:";
+    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7",
+         "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret"),
+    "F7 opens the unified guest Settings window");
+my $f5 = join "\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \\@gk_n5", "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret", "gk_n5:";
 $gui = replace_once($gui, $f5,
-    join("\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \@gk_n5", "JMP \@gk_ret", "gk_n5:"),
-    "F5 delegates to the single Android desktop settings surface");
+    join("\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \\@gk_n5",
+         "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret", "gk_n5:"),
+    "F5 and F7 share the unified guest Settings window");
 
-
-# Full nannet-training token dispatch and guest-native window kind 8.
-my $train_dispatch = "MOVI r5,104\\nCMP r4,r5\\nJMP[EQ] \\@tm_help";
+# Full nannet-training token dispatch to the shared training controls.
+my $train_dispatch = join "\n",
+    "MOVI r5,104", "CMP r4,r5", 'JMP[EQ] @tm_help';
 $gui = replace_once($gui, $train_dispatch,
-    "MOVI r5,256\\nCMP r4,r5\\nJMP[EQ] \\@tm_train\\n" . $train_dispatch,
+    join("\n", "MOVI r5,256", "CMP r4,r5", 'JMP[EQ] @tm_train', $train_dispatch),
     "dispatch full nannet-training token");
-my $train_tail = "tm_br:\\nMOVI r1,7\\nCALL \\@gui_open_new\\nJMP \\@tm_done";
+my $train_tail = join "\n",
+    "tm_br:", "MOVI r1,7", 'CALL @gui_open_new', 'JMP @tm_done';
 $gui = replace_once($gui, $train_tail,
-    $train_tail . "\\ntm_train:\\nMOVI r1,8\\nCALL \\@gui_single\\nJMP \\@tm_done",
+    $train_tail . "\n" . join("\n", "tm_train:", "MOVI r1,8", 'CALL @gui_single', 'JMP @tm_done'),
     "open guest NANNET training window");
-$gui = replace_once($gui, ".word 560,340,\\@t_br,0",
-    ".word 560,340,\\@t_br,0\\n.word 520,300,\\@t_train,0",
+$gui = replace_once($gui, '.word 560,340,@t_br,0',
+    join("\n", '.word 560,340,@t_br,0', '.word 520,300,@t_train,0'),
     "add training window geometry");
-$gui = replace_once($gui, ".word \\@br_init,\\@br_draw,\\@br_key,\\@nop_k",
-    ".word \\@br_init,\\@br_draw,\\@br_key,\\@nop_k\\n.word \\@train_init,\\@train_draw,\\@train_key,\\@nop_k",
+$gui = replace_once($gui, '.word @br_init,@br_draw,@br_key,@nop_k',
+    join("\n", '.word @br_init,@br_draw,@br_key,@nop_k', '.word @train_init,@train_draw,@train_key,@nop_k'),
     "add training window dispatch");
 my $training_guest = <<'NAS';
-; NaN16 guest-owned NANNET training window. The corpus-picker/run bridge is a separate host-service task.
+; NaN16 guest-owned NANNET training status window. Corpus picking and execution use
+; the same Android host-service training controls as the NANNET training launcher.
 t_train:
 .str "NANNET TRAINING"
 train_init:
@@ -240,11 +245,11 @@ s_tr_guest:
 s_tr_candidate:
 .str "Candidate snapshot remains isolated from active VM."
 s_tr_bridge:
-.str "FILE PICKER / RUN CONTROL BRIDGE: NOT YET WIRED"
+.str "FILE PICKER / RUN CONTROL IS HOST-SERVICED"
 s_tr_help:
 .str "Use NSH: nannet-training   ESC closes this window."
 NAS
-$gui .= "\\n" . $training_guest;
+$gui .= "\n" . $training_guest;
 
 write_file($gui_path, $gui);
 
