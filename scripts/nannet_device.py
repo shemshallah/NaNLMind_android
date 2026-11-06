@@ -136,18 +136,26 @@ def main(argv=None) -> int:
             if not args.consent:
                 print("Registration requires --consent after reviewing the system report.", file=sys.stderr)
                 return 2
-            secret = state.get("device_secret") or secrets.token_urlsafe(32)
-            state["device_secret"] = secret
-            write_state(path, state)
-            result = request(args.url, "/v1/devices/register", payload={
-                "device_secret": secret,
-                "consent": True,
-                "terms_version": TERMS,
-                "system_report": system_report(),
-            })
-            state.update({k: result[k] for k in ("device_id", "address", "lease_id", "lease_expires_at", "token")})
-            write_state(path, state)
-            print(json.dumps({k: result[k] for k in ("device_id", "address", "lease_id", "lease_expires_at", "head_count")}, indent=2))
+            if state.get("token"):
+                # Re-running registration resumes this installation and rotates
+                # its bearer atomically; it must not claim a second HW slot.
+                result = request(args.url, "/v1/devices/rotate", state["token"], {})
+                state.update({k: result[k] for k in ("address", "lease_id", "lease_expires_at", "token")})
+                write_state(path, state)
+                print(json.dumps({k: result[k] for k in ("address", "lease_id", "lease_expires_at")}, indent=2))
+            else:
+                secret = state.get("device_secret") or secrets.token_urlsafe(32)
+                state["device_secret"] = secret
+                write_state(path, state)
+                result = request(args.url, "/v1/devices/register", payload={
+                    "device_secret": secret,
+                    "consent": True,
+                    "terms_version": TERMS,
+                    "system_report": system_report(),
+                })
+                state.update({k: result[k] for k in ("device_id", "address", "lease_id", "lease_expires_at", "token")})
+                write_state(path, state)
+                print(json.dumps({k: result[k] for k in ("device_id", "address", "lease_id", "lease_expires_at", "head_count")}, indent=2))
         else:
             token = state.get("token", "")
             if not token:
