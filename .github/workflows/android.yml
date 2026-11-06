@@ -64,6 +64,41 @@ jobs:
           sh_after_menu:\
           MOVI r13,1\
           JMP @sh_redraw' src/museum/shell.nas
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("src/exhibits/gui_cart.nas")
+          s = p.read_text()
+          old = """nn_init:
+          ST r15,r14,0
+          ADD r14,r14,r13
+          CALL @pci_scan
+          CALL @pci_nic
+          SUB r14,r14,r13
+          LD r15,r14,0
+          RET"""
+          new = """nn_init:
+          ST r15,r14,0
+          ADD r14,r14,r13
+          CALL @wm_wbase
+          MOVI r2,3
+          ST r2,r1,#W_A3
+          SUB r14,r14,r13
+          LD r15,r14,0
+          RET"""
+          if old not in s:
+              raise SystemExit("Android NaNNet init patch target not found")
+          s = s.replace(old, new, 1)
+          s = s.replace('.str "NaNNet  NETWORK CONTROL  (DRIVER PENDING)"',
+                        '.str "NaNNet  ANDROID NETWORK MANAGER"')
+          s = s.replace('.str "ADAPTER"', '.str "NETWORK"')
+          s = s.replace('.str "NONE ON PCI BUS 0"', '.str "ANDROID WIFI / CELLULAR ROUTE"')
+          s = s.replace('.str "NO ADAPTER FOUND"', '.str "HOST NETWORK VIA ANDROID"')
+          s = s.replace('.str "ADAPTER FOUND, NO DRIVER YET (STUB)"',
+                        '.str "ANDROID HOST NETWORK ACTIVE"')
+          if "NONE ON PCI BUS 0" in s or "NO ADAPTER FOUND" in s:
+              raise SystemExit("Android NaNNet PCI-only status remains")
+          p.write_text(s)
+          PY
           sh tools/build.sh
           mkdir -p ../aarch64/android/app/src/main/assets
           cp aarch64/android/app/src/main/assets/nan0s.img ../aarch64/android/app/src/main/assets/nan0s.img
