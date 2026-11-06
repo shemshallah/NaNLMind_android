@@ -81,7 +81,8 @@ object WifiBridge {
     fun scan(c: Context, done: (List<Ap>) -> Unit) {
         val app = c.applicationContext
         val w = wifi(app)
-        if (!w.isWifiEnabled || !locationEnabled(app)) { done(emptyList()); return }
+        if (!w.isWifiEnabled) { done(emptyList()); return }
+        val canActivelyScan = locationEnabled(app)
         val handler = Handler(Looper.getMainLooper())
         var completed = false
         var receiver: BroadcastReceiver? = null
@@ -90,10 +91,21 @@ object WifiBridge {
             completed = true
             try { receiver?.let { app.unregisterReceiver(it) } } catch (_: Exception) { }
             val list = try {
-                w.scanResults.asSequence().filter { it.SSID.isNotBlank() && it.SSID != "<unknown ssid>" }
+                val cached = w.scanResults.asSequence()
+                    .filter { it.SSID.isNotBlank() && it.SSID != "<unknown ssid>" }
                     .distinctBy { it.SSID }
                     .map { Ap(it.SSID, it.level, security(it.capabilities)) }
-                    .sortedByDescending { it.level }.toList()
+                    .toMutableList()
+                // Preserve the current association in the manager even when Android
+                // masks scan SSIDs or throttles active scans.
+                val current = w.connectionInfo
+                val currentSsid = current.ssid?.removePrefix("\"")?.removeSuffix("\"")
+                if (w.isWifiEnabled && current.networkId >= 0 &&
+                    !currentSsid.isNullOrBlank() && currentSsid != "<unknown ssid>" &&
+                    cached.none { it.ssid == currentSsid }) {
+                    cached.add(Ap(currentSsid, current.rssi, "connected"))
+                }
+                cached.sortedByDescending { it.level }
             } catch (_: Exception) { emptyList() }
             done(list)
         }
@@ -106,10 +118,10 @@ object WifiBridge {
             val filter = IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
             if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
             else app.registerReceiver(receiver, filter)
-            val accepted = w.startScan()
+            val accepted = canActivelyScan && try { w.startScan() } catch (_: Exception) { false }
             // Android can throttle scans. A broadcast is preferred, but the cache is
             // still returned after the timeout if the platform declines the request.
-            handler.postDelayed({ deliver() }, if (accepted) 8_000L else 1_000L)
+            handler.postDelayed({ deliver() }, if (accepted) 8_000L else 1_500L)
         } catch (_: Exception) {
             deliver()
         }
