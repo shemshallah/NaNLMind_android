@@ -856,7 +856,16 @@ class MainActivity : Activity(), NanLoop.Listener {
     // ---- NanLoop.Listener (called on the run thread) ----
     override fun onFrame() { view.postInvalidate() }
     override fun onSerial(bytes: ByteArray) {
-        synchronized(log) { log.append(String(bytes, Charsets.ISO_8859_1)); if (log.length > 65536) log.delete(0, log.length - 49152) }
+        val received = String(bytes, Charsets.ISO_8859_1)
+        val openTraining = received.contains("N16HOST:TRAIN\\n")
+        val visible = received.replace("N16HOST:TRAIN\\n", "")
+        if (visible.isNotEmpty()) synchronized(log) {
+            log.append(visible)
+            if (log.length > 65536) log.delete(0, log.length - 49152)
+        }
+        if (openTraining) runOnUiThread {
+            if (!isFinishing && !isDestroyed) showTrainingSuite()
+        }
     }
     override fun onHalt(trap: String) {
         runOnUiThread { Toast.makeText(this, if (trap.isEmpty()) "guest halted" else "guest halted: $trap", Toast.LENGTH_SHORT).show() }
