@@ -1,3 +1,6 @@
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 package org.nan0s.vm
 
 /** Thread-safe wrapper: the UI thread (input, drawing) and the run thread share one nan_vm. All calls take the same lock. */
@@ -9,6 +12,7 @@ class NanVm : AutoCloseable {
     }
     private val lock = Any()
     private var h: Long = NanNative.create()
+    private var pointerSequence: Int = 0
     private val cells = IntArray(2000)
     private val pal = IntArray(16)
 
@@ -21,6 +25,17 @@ class NanVm : AutoCloseable {
     fun register(index: Int): Int = synchronized(lock) { if (h == 0L) 0 else NanNative.getReg(h, index) }
     fun setRegister(index: Int, value: Int) = synchronized(lock) { if (h != 0L) NanNative.setReg(h, index, value) }
     fun setProgramCounter(pc: Int) = synchronized(lock) { if (h != 0L && pc >= 0) NanNative.setPc(h, pc) }
+    /** Guest-owned pointer mailbox: byte offset 0x168000 (word 0x5A000).
+     * Android sends coordinates/actions only; NaN16DE owns all window behaviour.
+     * action: 1 down, 2 move, 3 up, 4 cancel.
+     */
+    fun pointerEvent(x: Int, y: Int, action: Int): Boolean = synchronized(lock) {
+        if (h == 0L) return@synchronized false
+        pointerSequence += 1
+        val payload = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(pointerSequence).putInt(x).putInt(y).putInt(action).array()
+        NanNative.writeBytes(h, 0x168000, payload)
+    }
     fun stageNetworkFrame(address: Int, frame: ByteArray): Boolean = synchronized(lock) { h != 0L && NanNative.stageNetworkFrame(h, address, frame) }
     fun extractNetworkFrame(address: Int, length: Int): ByteArray? = synchronized(lock) { if (h == 0L) null else NanNative.extractNetworkFrame(h, address, length) }
     fun run(steps: Int): Int = synchronized(lock) { if (h == 0L) HALTED else NanNative.run(h, steps) }
