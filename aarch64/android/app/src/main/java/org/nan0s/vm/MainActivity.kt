@@ -166,7 +166,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         for (i in 1..12) {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
-                if (i == 6) showWifi()
+                if (i == 5) showWifi()
                 else { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
             }
             key.textSize = 11f
