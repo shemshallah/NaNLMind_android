@@ -1,0 +1,28 @@
+name: Android NANNET intake contract
+on:
+  push:
+    paths:
+      - "scripts/intake_client.py"
+      - "scripts/route_diff.py"
+      - "tests/test_nannet_intake.py"
+      - "config/android.env"
+      - ".github/workflows/nannet-intake.yml"
+  pull_request:
+    paths:
+      - "scripts/intake_client.py"
+      - "scripts/route_diff.py"
+      - "tests/test_nannet_intake.py"
+      - "config/android.env"
+      - ".github/workflows/nannet-intake.yml"
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify Android route-diff and NANNET HTTPS contract
+        run: python -m unittest discover -s tests -p "test_nannet_intake.py" -v
