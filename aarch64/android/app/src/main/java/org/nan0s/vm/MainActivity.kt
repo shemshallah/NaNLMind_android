@@ -45,6 +45,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var desktopSurface: FrameLayout
     private var nshWindow: View? = null
     private var nshMaximized = false
+    private val desktopWindows = linkedMapOf<View, String>()
     private var wifiStatusView: TextView? = null
     private var wifiResultsView: LinearLayout? = null
     private var wifiWindow: View? = null
@@ -218,6 +219,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         maximizeButton = maximize
         val close = btn("×") {
+            desktopWindows.remove(shell)
             desktopSurface.removeView(shell)
         }
         chrome.addView(minimize, LinearLayout.LayoutParams(dp(40), dp(32)))
@@ -228,6 +230,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         desktopSurface.addView(shell, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, dp(heightDp), Gravity.TOP or Gravity.CENTER_HORIZONTAL
         ).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
+        desktopWindows[shell] = title
         var rawX = 0f
         var rawY = 0f
         var originX = 0
@@ -412,6 +415,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             FrameLayout.LayoutParams.MATCH_PARENT, dp(360), Gravity.TOP or Gravity.CENTER_HORIZONTAL
         ).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
         nshWindow = panel
+        desktopWindows[panel] = "NSH"
         nshMaximized = false
 
         var downX = 0f
@@ -544,7 +548,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                     app("BROWSER") { showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") }
                     showDesktopWindow("Desktop Applications", ScrollView(this).apply { addView(menu) }, 420)
                 }
-                "windows", "wm" -> append("Guest windows: Lattice, Monitor, Hex. Host windows: NSH, Settings, NaNNet, Training, N16T.")
+                "windows", "wm" -> append(desktopWindows.entries.joinToString("\n") { (window, title) -> (if (window.visibility == View.VISIBLE) "OPEN  " else "HIDDEN  ") + title }.ifBlank { "No host windows open." })
                 "version", "ver" -> append("NaNLMind_ANDROID • NaN16 guest • Android host services")
                 "desktop" -> append("Desktop remains active behind this NSH window.")
                 "reset" -> {
