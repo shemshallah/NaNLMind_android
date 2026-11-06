@@ -826,7 +826,7 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     // ---- real WiFi: status, scan, connect request ----
     private fun showWifi() {
-        wifiDialog?.dismiss()
+        wifiWindow?.let { desktopSurface.removeView(it) }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(10), dp(14), dp(8))
@@ -869,29 +869,9 @@ class MainActivity : Activity(), NanLoop.Listener {
         panel.addView(btn("SCAN NETWORKS") { scanWifi() })
         panel.addView(btn("ANDROID WI-FI SETTINGS") { WifiBridge.openSettings(this) })
         panel.addView(btn("MOBILE DATA / 5G SETTINGS") { WifiBridge.openMobileSettings(this) })
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("NaNNet Network Manager")
-            .setView(panel)
-            .setPositiveButton("Scan", null)
-            .setNeutralButton("Refresh", null)
-            .setNegativeButton("Close", null)
-            .create()
-        wifiDialog = dialog
-        dialog.setOnDismissListener {
-            if (wifiDialog === dialog) {
-                wifiDialog = null
-                wifiStatusView = null
-                wifiResultsView = null
-            }
-        }
-        dialog.setOnShowListener {
-            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.78f).toInt())
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { scanWifi() }
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                status.text = WifiBridge.status(this)
-            }
-        }
-        dialog.show()
+        panel.addView(btn("REFRESH ROUTE STATUS") { status.text = WifiBridge.status(this) })
+        wifiWindow = showDesktopWindow("NaNNet Network Manager", panel, 430)
+
     }
 
     /** The guest window chrome is rendered by NaN16; translate taps on its close/enlarge
