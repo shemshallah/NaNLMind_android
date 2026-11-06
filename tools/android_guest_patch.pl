@@ -179,15 +179,16 @@ my $insert = join "\n",
 $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
 
 
-my $f7 = join "\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7", "MOVI r1,6";
+my $f7 = join "\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7', 'MOVI r1,6';
 $gui = replace_once($gui, $f7,
-    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7",
-         "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret"),
+    join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7',
+         'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret'),
     "F7 opens the unified guest Settings window");
-my $f5 = join "\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \\@gk_n5", "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret", "gk_n5:";
+my $f5 = join "\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2', 'JMP[NE] @gk_n5',
+    'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret', 'gk_n5:';
 $gui = replace_once($gui, $f5,
-    join("\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \\@gk_n5",
-         "MOVI r1,4", "CALL \\@gui_single", "JMP \\@gk_ret", "gk_n5:"),
+    join("\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2', 'JMP[NE] @gk_n5',
+         'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret', 'gk_n5:'),
     "F5 and F7 share the unified guest Settings window");
 
 # Full nannet-training token dispatch to the shared training controls.
