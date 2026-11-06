@@ -250,7 +250,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         val output = TextView(this).apply { textSize=12f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.rgb(180,225,218)); setPadding(dp(10),dp(8),dp(10),dp(8)); text="NaNLMind NSH  •  NaN16 desktop shell\nType --help for commands. Files are sandboxed in /nsh.\n\n"+nshHelp(); setBackgroundColor(Color.rgb(3,7,14)) }
         val scroll=ScrollView(this).apply { addView(output) }
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val input=EditText(this).apply { singleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
+        val input=EditText(this).apply { isSingleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
         panel.addView(input,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         val dialog=AlertDialog.Builder(this).setTitle("NSH  /  DESKTOP TERMINAL").setView(panel).setPositiveButton("Close window",null).setNeutralButton("Help",null).create()
         nshDialog = dialog
@@ -329,7 +329,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private fun showBrowserWindow(initialUrl:String) {
         val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(8));setBackgroundColor(Color.rgb(13,18,32))}
         val bar=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-        val address=EditText(this).apply{singleLine=true;textSize=12f;setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setText(initialUrl);setBackgroundColor(Color.rgb(30,39,61));inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI}
+        val address=EditText(this).apply{isSingleLine=true;textSize=12f;setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setText(initialUrl);setBackgroundColor(Color.rgb(30,39,61));inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI}
         val web=WebView(this).apply{
             settings.javaScriptEnabled=false
             settings.domStorageEnabled=false
