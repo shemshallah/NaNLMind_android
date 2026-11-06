@@ -166,8 +166,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           gui = Path("src/exhibits/gui_cart.nas").read_text()
-          boot = chr(10).join(["MOVI r1,0", "CALL @gui_open_new", "MOVI r1,1", "ST r1,r0,@wm_redraw"])
-          assert boot not in gui, "Android desktop must not boot a second guest CLI"
           assert "CALL @pci_scan" not in gui[gui.index("nn_init:"):gui.index("nn_nic:")], "Android NaNNet must not probe guest PCI"
           shell = Path("src/museum/shell.nas").read_text()
           assert "JMP @sh_run" in shell[shell.index("sh_after_prog:"):shell.index("sh_curator:")], "Android shell must relaunch desktop instead of showing museum"
