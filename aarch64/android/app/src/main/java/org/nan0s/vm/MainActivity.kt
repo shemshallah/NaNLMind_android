@@ -187,20 +187,20 @@ class MainActivity : Activity(), NanLoop.Listener {
         val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(2), dp(2), dp(2), dp(2))
-            setBackgroundColor(Color.rgb(9, 13, 27))
+            setBackgroundColor(Color.rgb(192, 192, 192))
             elevation = dp(14).toFloat()
         }
         val chrome = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(8), dp(3), dp(4), dp(3))
-            setBackgroundColor(Color.rgb(37, 53, 91))
+            setBackgroundColor(Color.rgb(0, 0, 128))
         }
         val caption = TextView(this).apply {
             text = title.uppercase()
             textSize = 11f
             typeface = android.graphics.Typeface.MONOSPACE
-            setTextColor(Color.rgb(128, 232, 218))
+            setTextColor(Color.WHITE)
         }
         chrome.addView(caption, LinearLayout.LayoutParams(0, dp(32), 1f))
         val initialWidth = minOf(dp(760), (resources.displayMetrics.widthPixels - dp(24)).coerceAtLeast(dp(280)))
