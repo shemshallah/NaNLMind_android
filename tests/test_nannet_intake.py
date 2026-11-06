@@ -40,6 +40,38 @@ class AndroidNannetIntakeTests(unittest.TestCase):
             self.assertTrue(payload["consent"])
             self.assertNotIn("mac_address", payload["system_report"])
 
+
+    def test_device_register_resumes_identity_by_rotating_existing_token(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "device.json"
+            state.write_text(json.dumps({
+                "device_id": "d" * 32,
+                "device_secret": "s" * 43,
+                "address": "nan://GM0:SC0:MC0:BS0:HW4",
+                "lease_id": "lease-1",
+                "lease_expires_at": 1000,
+                "token": "nnt_old",
+            }))
+            response = MagicMock()
+            response.__enter__.return_value = response
+            response.read.return_value = json.dumps({
+                "address": "nan://GM0:SC0:MC0:BS0:HW4",
+                "lease_id": "lease-1",
+                "lease_expires_at": 2000,
+                "token": "nnt_new",
+            }).encode()
+            with patch.object(sys, "argv", ["nannet_device.py", "--url", "https://nannet.example",
+                                           "--state", str(state), "register", "--consent"]), \\
+                 patch("urllib.request.urlopen", return_value=response) as open_url, \\
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(nannet_device.main(), 0)
+            request = open_url.call_args.args[0]
+            self.assertEqual(request.full_url, "https://nannet.example/v1/devices/rotate")
+            self.assertEqual(request.get_header("Authorization"), "Bearer nnt_old")
+            saved = json.loads(state.read_text())
+            self.assertEqual(saved["token"], "nnt_new")
+            self.assertEqual(saved["address"], "nan://GM0:SC0:MC0:BS0:HW4")
+
     def test_device_registration_refuses_missing_consent(self):
         with tempfile.TemporaryDirectory() as tmp, \
              patch.object(sys, "argv", ["nannet_device.py", "--url", "https://nannet.example",
