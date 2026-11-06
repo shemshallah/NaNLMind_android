@@ -86,6 +86,7 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
         override fun onDoubleTap(e: MotionEvent): Boolean { resetZoom(); return true }
     }
     private val gestures = GestureDetector(context, gestureListener)
+    private val hostKeysDown = HashSet<Int>()
 
     init { isFocusable = true; isFocusableInTouchMode = true }
 
@@ -208,7 +209,11 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean = key(keyCode, event, false) || super.onKeyUp(keyCode, event)
 
     private fun key(code: Int, e: KeyEvent, down: Boolean): Boolean {
-        if (down && onHostKey(code)) return true
+        if (down && onHostKey(code)) {
+            hostKeysDown.add(code)
+            return true
+        }
+        if (!down && hostKeysDown.remove(code)) return true
         if (vm.rawKeyboard()) {
             val sc = KeyMap.scancode(code)
             if (sc < 0) return false
