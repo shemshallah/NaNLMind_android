@@ -126,6 +126,11 @@ class MainActivity : Activity(), NanLoop.Listener {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         vm = NanVm()
+        val bootPrefs = getSharedPreferences("system_boot", MODE_PRIVATE)
+        if (!bootPrefs.getBoolean("desktop_nsh_v1", false)) {
+            autosave.delete()
+            bootPrefs.edit().putBoolean("desktop_nsh_v1", true).apply()
+        }
         var restored = false
         if (autosave.exists()) restored = try { vm.restoreState(autosave.readBytes()) } catch (e: Exception) { false }
         if (!restored) vm.load(asset())
@@ -224,6 +229,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         row.addView(btn("Scale") { view.integerScale = !view.integerScale; view.invalidate() })
         row.addView(btn("Fit") { view.resetZoom() })
         row.addView(btn("Log") { showLog() })
+        row.addView(btn("NSH") { showNshWindow() })
         row.addView(btn("NaNNet") { showWifi() })
         row.addView(btn("nannet-training") { showTrainingSuite() })
         row.addView(btn("N16T Gateway") { showRemoteGateway() })
@@ -577,16 +583,17 @@ class MainActivity : Activity(), NanLoop.Listener {
             setTextColor(Color.LTGRAY); textSize = 12f
             setPadding(0, dp(10), 0, dp(8))
         })
+        panel.addView(btn("Open Android network settings") { WifiBridge.openSettings(this) })
         val dialog = AlertDialog.Builder(this)
             .setTitle("NaNNet Network Manager")
             .setView(panel)
             .setPositiveButton("Scan Wi-Fi", null)
-            .setNeutralButton("Android settings", null)
+            .setNeutralButton("Refresh status", null)
             .setNegativeButton("Close", null)
             .create()
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { scanWifi() }
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { WifiBridge.openSettings(this) }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { status.text = WifiBridge.status(this) }
         }
         dialog.show()
     }
