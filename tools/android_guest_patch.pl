@@ -39,6 +39,8 @@ my $wm = read_file($wm_path);
 $wm = replace_once($wm, '.equ TOPH 17', '.equ TOPH 44', 'desktop top strip height');
 $wm = replace_once($wm, "CALL \@fb_text7\nST r0,r0,\@da_i",
     "CALL \@fb_text7\nCALL \@wm_fkeybar\nST r0,r0,\@da_i", "draw NaN16 F-key strip");
+$wm = replace_once($wm, 'F7 SYSTEM', 'F7 SETTINGS', 'label F7 as unified Settings');
+$wm = replace_once($wm, 'F7 SYS', 'F7 SET', 'label compact F7 hint as Settings');
 write_file($wm_path, $wm);
 
 my $gui_path = 'src/exhibits/gui_cart.nas';
