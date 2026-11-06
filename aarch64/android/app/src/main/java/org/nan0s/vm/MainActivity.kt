@@ -1051,7 +1051,8 @@ class MainActivity : Activity(), NanLoop.Listener {
 
             // TAB cycles the bottom guest window to the top. Focus the tapped window
             // first so Escape/F3 always targets the window under the finger.
-            repeat(alive - 1 - index) { vm.keyChar(9) }
+            val cyclesToFocus = if (index == alive - 1) 0 else index + 1
+            repeat(cyclesToFocus) { vm.keyChar(9) }
             when {
                 closeHit -> vm.keyChar(27)
                 enlargeHit -> {
