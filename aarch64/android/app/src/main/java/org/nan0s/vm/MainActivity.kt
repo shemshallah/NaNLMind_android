@@ -857,8 +857,8 @@ class MainActivity : Activity(), NanLoop.Listener {
     override fun onFrame() { view.postInvalidate() }
     override fun onSerial(bytes: ByteArray) {
         val received = String(bytes, Charsets.ISO_8859_1)
-        val openTraining = received.contains("N16HOST:TRAIN\\n")
-        val visible = received.replace("N16HOST:TRAIN\\n", "")
+        val openTraining = received.contains("N16HOST:TRAIN\n")
+        val visible = received.replace("N16HOST:TRAIN\n", "")
         if (visible.isNotEmpty()) synchronized(log) {
             log.append(visible)
             if (log.length > 65536) log.delete(0, log.length - 49152)
