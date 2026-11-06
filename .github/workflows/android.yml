@@ -33,6 +33,8 @@ jobs:
           make test
           make asan
           make seals
+          ./nan_cli --help | grep -q "nannet-training"
+          ./nan_cli --help | grep -q -- "--candidate-out"
 
   apk:
     needs: native-tests
