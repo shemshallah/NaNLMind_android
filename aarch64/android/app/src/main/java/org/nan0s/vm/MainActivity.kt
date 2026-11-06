@@ -733,6 +733,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         panel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         panel.addView(btn("SCAN NETWORKS") { scanWifi() })
         panel.addView(btn("ANDROID WI-FI SETTINGS") { WifiBridge.openSettings(this) })
+        panel.addView(btn("LOCATION SERVICES FOR WI-FI SCAN") { WifiBridge.openLocationSettings(this) })
         panel.addView(btn("MOBILE DATA / 5G SETTINGS") { WifiBridge.openMobileSettings(this) })
         panel.addView(btn("REFRESH ROUTE STATUS") { status.text = WifiBridge.status(this) })
         wifiWindow = showDesktopWindow("NaNNet Network Manager", panel, 430)
