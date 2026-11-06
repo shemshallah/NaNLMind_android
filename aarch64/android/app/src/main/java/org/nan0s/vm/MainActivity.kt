@@ -277,14 +277,14 @@ class MainActivity : Activity(), NanLoop.Listener {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
                 when (i) {
-                    2 -> { vm.keyEvent(0x102, true); vm.keyEvent(0x102, false); loop.poke(); view.requestFocus() }
-                    3 -> { vm.keyEvent(0x103, true); vm.keyEvent(0x103, false); loop.poke(); view.requestFocus() }
+                    2 -> { vm.keyEvent(0x3C, true); vm.keyEvent(0x3C, false); loop.poke(); view.requestFocus() }
+                    3 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); view.requestFocus() }
                     5 -> showUnifiedSettings()
                     6 -> showWifi()
-                    7 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke(); view.requestFocus() }
-                    8 -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke(); view.requestFocus() }
-                    9 -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke(); view.requestFocus() }
-                    10 -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke(); view.requestFocus() }
+                    7 -> { vm.keyEvent(0x41, true); vm.keyEvent(0x41, false); loop.poke(); view.requestFocus() }
+                    8 -> { vm.keyEvent(0x42, true); vm.keyEvent(0x42, false); loop.poke(); view.requestFocus() }
+                    9 -> { vm.keyEvent(0x43, true); vm.keyEvent(0x43, false); loop.poke(); view.requestFocus() }
+                    10 -> { vm.keyEvent(0x44, true); vm.keyEvent(0x44, false); loop.poke(); view.requestFocus() }
                     else -> { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
                 }
             }
@@ -503,17 +503,17 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "log" -> showLog()
                 "fit" -> { view.resetZoom(); append("Display fitted to desktop.") }
                 "scale" -> { view.integerScale = !view.integerScale; view.invalidate(); append("Integer scaling: " + view.integerScale) }
-                "system" -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                "system" -> { vm.keyEvent(0x41, true); vm.keyEvent(0x41, false); loop.poke() }
                 "run" -> when (arg.lowercase()) {
-                    "lattice" -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke(); append("Opened Lattice.") }
-                    "monitor" -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke(); append("Opened Monitor.") }
-                    "hex" -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke(); append("Opened Hex.") }
+                    "lattice" -> { vm.keyEvent(0x42, true); vm.keyEvent(0x42, false); loop.poke(); append("Opened Lattice.") }
+                    "monitor" -> { vm.keyEvent(0x43, true); vm.keyEvent(0x43, false); loop.poke(); append("Opened Monitor.") }
+                    "hex" -> { vm.keyEvent(0x44, true); vm.keyEvent(0x44, false); loop.poke(); append("Opened Hex.") }
                     "settings" -> showUnifiedSettings()
                     "nannet", "wifi" -> showWifi()
                     "training", "nannet-training" -> showTrainingSuite()
                     "gateway", "n16t" -> showRemoteGateway()
                     "browser" -> showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
-                    "system" -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                    "system" -> { vm.keyEvent(0x41, true); vm.keyEvent(0x41, false); loop.poke() }
                     else -> append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
                 }
                 "apps" -> {
@@ -525,12 +525,12 @@ class MainActivity : Activity(), NanLoop.Listener {
                     fun app(label: String, action: () -> Unit) {
                         menu.addView(btn(label, action), LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(3) })
                     }
-                    app("LATTICE") { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke() }
-                    app("MONITOR") { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke() }
-                    app("HEX VIEWER") { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke() }
+                    app("LATTICE") { vm.keyEvent(0x42, true); vm.keyEvent(0x42, false); loop.poke() }
+                    app("MONITOR") { vm.keyEvent(0x43, true); vm.keyEvent(0x43, false); loop.poke() }
+                    app("HEX VIEWER") { vm.keyEvent(0x44, true); vm.keyEvent(0x44, false); loop.poke() }
                     app("SETTINGS") { showUnifiedSettings() }
                     app("NANNET NETWORK MANAGER") { showWifi() }
-                    app("SYSTEM UTILITIES") { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                    app("SYSTEM UTILITIES") { vm.keyEvent(0x41, true); vm.keyEvent(0x41, false); loop.poke() }
                     app("NANNET TRAINING") { showTrainingSuite() }
                     app("N16T GATEWAY") { showRemoteGateway() }
                     app("BROWSER") { showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") }
@@ -647,7 +647,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             setPadding(0, 0, 0, dp(8))
         })
         panel.addView(btn("DISPLAY / GUEST SETTINGS") {
-            vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke()
+            vm.keyEvent(0x3F, true); vm.keyEvent(0x3F, false); loop.poke()
         })
         panel.addView(btn("NANNET / WI-FI / CELLULAR") { showWifi() })
         panel.addView(btn("NANNET TRAINING") { showTrainingSuite() })
@@ -977,7 +977,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         when {
             red >= 5 -> { vm.keyChar(27); loop.poke(); return true }
-            green >= 5 -> { vm.keyEvent(0x103, true); vm.keyEvent(0x103, false); loop.poke(); return true }
+            green >= 5 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); return true }
         }
         return false
     }
