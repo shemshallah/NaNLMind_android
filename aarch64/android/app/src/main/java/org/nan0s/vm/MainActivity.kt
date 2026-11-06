@@ -547,12 +547,25 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "windows", "wm" -> append("Guest windows: Lattice, Monitor, Hex. Host windows: NSH, Settings, NaNNet, Training, N16T.")
                 "version", "ver" -> append("NaNLMind_ANDROID • NaN16 guest • Android host services")
                 "desktop" -> append("Desktop remains active behind this NSH window.")
-                "reset" -> AlertDialog.Builder(this).setTitle("Reset desktop")
-                    .setMessage("Restore the bundled NaN16 desktop and discard the current unsaved VM session?")
-                    .setPositiveButton("Reset") { _, _ ->
-                        autosave.delete(); vm.detachDisk(); diskFile.delete(); fsFile.delete(); fsKey.delete()
+                "reset" -> {
+                    val resetPanel = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(dp(12), dp(10), dp(12), dp(10))
+                        setBackgroundColor(Color.rgb(17, 22, 42))
+                    }
+                    resetPanel.addView(TextView(this).apply {
+                        text = "Restore the bundled NaN16 desktop and discard the current unsaved VM session?"
+                        setTextColor(Color.LTGRAY)
+                        textSize = 12f
+                    })
+                    resetPanel.addView(btn("CONFIRM RESET") {
+                        autosave.delete()
+                        vm.detachDisk()
+                        diskFile.delete(); fsFile.delete(); fsKey.delete()
                         seedDisk(); vm.load(asset()); attachDefaultDisk(); loop.rearm()
-                    }.setNegativeButton("Cancel", null).show()
+                    })
+                    showDesktopWindow("Reset Desktop", resetPanel, 180)
+                }
                 "exit", "quit" -> hideNshWindow()
                 else -> append("command not found: " + verb + " (type --help)")
             }
