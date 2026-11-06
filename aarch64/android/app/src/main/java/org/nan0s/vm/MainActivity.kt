@@ -14,6 +14,8 @@ import android.text.InputType
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.view.Gravity
+import android.widget.TextView
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
@@ -126,6 +128,8 @@ class MainActivity : Activity(), NanLoop.Listener {
         beeper = Beeper { vm.speakerHz() }
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
+        root.addView(desktopBar(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(34)))
+        root.addView(functionRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(42)))
         root.addView(view, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(keyRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         root.addView(toolRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -134,8 +138,50 @@ class MainActivity : Activity(), NanLoop.Listener {
         loop.start(); beeper.start()
     }
 
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private fun desktopBar(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(10), 0, dp(8), 0)
+        setBackgroundColor(Color.rgb(22, 28, 55))
+        addView(TextView(this@MainActivity).apply {
+            text = "NaNLMind  /  ANDROID DESKTOP"
+            setTextColor(Color.rgb(112, 231, 220)); textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+        }, LinearLayout.LayoutParams(0, -1, 1f))
+        addView(TextView(this@MainActivity).apply {
+            text = "●  LOCAL"
+            setTextColor(Color.rgb(238, 194, 91)); textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+        })
+    }
+
+    private fun functionRow(): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(3), dp(2), dp(3), dp(2))
+            setBackgroundColor(Color.rgb(31, 38, 70))
+        }
+        for (i in 1..12) {
+            val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
+            val key = btn("F$i") {
+                vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus()
+            }
+            key.textSize = 11f
+            row.addView(key, LinearLayout.LayoutParams(0, dp(36), 1f).apply {
+                setMargins(dp(2), 0, dp(2), 0)
+            })
+        }
+        return row
+    }
+
     private fun btn(label: String, action: () -> Unit): Button = Button(this).apply {
         text = label; isAllCaps = false; minWidth = 0; minimumWidth = 0
+        textSize = 11f
+        setTextColor(Color.rgb(205, 226, 232))
+        setBackgroundColor(Color.rgb(48, 56, 86))
+        setPadding(dp(7), dp(4), dp(7), dp(4))
         setOnClickListener { action() }
     }
     private fun send(c: Int) { vm.keyChar(c); loop.poke(); view.requestFocus() }
@@ -165,17 +211,17 @@ class MainActivity : Activity(), NanLoop.Listener {
         row.addView(btn("Scale") { view.integerScale = !view.integerScale; view.invalidate() })
         row.addView(btn("Fit") { view.resetZoom() })
         row.addView(btn("Log") { showLog() })
-        row.addView(btn("WiFi") { showWifi() })
-        row.addView(btn("NaNLMind Remote Training") { showTrainingSuite() })
+        row.addView(btn("NaNNet") { showWifi() })
+        row.addView(btn("nannet-training") { showTrainingSuite() })
         row.addView(btn("N16T Gateway") { showRemoteGateway() })
         return HorizontalScrollView(this).apply { addView(row) }
     }
 
     private fun showRemoteGateway() {
         val input = EditText(this).apply {
-            hint = "https://gateway.example/n16t"
+            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            setText(remotePrefs.getString("endpoint", "") ?: "")
+            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
         }
         AlertDialog.Builder(this)
             .setTitle("N16T HTTPS Gateway")
@@ -194,7 +240,8 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun connectRemoteGateway(raw: String) {
-        val endpoint = try { URI(raw) } catch (e: Exception) {
+        val normalized = raw.trim().let { if (it.startsWith("https://", true)) it else "https://$it" }
+        val endpoint = try { URI(normalized) } catch (e: Exception) {
             Toast.makeText(this, "Invalid gateway URL", Toast.LENGTH_LONG).show()
             return
         }
@@ -261,8 +308,8 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun showTrainingSuite() {
         AlertDialog.Builder(this)
-            .setTitle("NaNLMind Remote Training")
-            .setMessage("Run the NaN16 corpus trainer in an isolated VM snapshot. It builds a temporary byte-bigram candidate; merging into the active universe is not enabled yet. Use N16T Gateway for the HTTPS HELLO/CAPABILITIES check; remote corpus transfer is not enabled yet.")
+             .setTitle("NaNNet Training")
+            .setMessage("N16TXT corpus training interface. Training runs in an isolated VM snapshot and restores the live desktop session afterward. The current guest emits a local candidate checkpoint; remote corpus transfer and candidate merge are not enabled yet.")
             .setPositiveButton("Choose TXT") { _, _ ->
                 if (prepareTraining()) {
                     val i = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -390,10 +437,10 @@ class MainActivity : Activity(), NanLoop.Listener {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("WiFi")
-            .setMessage(WifiBridge.status(this) + "\n\nScan for networks, or open system WiFi settings.")
-            .setPositiveButton("Scan") { _, _ -> scanWifi() }
-            .setNeutralButton("Settings") { _, _ -> WifiBridge.openSettings(this) }
+            .setTitle("NaNNet Network Manager")
+            .setMessage(WifiBridge.status(this) + "\n\nNaNNet uses Android's active network route. Wi-Fi and cellular data (including 5G) both carry HTTPS gateway traffic. Android radios are managed by the host OS; no guest PCI adapter is required.\n\nScan Wi-Fi or manage the active radio in Android settings.")
+            .setPositiveButton("Scan Wi-Fi") { _, _ -> scanWifi() }
+            .setNeutralButton("Network settings") { _, _ -> WifiBridge.openSettings(this) }
             .setNegativeButton("Close", null)
             .show()
     }
@@ -408,8 +455,8 @@ class MainActivity : Activity(), NanLoop.Listener {
             runOnUiThread {
                 if (aps.isEmpty()) {
                     AlertDialog.Builder(this)
-                        .setTitle("WiFi")
-                        .setMessage("No networks. Check that WiFi is on, scanning is permitted, and location services are enabled.")
+                         .setTitle("NaNNet Wi-Fi scan")
+                        .setMessage("Android returned no visible access points. Check Wi-Fi and Location are enabled. Android may throttle scans; try again shortly. Your current Wi-Fi or cellular connection can still carry gateway traffic.")
                         .setPositiveButton("Settings") { _, _ -> WifiBridge.openSettings(this) }
                         .setNegativeButton("Close", null)
                         .show()
