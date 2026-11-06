@@ -373,6 +373,31 @@ class MainActivity : Activity(), NanLoop.Listener {
         showDesktopWindow("Browser", panel, 260)
     }
 
+    private fun showBrowserPrompt() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "ISOLATED BROWSER LAUNCHER  •  external browser runs outside the NaN16 VM"
+            setTextColor(Color.rgb(128, 232, 218))
+            textSize = 12f
+        })
+        val address = EditText(this).apply {
+            setText("https://")
+            hint = "https://example.com"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        panel.addView(address, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        panel.addView(btn("OPEN IN ANDROID BROWSER") {
+            showBrowserWindow(address.text.toString())
+        })
+        showDesktopWindow("Browser Launcher", panel, 190)
+    }
+
     private fun showUnifiedSettings() {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -973,17 +998,28 @@ class MainActivity : Activity(), NanLoop.Listener {
         val received = String(bytes, Charsets.ISO_8859_1)
         val openTraining = received.contains("N16HOST:TRAIN\n")
         val openFiles = received.contains("N16HOST:FILES\n")
+        val openSettings = received.contains("N16HOST:SETTINGS\n")
+        val openWifi = received.contains("N16HOST:WIFI\n")
+        val openBrowser = received.contains("N16HOST:BROWSER\n")
         val writeRequest = Regex("N16HOST:WRITE:([^\\r\\n]*)\\n").find(received)
-        var visible = received.replace("N16HOST:TRAIN\n", "").replace("N16HOST:FILES\n", "")
+        var visible = received
+            .replace("N16HOST:TRAIN\n", "")
+            .replace("N16HOST:FILES\n", "")
+            .replace("N16HOST:SETTINGS\n", "")
+            .replace("N16HOST:WIFI\n", "")
+            .replace("N16HOST:BROWSER\n", "")
         if (writeRequest != null) visible = visible.replace(writeRequest.value, "")
         if (visible.isNotEmpty()) synchronized(log) {
             log.append(visible)
             if (log.length > 65536) log.delete(0, log.length - 49152)
         }
-        if (openTraining || openFiles || writeRequest != null) runOnUiThread {
+        if (openTraining || openFiles || openSettings || openWifi || openBrowser || writeRequest != null) runOnUiThread {
             if (isFinishing || isDestroyed) return@runOnUiThread
             if (openTraining) showTrainingSuite()
             if (openFiles) showNshFiles()
+            if (openSettings) showUnifiedSettings()
+            if (openWifi) showWifi()
+            if (openBrowser) showBrowserPrompt()
             writeRequest?.groupValues?.getOrNull(1)?.let { name ->
                 if (name.isBlank()) Toast.makeText(this, "Usage: write FILENAME", Toast.LENGTH_LONG).show()
                 else showNshEditor(name)
