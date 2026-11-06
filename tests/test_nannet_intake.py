@@ -4,14 +4,49 @@ import json
 import os
 import sys
 import tempfile
+import stat
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from scripts import intake_client, route_diff
+from scripts import intake_client, route_diff, nannet_device
 
 
 class AndroidNannetIntakeTests(unittest.TestCase):
+
+    def test_device_register_requires_consent_and_persists_private_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "device.json"
+            response = MagicMock()
+            response.__enter__.return_value = response
+            response.read.return_value = json.dumps({
+                "device_id": "d" * 32,
+                "address": "nan://GM0:SC0:MC0:BS0:HW4",
+                "lease_id": "lease-1",
+                "lease_expires_at": 9999999999,
+                "token": "nnt_device_token",
+                "head_count": 256,
+            }).encode()
+            with patch.object(sys, "argv", ["nannet_device.py", "--url", "https://nannet.example",
+                                           "--state", str(state), "register", "--consent"]), \
+                 patch("urllib.request.urlopen", return_value=response) as open_url, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(nannet_device.main(), 0)
+            saved = json.loads(state.read_text())
+            self.assertEqual(saved["address"], "nan://GM0:SC0:MC0:BS0:HW4")
+            self.assertEqual(len(saved["device_secret"]), 43)
+            self.assertEqual(stat.S_IMODE(state.stat().st_mode), 0o600)
+            payload = json.loads(open_url.call_args.args[0].data)
+            self.assertTrue(payload["consent"])
+            self.assertNotIn("mac_address", payload["system_report"])
+
+    def test_device_registration_refuses_missing_consent(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(sys, "argv", ["nannet_device.py", "--url", "https://nannet.example",
+                                        "--state", str(Path(tmp) / "device.json"), "register"]), \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(nannet_device.main(), 2)
+
     def test_route_diff_digest_is_canonical(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "route.json"
