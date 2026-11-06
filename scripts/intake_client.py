@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 
 
@@ -17,8 +18,13 @@ def main() -> int:
     args = parser.parse_args()
 
     token = os.environ.get("NANLM_DEVICE_TOKEN", "")
-    if not args.url or not token:
-        print("NANLM_INTAKE_URL and NANLM_DEVICE_TOKEN are required", flush=True)
+    address = os.environ.get("NANLM_DEVICE_ADDRESS", "nan://GM0:SC0:MC0:BS0:HW1")
+    parsed = urlsplit(args.url)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+        print("NANLM_INTAKE_URL must be a public HTTPS origin", flush=True)
+        return 2
+    if not token or not address.startswith("nan://"):
+        print("NANLM_DEVICE_TOKEN and NANLM_DEVICE_ADDRESS are required", flush=True)
         print("DEEPREPO_PAT is never used by this client", flush=True)
         return 2
     payload = Path(args.diff).read_bytes()
@@ -29,6 +35,7 @@ def main() -> int:
         headers={
             "Authorization": "Bearer " + token,
             "Content-Type": "application/json",
+            "X-NaN-Address": address,
             "User-Agent": "nanlmind-android",
         },
     )
