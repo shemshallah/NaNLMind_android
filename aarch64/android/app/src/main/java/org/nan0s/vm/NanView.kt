@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
  *  - "resolution" adjust on the fly = the zoom over the current fit; integerScale snaps the
  *    base stage to whole pixels for a crisp blit (guest VGA mode is untouched).
  */
-class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit, private val onHostTap: (Int, Int) -> Boolean = { _, _ -> false }, private val onHostKey: (Int) -> Boolean = { false }) : View(context) {
+class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit, private val onGuestPointer: (Int, Int, Int) -> Unit = { _, _, _ -> }, private val onHostKey: (Int) -> Boolean = { false }) : View(context) {
     companion object {
         private const val MAX_ZOOM = 8f
         private const val CELL_ASPECT = 0.5f   // VGA text cell width/height = 8/16
@@ -176,15 +176,25 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
     // ---- touch: pinch zoom / pan / double-tap fit ----
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (e.actionMasked == MotionEvent.ACTION_DOWN) requestFocus()
-        if (e.actionMasked == MotionEvent.ACTION_UP && e.pointerCount == 1 &&
-            vm.graphics() && baseW > 0f && baseH > 0f) {
-            val gx = (((e.x - panX) / (baseW * zoom)) * vm.width()).toInt()
-            val gy = (((e.y - panY) / (baseH * zoom)) * vm.height()).toInt()
-            if (onHostTap(gx, gy)) return true
+        var guestHandled = false
+        if (vm.graphics() && baseW > 0f && baseH > 0f) {
+            val action = when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> 1
+                MotionEvent.ACTION_MOVE -> if (e.pointerCount == 1 && zoom <= 1.01f) 2 else 0
+                MotionEvent.ACTION_UP -> 3
+                MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> 4
+                else -> 0
+            }
+            if (action != 0) {
+                val gx = (((e.x - panX) / (baseW * zoom)) * vm.width()).toInt().coerceIn(0, vm.width() - 1)
+                val gy = (((e.y - panY) / (baseH * zoom)) * vm.height()).toInt().coerceIn(0, vm.height() - 1)
+                onGuestPointer(gx, gy, action)
+                guestHandled = true
+            }
         }
         val a = scaleDetector.onTouchEvent(e)
         val b = gestures.onTouchEvent(e)
-        return a || b || super.onTouchEvent(e)
+        return guestHandled || a || b || super.onTouchEvent(e)
     }
 
     // ---- input: hardware and soft keyboards arrive as KeyEvents (soft keyboard with TYPE_NULL) ----
