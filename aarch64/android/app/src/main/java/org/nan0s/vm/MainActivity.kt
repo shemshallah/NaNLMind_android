@@ -590,10 +590,8 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     // ---- real WiFi: status, scan, connect request ----
     private fun showWifi() {
-        if (!WifiBridge.hasPermission(this)) {
-            WifiBridge.requestPermission(this, reqWifi)
-            return
-        }
+        // The manager and active-route status are always visible. Runtime location/nearby
+        // permissions are requested only when the user explicitly starts a Wi-Fi scan.
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(12), dp(18), dp(8))
