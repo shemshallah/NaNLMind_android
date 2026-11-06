@@ -259,6 +259,10 @@ $gui = replace_once($gui, $f5,
          $settings_hotkey, 'gk_n5:'),
     "F5 and F7 open the same unified Settings surface");
 
+die "NSH full-command parser missing files/write handlers\n"
+    unless index($gui, "tk_check_files:") >= 0 &&
+           index($gui, "tk_check_write:") >= 0 &&
+           index($gui, "tk_write_loop:") >= 0;
 die "NSH full-command parser missing nannet-training\n"
     unless index($gui, "tk_check_training:") >= 0;
 die "NSH exit no longer closes only its child window\n"
