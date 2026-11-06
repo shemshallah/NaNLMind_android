@@ -265,7 +265,10 @@ die "NSH exit no longer closes only its child window\n"
     unless index($gui, join("\n", 'tm_quit:', 'LD r1,r0,@tm_id', 'CALL @wm_close')) >= 0;
 die "F7 does not open the unified Settings window\n"
     unless index($gui, join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2',
-        'JMP[NE] @gk_n7', 'MOVI r1,4', 'CALL @gui_single')) >= 0;
+        'JMP[NE] @gk_n7', 'MOVI r1,78', 'PUTC r1')) >= 0;
+die "F5 does not open the same unified Settings window\n"
+    unless index($gui, join("\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2',
+        'JMP[NE] @gk_n5', 'MOVI r1,78', 'PUTC r1')) >= 0;
 die "NSH help omits the training command\n"
     unless index($gui, "nannet-training  OPEN NaNNet TRAINING INTERFACE") >= 0;
 
