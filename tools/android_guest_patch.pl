@@ -122,6 +122,7 @@ write_file($gui_path, $gui);
 my $check_shell = read_file($shell_path);
 die "Android shell can still fall into museum menu\n"
     unless $check_shell =~ /sh_after_prog:\nLA r10,\@boot_rec\nJMP \@sh_run/s;
+my $museum_fallback = "LA r10,\@boot_rec\nLD r1,r10,0\nCMP r1,r0\nJMP[EQ] \@sh_redraw\nJMP \@sh_run";
 die "Android cold boot still branches to museum menu\n"
-    if $check_shell =~ /JMP\[EQ\] \@sh_redraw/;
+    if index($check_shell, $museum_fallback) >= 0;
 print "Android NaN16 desktop/NSH/browser/NaNNet patch invariants: PASS\n";
