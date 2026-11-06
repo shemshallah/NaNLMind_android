@@ -224,7 +224,7 @@ my $command_token = join "\n",
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $command_token,
     "recognize exit, quit, nannet-training and --help as NaN16 NSH commands");
-my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  files / f FILES  write NAME EDIT TEXT FILE\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t NEW TERMINAL\nf FOCUS NSH  s SETTINGS  n NANNET/WI-FI  u UTILITIES\nfiles LIST FILES  write NAME OPEN TEXT EDITOR\nnannet-training  OPEN TRAINING INTERFACE\nF5 SETTINGS  F6 NANNET  F7 SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
 $gui =~ s/(s_help:\n)\.str "[^"]*"/$1$new_help/s
     or die "Android NSH help text patch target missing\n";
 
