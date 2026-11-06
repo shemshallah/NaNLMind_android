@@ -53,6 +53,7 @@ object WifiBridge {
             ?.takeIf { it.isNotBlank() && it != "<unknown ssid>" } ?: "SSID hidden (Android privacy)"
         val sb = StringBuilder("NANNET • ANDROID HOST NETWORK MANAGER\n")
         sb.append("Wi-Fi radio: ").append(if (w.isWifiEnabled) "ON" else "OFF")
+        sb.append("\nLocation services: ").append(if (locationEnabled(c)) "ON" else "OFF (needed for Android scan results)")
         if (connectedWifi) {
             sb.append("\nWi-Fi SSID: ").append(ssid)
             sb.append("\nWi-Fi signal: ").append(info.rssi).append(" dBm")
@@ -177,6 +178,10 @@ object WifiBridge {
 
     fun openSettings(c: Context) {
         c.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    fun openLocationSettings(c: Context) {
+        c.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     fun openMobileSettings(c: Context) {
