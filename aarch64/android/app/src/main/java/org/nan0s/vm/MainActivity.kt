@@ -1027,6 +1027,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         val openSettings = received.contains("N16HOST:SETTINGS\n")
         val openWifi = received.contains("N16HOST:WIFI\n")
         val openBrowser = received.contains("N16HOST:BROWSER\n")
+        val openGateway = received.contains("N16HOST:GATEWAY\n")
         val writeRequest = Regex("N16HOST:WRITE:([^\\r\\n]*)\\n").find(received)
         var visible = received
             .replace("N16HOST:TRAIN\n", "")
@@ -1034,18 +1035,20 @@ class MainActivity : Activity(), NanLoop.Listener {
             .replace("N16HOST:SETTINGS\n", "")
             .replace("N16HOST:WIFI\n", "")
             .replace("N16HOST:BROWSER\n", "")
+            .replace("N16HOST:GATEWAY\n", "")
         if (writeRequest != null) visible = visible.replace(writeRequest.value, "")
         if (visible.isNotEmpty()) synchronized(log) {
             log.append(visible)
             if (log.length > 65536) log.delete(0, log.length - 49152)
         }
-        if (openTraining || openFiles || openSettings || openWifi || openBrowser || writeRequest != null) runOnUiThread {
+        if (openTraining || openFiles || openSettings || openWifi || openBrowser || openGateway || writeRequest != null) runOnUiThread {
             if (isFinishing || isDestroyed) return@runOnUiThread
             if (openTraining) showTrainingSuite()
             if (openFiles) showNshFiles()
             if (openSettings) showUnifiedSettings()
             if (openWifi) showWifi()
             if (openBrowser) showBrowserPrompt()
+            if (openGateway) showRemoteGateway()
             writeRequest?.groupValues?.getOrNull(1)?.let { name ->
                 if (name.isBlank()) Toast.makeText(this, "Usage: write FILENAME", Toast.LENGTH_LONG).show()
                 else showNshEditor(name)
