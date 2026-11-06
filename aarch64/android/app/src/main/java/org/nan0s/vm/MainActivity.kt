@@ -17,6 +17,10 @@ import android.view.WindowManager
 import android.view.Gravity
 import android.widget.TextView
 import android.widget.ScrollView
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceError
 import android.view.inputmethod.InputMethodManager
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -251,9 +255,13 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "nannet-training","training"->{dialog.dismiss();showTrainingSuite()}
                 "wifi","nannet"->{dialog.dismiss();showWifi()}
                 "n16t","gateway"->{dialog.dismiss();showRemoteGateway()}
-                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening external browser: "+target);try{startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse(target)))}catch(e:Exception){append("BROWSER NO: "+e.message)}}
+                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
                 "settings"->{dialog.dismiss();showUnifiedSettings()}
-                "open","load"->{dialog.dismiss();pick(reqImage)}
+                "open","load"->{
+                    if(arg.isBlank()){dialog.dismiss();pick(reqImage)}
+                    else try{val kind=vm.load(nshFile(arg).readBytes());loop.rearm();append(if(kind!=null)"Loaded NaN16 program: "+kind else "OPEN NO: not a NaN16 program")}
+                    catch(e:Exception){append("OPEN NO: "+e.message)}
+                }
                 "disk"->{dialog.dismiss();pick(reqDisk)}
                 "fs"->{dialog.dismiss();chooseFsSize()}
                 "log"->{dialog.dismiss();showLog()}
@@ -281,6 +289,42 @@ class MainActivity : Activity(), NanLoop.Listener {
         require(file.path==base.path||file.path.startsWith(base.path+File.separator)){"path escapes /nsh"};return file
     }
     private fun nshWrite(name:String,contents:String):String=try{val f=nshFile(name);f.parentFile?.mkdirs();f.writeText(contents,Charsets.UTF_8);"WRITE OK: /nsh/"+name+" ("+f.length()+" bytes)"}catch(e:Exception){"WRITE NO: "+e.message}
+    private fun showBrowserWindow(initialUrl:String) {
+        val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(8));setBackgroundColor(Color.rgb(13,18,32))}
+        val bar=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        val address=EditText(this).apply{singleLine=true;textSize=12f;setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setText(initialUrl);setBackgroundColor(Color.rgb(30,39,61));inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI}
+        val web=WebView(this).apply{
+            settings.javaScriptEnabled=false
+            settings.domStorageEnabled=false
+            settings.allowFileAccess=false
+            settings.allowContentAccess=false
+            settings.loadsImagesAutomatically=true
+            if(android.os.Build.VERSION.SDK_INT>=21) settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            webViewClient=object:WebViewClient(){
+                override fun shouldOverrideUrlLoading(view:WebView,request:WebResourceRequest):Boolean {
+                    val u=request.url
+                    return !(u.scheme=="https"||u.scheme=="http") || u.userInfo!=null
+                }
+                @Suppress("DEPRECATION")
+                override fun shouldOverrideUrlLoading(view:WebView,url:String):Boolean = !(url.startsWith("https://")||url.startsWith("http://"))
+                override fun onReceivedError(view:WebView,request:WebResourceRequest,error:WebResourceError){if(request.isForMainFrame)Toast.makeText(this@MainActivity,"Page load failed: "+error.description,Toast.LENGTH_SHORT).show()}
+                override fun onRenderProcessGone(view:WebView,detail:android.webkit.RenderProcessGoneDetail):Boolean { view.destroy();Toast.makeText(this@MainActivity,"Browser renderer stopped safely; desktop is still running.",Toast.LENGTH_LONG).show();return true }
+            }
+        }
+        bar.addView(address,LinearLayout.LayoutParams(0,dp(46),1f))
+        val go=btn("Go"){}
+        bar.addView(go,LinearLayout.LayoutParams(dp(64),dp(46)))
+        panel.addView(bar)
+        panel.addView(web,LinearLayout.LayoutParams(-1,dp(420)).apply{topMargin=dp(8)})
+        val dialog=AlertDialog.Builder(this).setTitle("NaNLMind Browser").setView(panel).setPositiveButton("Close",null).setNeutralButton("Back",null).create()
+        fun navigate(){try{val u=URI(address.text.toString().trim());require((u.scheme=="https"||u.scheme=="http")&&!u.host.isNullOrBlank()&&u.userInfo==null&&u.fragment==null);web.loadUrl(u.toString())}catch(e:Exception){Toast.makeText(this,"Enter a valid HTTP(S) URL without credentials or fragments",Toast.LENGTH_LONG).show()}}
+        go.setOnClickListener{navigate()}
+        dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{if(web.canGoBack())web.goBack()}}
+        dialog.setOnDismissListener{web.stopLoading();web.destroy()}
+        dialog.show()
+        web.loadUrl(initialUrl)
+    }
+
     private fun showUnifiedSettings(){
         AlertDialog.Builder(this).setTitle("NaNLMind Desktop Settings").setMessage("Unified Android-host settings. NaNNet uses the active Wi-Fi or cellular route.")
             .setPositiveButton("NaNNet / Wi-Fi"){_,_->showWifi()}.setNeutralButton("Training"){_,_->showTrainingSuite()}.setNegativeButton("Close",null).show()
