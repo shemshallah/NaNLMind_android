@@ -692,6 +692,10 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun joinWifi(ap: WifiBridge.Ap) {
+        if (ap.security == "connected") {
+            Toast.makeText(this, "Already connected to " + ap.ssid, Toast.LENGTH_SHORT).show()
+            return
+        }
         if (ap.security == "open") {
             Toast.makeText(this, WifiBridge.join(this, ap.ssid, ""), Toast.LENGTH_LONG).show()
             return
