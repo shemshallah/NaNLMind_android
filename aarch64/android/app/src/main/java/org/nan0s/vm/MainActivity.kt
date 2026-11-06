@@ -30,6 +30,7 @@ import java.io.File
 import java.net.URI
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.charset.CodingErrorAction
 
 /** Android host boundary: one persistent NaN16 guest, one desktop surface, and native OS services. Guest semantics stay in NaN16 cartridges. */
@@ -1018,28 +1019,48 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     }
 
-    /** The guest window chrome is rendered by NaN16; translate taps on its close/enlarge
-     *  titlebar buttons into the same keyboard actions used by ESC/F3. */
+    /**
+     * Resolve touch directly against the NaN16 WM tables (WT=0x58000, ZO=0x58100).
+     * This avoids colour heuristics and focuses the exact tapped window before
+     * dispatching close/enlarge. The guest remains the authority for WM actions.
+     */
     private fun handleWindowChromeTap(x: Int, y: Int): Boolean {
-        if (!vm.graphics() || x < 0 || y < 0) return false
-        val width = vm.width()
-        val height = vm.height()
-        if (width <= 0 || height <= 0 || x >= width || y >= height) return false
-        val pixels = IntArray(width * height)
-        if (!vm.snapshotGfx(pixels)) return false
-        var red = 0
-        var green = 0
-        for (yy in (y - 6).coerceAtLeast(0)..(y + 6).coerceAtMost(height - 1)) {
-            for (xx in (x - 6).coerceAtLeast(0)..(x + 6).coerceAtMost(width - 1)) {
-                val c = pixels[yy * width + xx]
-                val r = Color.red(c); val g = Color.green(c); val b = Color.blue(c)
-                if (r > 100 && r > g * 1.35 && r > b * 1.35) red++
-                if (g > 90 && g > r * 1.25 && g > b * 1.15) green++
+        if (!vm.graphics() || x < 0 || y < 0 || x >= vm.width() || y >= vm.height()) return false
+        val windowBytes = vm.readBytes(0x58000 * 4, 8 * 32 * 4) ?: return false
+        val zBytes = vm.readBytes(0x58100 * 4, 8 * 4) ?: return false
+        val windows = ByteBuffer.wrap(windowBytes).order(ByteOrder.LITTLE_ENDIAN)
+        val zorder = ByteBuffer.wrap(zBytes).order(ByteOrder.LITTLE_ENDIAN)
+        val alive = (0 until 8).count { windows.getInt(it * 32 * 4) == 1 }
+        if (alive == 0) return false
+
+        for (index in alive - 1 downTo 0) {
+            val id = zorder.getInt(index * 4)
+            if (id !in 0..7) continue
+            val base = id * 32 * 4
+            if (windows.getInt(base) != 1) continue
+            val wx = windows.getInt(base + 1 * 4)
+            val wy = windows.getInt(base + 2 * 4)
+            val ww = windows.getInt(base + 3 * 4)
+            val wh = windows.getInt(base + 4 * 4)
+            if (ww <= 0 || wh <= 0 || x < wx || x >= wx + ww || y < wy || y >= wy + wh) continue
+
+            // wm_draw_window: close box [x+w-16, x+w-3), enlarge [x+w-31, x+w-18).
+            val inTitle = y >= wy + 1 && y < wy + 16
+            val closeHit = inTitle && x >= wx + ww - 16 && x < wx + ww - 3
+            val enlargeHit = inTitle && x >= wx + ww - 31 && x < wx + ww - 18
+
+            // TAB cycles the bottom guest window to the top. Focus the tapped window
+            // first so Escape/F3 always targets the window under the finger.
+            repeat(alive - 1 - index) { vm.keyChar(9) }
+            when {
+                closeHit -> vm.keyChar(27)
+                enlargeHit -> {
+                    vm.keyEvent(0x3D, true)
+                    vm.keyEvent(0x3D, false)
+                }
             }
-        }
-        when {
-            red >= 5 -> { vm.keyChar(27); loop.poke(); return true }
-            green >= 5 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); return true }
+            loop.poke()
+            return true
         }
         return false
     }
