@@ -1,6 +1,6 @@
 # NaNLMind Remote Training (NaN16-first)
 
-Status: initial implementation underway. The local NaN16 guest scanner, bounded C network byte driver, protocol frame validator, point-to-route bridge, Android GUI/CLI entry points, and runner workflow are present. Candidate merge and live gateway are not yet implemented.
+Status: local Android and hosted-runner corpus-profile paths are implemented. NaN16 now validates N16T frames, binds one 128-bit session identity, rejects replay/cross-session frames, enforces message-specific payload bounds and legal session transitions, and routes accepted frames. Candidate evaluation/transactional merge and a deployed live gateway are not yet implemented.
 
 **Prototype boundary:** the current guest validates and profiles corpora, updates byte-frequency and byte-bigram count tables, and emits an isolated candidate checkpoint. This is not yet a neural language-model optimizer or a quality-evaluated model update. Candidate evaluation, fair contribution accounting, transactional merge, and a live authenticated runner gateway remain unfinished.
 
@@ -37,7 +37,7 @@ CLI: --nannet-train ───────────┤
                   NaN16 route + peer dispatch
 ~~~
 
-The intended training suite, codec rules, sample scheduler, update policy, merge logic, and protocol state transitions belong in NaN16 guest programs. Implemented today: the corpus scanner/count tables and a frame validator with CRC, monotonic sequence check, and point routing. The full session/message state machine is still outstanding. The Android HTTPS adapter and JNI frame bridge compile, but the Android UI does not yet invoke a remote session. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
+The intended training suite, codec rules, sample scheduler, update policy, merge logic, and protocol state transitions belong in NaN16 guest programs. Implemented today: the corpus scanner/count tables; N16T framing and CRC validation; session ownership; per-session monotonic replay checks; message-specific payload bounds; state transitions; and point routing. The sequence cursor is currently single-direction rather than independently tracked per direction. The Android HTTPS adapter and JNI frame bridge compile, but the Android UI does not yet invoke a remote session. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
 
 The current Android VM already exposes a JNI-backed NaN16 interpreter. The GUI shell may present controls and SAF file selection, but it must not implement training policy. The guest owns those decisions.
 
@@ -86,7 +86,7 @@ Message types: HELLO, CAPABILITIES, CORPUS_BEGIN, CORPUS_CHUNK, CORPUS_END, ACCE
 
 CRC-32 detects accidental corruption; it is not authentication. The gateway must authenticate the device credential, enforce quotas, rate limits, TLS, sequence/replay checks, and session ownership before forwarding frames to NaN16 intake. NaN16 independently checks framing, lengths, state transitions, and sequence numbers.
 
-Runner and Android are intended to use the same frame and state-machine definitions. The current guest validates frame structure, CRC, monotonic sequence numbers, and route selection; complete session ownership, per-direction sequence state, message-specific payload validation, and transition enforcement remain to be implemented. Only the C transport driver should differ by platform.
+Runner and Android use the same NaN16 frame and state-machine definitions. The guest validates frame structure, CRC, session ownership, per-session sequence monotonicity, message-specific payload bounds, legal transitions, and route selection. Independent per-direction sequence cursors remain future work. Only the C transport driver should differ by platform.
 
 ## Launch surfaces
 
@@ -113,7 +113,7 @@ Do not put PATs, repository write tokens, signing keys, or runner secrets in APK
 4. [x] Implement bounded C stream/frame byte transport and NaN16 protocol validator/route bridge; TLS gateway remains pending.
 5. [x] Add runner invocation using the shared NaN16 guest program.
 6. [x] Add Android GUI menu entry and CLI --nannet-train launch path.
-7. [ ] Add transactional intake, candidate evaluation, fair merge, and replay protection.
+7. [x] Add N16T session ownership, replay rejection, message-specific payload bounds, state transitions, and CLOSE/reset handling. [ ] Add transactional intake, candidate evaluation, and fair merge.
 8. [ ] Add APK allowlist + artifact inspection proving nannetsuite is absent.
 9. [ ] Build and install the APK; run identical corpus vectors on runner and Android and compare pipeline outputs.
 

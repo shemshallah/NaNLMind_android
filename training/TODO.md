@@ -17,14 +17,14 @@
 2. [x] Add runner gates for host-injected N16TXT, bundled sample, valid multibyte UTF-8, and malformed UTF-8 rejection.
 3. [x] Add strict UTF-8 sequence validation in NaN16 guest code.
 4. [ ] Add Unicode normalization/noncharacter policy, deterministic sample scheduling, and fixed initialization/checkpoint ABI.
-5. [x] Add NaN16 frame validation, CRC-32, replay-sequence checks, and overbootstrap route dispatch.
+5. [x] Add NaN16 frame validation, CRC-32, session ownership, replay rejection, message-specific payload bounds, state transitions, CLOSE/reset, and overbootstrap route dispatch.
 6. [x] Add bounded C stream framing and NaN16 byte-buffer bridge; keep protocol policy in the guest.
 7. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
 8. [x] Add manual GitHub Runner CPU Ring workflow using the same guest and corpus format.
-9. [ ] Add candidate evaluator and transactional merge.
+9. [ ] Add candidate evaluator, contribution accounting, and transactional merge.
 10. [x] Add explicit Android runtime asset allowlist. [ ] Add packaged APK artifact scan.
-11. [ ] Add TLS gateway deployment and connect Android transport to the runner/VPS.
-12. [ ] Build APK and run identical corpus vectors on Android and runner.
+11. [ ] Wire the Android UI to NaN16-generated N16T frames and the HTTPS adapter; deploy the authenticated TLS gateway.
+12. [x] Build APK and run the shared corpus pipeline on the GitHub runner. [ ] Install APK on a device and run identical corpus vectors on Android.
 
 ## Acceptance gate
 
