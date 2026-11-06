@@ -296,7 +296,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                         "lattice"->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke();append("Opened Sierpinski desktop window.")}
                         "monitor"->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke();append("Opened Monitor desktop window.")}
                         "hex"->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke();append("Opened Hex desktop window.")}
-                        "settings"->{dialog.dismiss();showUnifiedSettings()}
+                        "settings"->{showUnifiedSettings()}
                         "nannet","wifi"->{showWifi()}
                         "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
                         "training"->{showTrainingSuite()}
