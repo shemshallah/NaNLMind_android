@@ -457,10 +457,24 @@ class MainActivity : Activity(), NanLoop.Listener {
                     if (arg.isBlank()) append("usage: write <filename> [text]")
                     else if (rest.isNotEmpty()) append(nshWrite(arg, rest))
                     else {
-                        val editor = EditText(this).apply { minLines = 5; gravity = Gravity.TOP; hint = "Enter file contents" }
-                        AlertDialog.Builder(this).setTitle("Write /nsh/" + arg).setView(editor)
-                            .setPositiveButton("Save") { _, _ -> append(nshWrite(arg, editor.text.toString())) }
-                            .setNegativeButton("Cancel", null).show()
+                        val editPanel = LinearLayout(this).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setPadding(dp(10), dp(8), dp(10), dp(8))
+                            setBackgroundColor(Color.rgb(17, 22, 42))
+                        }
+                        val editor = EditText(this).apply {
+                            minLines = 6
+                            gravity = Gravity.TOP
+                            hint = "Enter file contents"
+                            setTextColor(Color.WHITE)
+                            setHintTextColor(Color.GRAY)
+                        }
+                        editPanel.addView(editor, LinearLayout.LayoutParams(-1, 0, 1f))
+                        editPanel.addView(btn("SAVE FILE") {
+                            append(nshWrite(arg, editor.text.toString()))
+                            desktopSurface.removeView(editPanel.parent as? View)
+                        })
+                        showDesktopWindow("Text Editor / " + arg, editPanel, 360)
                     }
                 }
                 "cat", "type", "read" -> append(if (arg.isBlank()) "usage: cat <filename>" else try { nshFile(arg).readText(Charsets.UTF_8) } catch (e: Exception) { "READ NO: " + e.message })
