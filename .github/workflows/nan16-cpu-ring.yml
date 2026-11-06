@@ -52,10 +52,28 @@ jobs:
             --candidate-out "$RUNNER_TEMP/candidate.nan1" \
             --peek 8448:3
 
-      - name: Publish isolated candidate checkpoint
+      - name: Write candidate provenance and digests
+        run: |
+          {
+            printf 'workflow_run=%s\\n' "$GITHUB_RUN_ID"
+            printf 'control_repository=%s\\n' "$GITHUB_REPOSITORY"
+            printf 'control_commit=%s\\n' "$GITHUB_SHA"
+            printf 'runtime_repository=shemshallah/NaN0S\\n'
+            printf 'runtime_commit=%s\\n' "$(git -C NaN0S rev-parse HEAD)"
+            printf 'corpus_bytes=%s\\n' "$(wc -c < "$RUNNER_TEMP/corpus.txt" | tr -d ' ')"
+            printf 'corpus_sha256=%s\\n' "$(sha256sum "$RUNNER_TEMP/corpus.txt" | cut -d ' ' -f 1)"
+            printf 'candidate_bytes=%s\\n' "$(wc -c < "$RUNNER_TEMP/candidate.nan1" | tr -d ' ')"
+            printf 'candidate_sha256=%s\\n' "$(sha256sum "$RUNNER_TEMP/candidate.nan1" | cut -d ' ' -f 1)"
+          } > "$RUNNER_TEMP/candidate-manifest.txt"
+          sha256sum "$RUNNER_TEMP/candidate.nan1" > "$RUNNER_TEMP/candidate.nan1.sha256"
+
+      - name: Publish isolated candidate checkpoint and provenance
         uses: actions/upload-artifact@v4
         with:
           name: nan16-candidate-${{ github.run_id }}
-          path: ${{ runner.temp }}/candidate.nan1
+          path: |
+            ${{ runner.temp }}/candidate.nan1
+            ${{ runner.temp }}/candidate.nan1.sha256
+            ${{ runner.temp }}/candidate-manifest.txt
           if-no-files-found: error
           retention-days: 7
