@@ -597,7 +597,8 @@ class MainActivity : Activity(), NanLoop.Listener {
                 files.sortedBy { it.name.lowercase() }.forEach { file ->
                     choosePanel.addView(btn(file.name + "  •  " + file.length() + " bytes") {
                         if (prepareTraining()) Thread {
-                            runTraining(try { file.readBytes() } catch (_: Exception) { ByteArray(0) })
+                            try { runTraining(file.readBytes()) }
+                            catch (e: Exception) { finishTraining("Could not read /nsh/" + file.name + ": " + e.message) }
                         }.start()
                     })
                 }
