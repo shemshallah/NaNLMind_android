@@ -47,8 +47,10 @@ object WifiBridge {
         val active = cm.activeNetwork
         val caps = if (active != null) cm.getNetworkCapabilities(active) else null
         val info = w.connectionInfo
-        val connectedWifi = w.isWifiEnabled && info.networkId >= 0
-        val ssid = info.ssid?.takeIf { it.isNotBlank() && it != "<unknown ssid>" } ?: "SSID hidden"
+        val activeWifi = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+        val connectedWifi = w.isWifiEnabled && (activeWifi || info.networkId >= 0)
+        val ssid = info.ssid?.removePrefix("\"")?.removeSuffix("\"")
+            ?.takeIf { it.isNotBlank() && it != "<unknown ssid>" } ?: "SSID hidden (Android privacy)"
         val sb = StringBuilder("NANNET • ANDROID HOST NETWORK MANAGER\n")
         sb.append("Wi-Fi radio: ").append(if (w.isWifiEnabled) "ON" else "OFF")
         if (connectedWifi) {
@@ -100,10 +102,15 @@ object WifiBridge {
                 // masks scan SSIDs or throttles active scans.
                 val current = w.connectionInfo
                 val currentSsid = current.ssid?.removePrefix("\"")?.removeSuffix("\"")
-                if (w.isWifiEnabled && current.networkId >= 0 &&
-                    !currentSsid.isNullOrBlank() && currentSsid != "<unknown ssid>" &&
-                    cached.none { it.ssid == currentSsid }) {
-                    cached.add(Ap(currentSsid, current.rssi, "connected"))
+                val cm = app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val activeWifi = cm.getNetworkCapabilities(cm.activeNetwork)
+                    ?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+                val associated = w.isWifiEnabled && (current.networkId >= 0 || activeWifi)
+                if (associated) {
+                    val visibleName = currentSsid?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
+                        ?: "Connected Wi-Fi (SSID hidden)"
+                    if (cached.none { it.ssid == visibleName || it.security == "connected" })
+                        cached.add(Ap(visibleName, current.rssi, "connected"))
                 }
                 cached.sortedByDescending { it.level }
             } catch (_: Exception) { emptyList() }
