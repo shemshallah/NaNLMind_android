@@ -3,6 +3,7 @@ package org.nan0s.vm
 import android.content.Context
 import java.io.Closeable
 import java.security.SecureRandom
+import java.security.MessageDigest
 
 /**
  * Persistent NaN16 N16T guest instance for Android.
@@ -125,6 +126,11 @@ internal class N16GuestProtocol(context: Context) : Closeable {
         }
         return Route(vm.register(1), vm.register(2), logicalPoint)
     }
+
+    @Synchronized
+    fun sessionFingerprint(): String =
+        MessageDigest.getInstance("SHA-256").digest(sessionId).take(8)
+            .joinToString("") { "%02X".format(it) }
 
     @Synchronized
     fun resetSession() {
