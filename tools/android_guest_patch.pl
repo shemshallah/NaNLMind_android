@@ -112,16 +112,43 @@ $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q clos
 $gui = replace_once($gui, 's settings n browser u utils\n', 'n browser u utils\n', "remove duplicate guest settings menu");
 my $help_token = join "\n",
     "ADD r5,r1,r5",
+    "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,1", "LD r4,r6,0", "MOVI r7,97", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,2", "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,3", "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,4", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,5", "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,6", "LD r4,r6,0", "MOVI r7,45", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,7", "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,8", "LD r4,r6,0", "MOVI r7,114", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,9", "LD r4,r6,0", "MOVI r7,97", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,10", "LD r4,r6,0", "MOVI r7,105", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,11", "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,12", "LD r4,r6,0", "MOVI r7,105", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,13", "LD r4,r6,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "ADDI r6,r5,14", "LD r4,r6,0", "MOVI r7,103", "CMP r4,r7", 'JMP[NE] @tk_help_check',
+    "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1",
+    "MOVI r1,79", "PUTC r1", "MOVI r1,83", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,82", "PUTC r1",
+    "MOVI r1,65", "PUTC r1", "MOVI r1,73", "PUTC r1",
+    "MOVI r1,78", "PUTC r1", "MOVI r1,10", "PUTC r1",
+    "MOVI r4,0", 'JMP @tk_lc',
+    "tk_help_check:",
     "LD r4,r5,0", "MOVI r7,45", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
-    "ADD r6,r5,r13", "LD r4,r6,0", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADDI r6,r5,1", "LD r4,r6,0", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADDI r6,r6,1", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADDI r6,r6,1", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADDI r6,r6,1", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADDI r6,r6,1", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
     "MOVI r4,104", 'JMP @tk_lc',
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $help_token,
-    "recognize the complete --help token in NaN16 NSH");
+    "recognize nannet-training and --help as complete NaN16 NSH commands");
+my $old_help = '.str "h c v w b l m x t s n u f q\nb browser l lattice m monitor x hex\nt term w count c clear v ver\ns settings n browser u utils\nf files (nsh) q quit gui\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  f FILES\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS  q CLOSE\n"';
+$gui = replace_once($gui, $old_help, $new_help, "publish complete NSH command reference");
 
 
 my $marker = "gk_np:\nMOVI r2,0x105";
