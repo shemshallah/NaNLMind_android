@@ -55,6 +55,32 @@ make route-diff
 
 No 2 GiB map is created, uploaded, or cached here.
 
+## NANNET device registration
+
+A clone does not share a baked-in HW identity. First registration claims the
+next available community slot in BS0 (HW4–HW255); HW0–HW3 are reserved for
+the runner ring, Android reference endpoint, Hermes, and Clocked.
+
+    export NANNET_URL="https://your-nannet-service"
+    python scripts/nannet_device.py --url "$NANNET_URL" register --consent
+    python scripts/nannet_device.py heartbeat
+    python scripts/intake_client.py state/android-route.json --url "$NANNET_URL"
+    python scripts/nannet_device.py report --type system_error --summary "Example" --details "Describe the issue"
+    python scripts/nannet_device.py release
+
+The device CLI creates a random 256-bit installation secret and stores the
+local state at ~/.config/nanlmind/nannet-device.json with mode 0600. Repeated
+registration with that state resumes the same active lease. Release revokes
+the bearer token and frees the slot only after pending uploads and observations
+have been handled. The route-diff client automatically reads the token/address
+from this state file; environment variables can override them.
+
+This repository currently contains the Termux/CLI enrollment path and network
+contract, not a Kotlin application source tree. A native Android app should
+store the same secret in Android Keystore. MAC addresses are not collected or
+used for identity: Android MAC randomization and network changes must not
+create new logical devices. The current installation key is a good-faith
+identity, not physical-device attestation or Sybil resistance.
 ## Security
 
 `DEEPREPO_PAT` is never used here and must never be shipped in the APK or kept on
