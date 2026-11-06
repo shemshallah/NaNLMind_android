@@ -115,20 +115,28 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun chooseFsSize() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "Create a sparse NaNFS image in app-private storage and attach it to the guest."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+        })
         val input = EditText(this).apply {
             setText("1")
             hint = "GiB"
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(Color.WHITE)
         }
-        AlertDialog.Builder(this)
-            .setTitle("nan0s_fs size (GiB)")
-            .setView(input)
-            .setPositiveButton("Create") { _, _ ->
-                val gib = input.text.toString().toDoubleOrNull()?.coerceIn(0.0625, 64.0) ?: 1.0
-                makeFsImage((gib * 1024.0 * 1024.0 * 1024.0).toLong())
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        panel.addView(input, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        panel.addView(btn("CREATE AND ATTACH") {
+            val gib = input.text.toString().toDoubleOrNull()?.coerceIn(0.0625, 64.0) ?: 1.0
+            makeFsImage((gib * 1024.0 * 1024.0 * 1024.0).toLong())
+        })
+        showDesktopWindow("NaNFS Image Utility", panel, 220)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -580,8 +588,37 @@ class MainActivity : Activity(), NanLoop.Listener {
         panel.layoutParams = lp
     }
 
-    private fun nshHelp():String =
-        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nrun APP            Launch a desktop application\napps               Open application menu\nwindows            List desktop apps\nfiles              List files in /nsh\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
+    private fun nshHelp(): String =
+        "NaNLMind NSH COMMAND REFERENCE\n" +
+        "--help, -h, help       Show this reference\n" +
+        "pwd                    Show /nsh working directory\n" +
+        "ls, dir, files         List files in /nsh\n" +
+        "write, touch NAME      Create/edit a text file\n" +
+        "write NAME TEXT        Write text directly to a file\n" +
+        "cat, type, read NAME   Display a text file\n" +
+        "mkdir NAME             Create a directory\n" +
+        "rm, del NAME           Delete a file\n" +
+        "clear, cls             Clear terminal output\n" +
+        "open, load [FILE]      Load NaN16 program or open picker\n" +
+        "disk                   Choose and attach a disk image\n" +
+        "fs                     Create a sparse NaNFS image\n" +
+        "nannet-training        Open NaNNet training window\n" +
+        "wifi, nannet           Open NaNNet Wi-Fi/cellular manager\n" +
+        "n16t, gateway           Open N16T HTTPS gateway window\n" +
+        "browser [URL], b       Open isolated browser launcher\n" +
+        "settings               Open unified desktop settings\n" +
+        "run APP                Launch lattice|monitor|hex|settings|nannet|system|training|gateway|browser\n" +
+        "apps                   Open internal applications window\n" +
+        "windows, wm            List desktop window groups\n" +
+        "system                 Open NaN16 system utilities\n" +
+        "log                    Open COM1 serial log window\n" +
+        "fit                    Fit guest display to viewport\n" +
+        "scale                  Toggle integer display scaling\n" +
+        "desktop                Confirm desktop remains active\n" +
+        "reset                  Restore bundled desktop after confirmation\n" +
+        "version, ver           Show system version\n" +
+        "exit, quit, ESC        Hide NSH and return to desktop\n" +
+        "\nFiles are sandboxed below /nsh. Corpus text is data, never executable instructions."
     private fun nshFile(name:String):File{
         require(name.isNotBlank()&&!name.startsWith("/")&&!name.contains("\\"))
         val base=nshHome.canonicalFile;val file=File(base,name).canonicalFile
