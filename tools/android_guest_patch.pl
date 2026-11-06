@@ -163,7 +163,10 @@ push @training_check, "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
     "MOVI r1,73", "PUTC r1", "MOVI r1,78", "PUTC r1", "MOVI r1,10", "PUTC r1",
     "MOVI r4,0", 'JMP @tk_lc', "tk_help_check:";
 my $training_token = join "\n", @training_check;
-$gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $training_token . "\n" . $help_token,
+my @help_after_training = split /\n/, $help_token;
+splice @help_after_training, 0, 2;
+$gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0",
+    $training_token . "\n" . join("\n", @help_after_training),
     "recognize nannet-training and --help as complete NaN16 NSH commands");
 
 my $old_help = '.str "h c v w b l m x t s n u f q\nb browser l lattice m monitor x hex\nt term w count c clear v ver\ns settings n browser u utils\nf files (nsh) q quit gui\n"';
