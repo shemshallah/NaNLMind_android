@@ -256,112 +256,228 @@ class MainActivity : Activity(), NanLoop.Listener {
         return HorizontalScrollView(this).apply { addView(row) }
     }
 
+    private fun hideNshWindow() {
+        nshWindow?.visibility = View.GONE
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .hideSoftInputFromWindow(nshWindow?.windowToken, 0)
+    }
+
     private fun showNshWindow() {
-        val panel = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(8),dp(8),dp(8),dp(8)); setBackgroundColor(Color.rgb(12,17,31)) }
+        nshWindow?.let {
+            it.visibility = View.VISIBLE
+            it.bringToFront()
+            it.requestFocus()
+            return
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setBackgroundColor(Color.rgb(9, 13, 27))
+            elevation = dp(12).toFloat()
+        }
         val chrome = LinearLayout(this).apply {
-            orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
-            setPadding(dp(8),dp(3),dp(4),dp(3)); setBackgroundColor(Color.rgb(34,48,83))
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(3), dp(4), dp(3))
+            setBackgroundColor(Color.rgb(37, 53, 91))
         }
         val caption = TextView(this).apply {
-            text="NSH  /  NaNLMind terminal"; textSize=12f
-            typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.rgb(128,232,218))
+            text = "NSH  /  NaN16 COMMAND SHELL"
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(Color.rgb(128, 232, 218))
         }
-        chrome.addView(caption,LinearLayout.LayoutParams(0,dp(34),1f))
-        val minimize = btn("−") {}
-        val maximize = btn("□") {}
-        val close = btn("×") {}
-        chrome.addView(minimize,LinearLayout.LayoutParams(dp(42),dp(34)))
-        chrome.addView(maximize,LinearLayout.LayoutParams(dp(42),dp(34)))
-        chrome.addView(close,LinearLayout.LayoutParams(dp(42),dp(34)))
+        chrome.addView(caption, LinearLayout.LayoutParams(0, dp(34), 1f))
+        val minimize = btn("−") { hideNshWindow() }
+        val maximize = btn("□") { toggleNshMaximize(null) }
+        val close = btn("×") { hideNshWindow() }
+        chrome.addView(minimize, LinearLayout.LayoutParams(dp(42), dp(34)))
+        chrome.addView(maximize, LinearLayout.LayoutParams(dp(42), dp(34)))
+        chrome.addView(close, LinearLayout.LayoutParams(dp(42), dp(34)))
         panel.addView(chrome)
-        val output = TextView(this).apply { textSize=12f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.rgb(180,225,218)); setPadding(dp(10),dp(8),dp(10),dp(8)); text="NaNLMind NSH  •  NaN16 desktop shell\nType --help for commands. Files are sandboxed in /nsh.\n\n"+nshHelp(); setBackgroundColor(Color.rgb(3,7,14)) }
-        val scroll=ScrollView(this).apply { addView(output) }
-        panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val input=EditText(this).apply { isSingleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
-        panel.addView(input,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
-        val dialog=AlertDialog.Builder(this).setView(panel).setPositiveButton("Minimize",null).setNeutralButton("Help",null).create()
-        var maximized = false
-        close.setOnClickListener { dialog.dismiss() }
-        minimize.setOnClickListener { dialog.dismiss() }
-        maximize.setOnClickListener {
-            maximized = !maximized
-            dialog.window?.setLayout(
-                if (maximized) LinearLayout.LayoutParams.MATCH_PARENT else (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-                if (maximized) LinearLayout.LayoutParams.MATCH_PARENT else (resources.displayMetrics.heightPixels * 0.72f).toInt()
-            )
-            maximize.text = if (maximized) "❐" else "□"
+        val output = TextView(this).apply {
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(Color.rgb(180, 225, 218))
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            text = "NaNLMind NSH  •  NaN16 desktop shell\nType --help for commands. Files are sandboxed in /nsh.\n\n" + nshHelp()
+            setBackgroundColor(Color.rgb(3, 7, 14))
         }
-        nshDialog = dialog
-        dialog.setOnDismissListener { if (nshDialog === dialog) nshDialog = null }
-        fun append(line:String){ output.append(line+"\n"); scroll.post{scroll.fullScroll(View.FOCUS_DOWN)} }
-        fun runCommand(){
-            val command=input.text.toString().trim(); if(command.isEmpty()) return
-            input.text.clear(); append("nsh> "+command)
-            val parts=command.split(Regex("\\s+"),limit=3); val verb=parts[0].lowercase(); val arg=parts.getOrNull(1).orEmpty(); val rest=parts.getOrNull(2).orEmpty()
-            when(verb){
-                "--help","-h","help"->append(nshHelp())
-                "pwd"->append("/nsh")
-                "ls","dir"->append(nshHome.listFiles()?.sortedBy{it.name}?.joinToString("\n"){if(it.isDirectory)it.name+"/" else it.name+"  ("+it.length()+" bytes)"}?.ifBlank{"(empty)"}?:"(empty)")
-                "clear","cls"->output.text="NaNLMind NSH  •  /nsh\n"
-                "write","touch"->{ if(arg.isBlank()) append("usage: write <filename> [text]") else if(rest.isNotEmpty()) append(nshWrite(arg,rest)) else { val editor=EditText(this).apply{minLines=5;gravity=Gravity.TOP;hint="Enter file contents"}; AlertDialog.Builder(this).setTitle("Write /nsh/"+arg).setView(editor).setPositiveButton("Save"){_,_->append(nshWrite(arg,editor.text.toString()))}.setNegativeButton("Cancel",null).show() } }
-                "cat","type","read"->append(if(arg.isBlank())"usage: cat <filename>" else try{nshFile(arg).readText(Charsets.UTF_8)}catch(e:Exception){"READ NO: "+e.message})
-                "mkdir"->append(if(arg.isBlank())"usage: mkdir <directory>" else try{val f=nshFile(arg);if(f.mkdirs()||f.isDirectory)"OK: "+arg else "MKDIR NO"}catch(e:Exception){"MKDIR NO: "+e.message})
-                "rm","del"->append(if(arg.isBlank())"usage: rm <filename>" else try{if(nshFile(arg).delete())"DELETED: "+arg else "DELETE NO"}catch(e:Exception){"DELETE NO: "+e.message})
-                "nannet-training","training"->{showTrainingSuite()}
-                "wifi","nannet"->{showWifi()}
-                "n16t","gateway"->{showRemoteGateway()}
-                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening Android browser safely: "+target);showBrowserWindow(target)}
-                "settings"->{showUnifiedSettings()}
-                "open","load"->{
-                    if(arg.isBlank()){dialog.dismiss();pick(reqImage)}
-                    else try{val kind=vm.load(nshFile(arg).readBytes());loop.rearm();append(if(kind!=null)"Loaded NaN16 program: "+kind else "OPEN NO: not a NaN16 program")}
-                    catch(e:Exception){append("OPEN NO: "+e.message)}
+        val scroll = ScrollView(this).apply { addView(output) }
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val input = EditText(this).apply {
+            isSingleLine = true
+            textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(Color.WHITE)
+            hint = "nsh> command"
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setBackgroundColor(Color.rgb(30, 39, 61))
+            imeOptions = EditorInfo.IME_ACTION_DONE
+        }
+        panel.addView(input, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        desktopSurface.addView(panel, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, dp(360), Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        ).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
+        nshWindow = panel
+        nshMaximized = false
+
+        var downX = 0f
+        var downY = 0f
+        var startX = 0
+        var startY = 0
+        chrome.setOnTouchListener { _, event ->
+            val lp = panel.layoutParams as FrameLayout.LayoutParams
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.rawX
+                    downY = event.rawY
+                    startX = lp.leftMargin
+                    startY = lp.topMargin
+                    true
                 }
-                "disk"->{pick(reqDisk)}
-                "fs"->{chooseFsSize()}
-                "log"->{showLog()}
-                "fit"->{view.resetZoom();append("Display fitted to desktop.")}
-                "scale"->{view.integerScale=!view.integerScale;view.invalidate();append("Integer scaling: "+view.integerScale)}
-                "system"->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
-                "run"->{
-                    when(arg.lowercase()){
-                        "lattice"->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke();append("Opened Sierpinski desktop window.")}
-                        "monitor"->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke();append("Opened Monitor desktop window.")}
-                        "hex"->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke();append("Opened Hex desktop window.")}
-                        "settings"->{showUnifiedSettings()}
-                        "nannet","wifi"->{showWifi()}
-                        "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
-                        "training"->{showTrainingSuite()}
-                        "gateway","n16t"->{showRemoteGateway()}
-                        "browser"->{showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}
-                        else->append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
+                MotionEvent.ACTION_MOVE -> {
+                    if (!nshMaximized) {
+                        lp.gravity = Gravity.TOP or Gravity.START
+                        lp.leftMargin = (startX + event.rawX - downX).toInt().coerceIn(0, (desktopSurface.width - panel.width).coerceAtLeast(0))
+                        lp.topMargin = (startY + event.rawY - downY).toInt().coerceIn(0, (desktopSurface.height - panel.height).coerceAtLeast(0))
+                        panel.layoutParams = lp
                     }
+                    true
                 }
-                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}}.setNegativeButton("Close",null).show()}
-                "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. Use run <app> or apps.")
-                "files"->append(nshHome.listFiles()?.sortedBy{it.name}?.joinToString("\n"){if(it.isDirectory)it.name+"/" else it.name+"  ("+it.length()+" bytes)"}?.ifBlank{"(empty /nsh)"}?:"(empty /nsh)")
-                "version","ver"->append("NaNLMind_ANDROID • NaN16 guest • Android host services")
-                "desktop"->append("Desktop remains active behind this NSH window.")
-                "reset"->{dialog.dismiss();AlertDialog.Builder(this).setTitle("Reset desktop").setMessage("Restore the bundled NaN16 desktop and discard the current unsaved VM session?").setPositiveButton("Reset"){_,_->autosave.delete();vm.detachDisk();diskFile.delete();fsFile.delete();fsKey.delete();seedDisk();vm.load(asset());attachDefaultDisk();loop.rearm()}.setNegativeButton("Cancel",null).show()}
-                "exit","quit"->{dialog.dismiss();return}
-                else->append("command not found: "+verb+" (type --help)")
+                else -> true
             }
         }
-        input.setOnEditorActionListener{_,action,_->if(action==EditorInfo.IME_ACTION_DONE||action==EditorInfo.IME_NULL){runCommand();true}else false}
+
+        fun append(line: String) {
+            output.append(line + "\n")
+            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
+        fun runCommand() {
+            val command = input.text.toString().trim()
+            if (command.isEmpty()) return
+            input.text.clear()
+            append("nsh> " + command)
+            val parts = command.split(Regex("\\s+"), limit = 3)
+            val verb = parts[0].lowercase()
+            val arg = parts.getOrNull(1).orEmpty()
+            val rest = parts.getOrNull(2).orEmpty()
+            when (verb) {
+                "--help", "-h", "help" -> append(nshHelp())
+                "pwd" -> append("/nsh")
+                "ls", "dir", "files" -> append(nshHome.listFiles()?.sortedBy { it.name }?.joinToString("\n") {
+                    if (it.isDirectory) it.name + "/" else it.name + "  (" + it.length() + " bytes)"
+                }?.ifBlank { "(empty /nsh)" } ?: "(empty /nsh)")
+                "clear", "cls" -> output.text = "NaNLMind NSH  •  /nsh\n"
+                "write", "touch" -> {
+                    if (arg.isBlank()) append("usage: write <filename> [text]")
+                    else if (rest.isNotEmpty()) append(nshWrite(arg, rest))
+                    else {
+                        val editor = EditText(this).apply { minLines = 5; gravity = Gravity.TOP; hint = "Enter file contents" }
+                        AlertDialog.Builder(this).setTitle("Write /nsh/" + arg).setView(editor)
+                            .setPositiveButton("Save") { _, _ -> append(nshWrite(arg, editor.text.toString())) }
+                            .setNegativeButton("Cancel", null).show()
+                    }
+                }
+                "cat", "type", "read" -> append(if (arg.isBlank()) "usage: cat <filename>" else try { nshFile(arg).readText(Charsets.UTF_8) } catch (e: Exception) { "READ NO: " + e.message })
+                "mkdir" -> append(if (arg.isBlank()) "usage: mkdir <directory>" else try { val f = nshFile(arg); if (f.mkdirs() || f.isDirectory) "OK: " + arg else "MKDIR NO" } catch (e: Exception) { "MKDIR NO: " + e.message })
+                "rm", "del" -> append(if (arg.isBlank()) "usage: rm <filename>" else try { if (nshFile(arg).delete()) "DELETED: " + arg else "DELETE NO" } catch (e: Exception) { "DELETE NO: " + e.message })
+                "nannet-training", "training" -> showTrainingSuite()
+                "wifi", "nannet" -> showWifi()
+                "n16t", "gateway" -> showRemoteGateway()
+                "browser", "b" -> {
+                    val url = arg.ifBlank { "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal" }
+                    val target = if (url.startsWith("https://") || url.startsWith("http://")) url else "https://" + url
+                    append("Opening isolated Android browser: " + target)
+                    showBrowserWindow(target)
+                }
+                "settings" -> showUnifiedSettings()
+                "open", "load" -> {
+                    if (arg.isBlank()) { hideNshWindow(); pick(reqImage) }
+                    else try {
+                        val kind = vm.load(nshFile(arg).readBytes())
+                        loop.rearm()
+                        append(if (kind != null) "Loaded NaN16 program: " + kind else "OPEN NO: not a NaN16 program")
+                    } catch (e: Exception) { append("OPEN NO: " + e.message) }
+                }
+                "disk" -> pick(reqDisk)
+                "fs" -> chooseFsSize()
+                "log" -> showLog()
+                "fit" -> { view.resetZoom(); append("Display fitted to desktop.") }
+                "scale" -> { view.integerScale = !view.integerScale; view.invalidate(); append("Integer scaling: " + view.integerScale) }
+                "system" -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                "run" -> when (arg.lowercase()) {
+                    "lattice" -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke(); append("Opened Lattice.") }
+                    "monitor" -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke(); append("Opened Monitor.") }
+                    "hex" -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke(); append("Opened Hex.") }
+                    "settings" -> showUnifiedSettings()
+                    "nannet", "wifi" -> showWifi()
+                    "training", "nannet-training" -> showTrainingSuite()
+                    "gateway", "n16t" -> showRemoteGateway()
+                    "browser" -> showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
+                    "system" -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                    else -> append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
+                }
+                "apps" -> {
+                    val apps = arrayOf("Lattice", "Monitor", "Hex viewer", "Settings", "NaNNet", "System utilities", "NaNNet training", "N16T gateway", "Browser")
+                    AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps) { _, which ->
+                        when (which) {
+                            0 -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke() }
+                            1 -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke() }
+                            2 -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke() }
+                            3 -> showUnifiedSettings()
+                            4 -> showWifi()
+                            5 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                            6 -> showTrainingSuite()
+                            7 -> showRemoteGateway()
+                            8 -> showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
+                        }
+                    }.setNegativeButton("Close", null).show()
+                }
+                "windows", "wm" -> append("Guest windows: Lattice, Monitor, Hex. Host windows: NSH, Settings, NaNNet, Training, N16T.")
+                "version", "ver" -> append("NaNLMind_ANDROID • NaN16 guest • Android host services")
+                "desktop" -> append("Desktop remains active behind this NSH window.")
+                "reset" -> AlertDialog.Builder(this).setTitle("Reset desktop")
+                    .setMessage("Restore the bundled NaN16 desktop and discard the current unsaved VM session?")
+                    .setPositiveButton("Reset") { _, _ ->
+                        autosave.delete(); vm.detachDisk(); diskFile.delete(); fsFile.delete(); fsKey.delete()
+                        seedDisk(); vm.load(asset()); attachDefaultDisk(); loop.rearm()
+                    }.setNegativeButton("Cancel", null).show()
+                "exit", "quit" -> hideNshWindow()
+                else -> append("command not found: " + verb + " (type --help)")
+            }
+        }
+        input.setOnEditorActionListener { _, action, _ ->
+            if (action == EditorInfo.IME_ACTION_DONE || action == EditorInfo.IME_NULL) { runCommand(); true } else false
+        }
         input.setOnKeyListener { _, keyCode, event ->
             if (keyCode == android.view.KeyEvent.KEYCODE_ESCAPE && event.action == android.view.KeyEvent.ACTION_UP) {
-                dialog.dismiss(); true
+                hideNshWindow()
+                true
             } else false
         }
-        dialog.setOnShowListener{
-            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.76f).toInt())
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss()}
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{append(nshHelp())}
-            input.requestFocus()
-            input.post{(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT)}
-        }
-        dialog.show()
+        input.requestFocus()
+        input.post { (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT) }
     }
+
+    private fun toggleNshMaximize(maximize: Boolean?) {
+        val panel = nshWindow ?: return
+        val lp = panel.layoutParams as? FrameLayout.LayoutParams ?: return
+        nshMaximized = maximize ?: !nshMaximized
+        if (nshMaximized) {
+            lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+            lp.height = FrameLayout.LayoutParams.MATCH_PARENT
+            lp.setMargins(0, 0, 0, 0)
+            lp.gravity = Gravity.TOP or Gravity.START
+        } else {
+            lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+            lp.height = dp(360)
+            lp.setMargins(dp(8), dp(8), dp(8), dp(8))
+            lp.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        }
+        panel.layoutParams = lp
+    }
+
     private fun nshHelp():String =
         "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nrun APP            Launch a desktop application\napps               Open application menu\nwindows            List desktop apps\nfiles              List files in /nsh\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
     private fun nshFile(name:String):File{
