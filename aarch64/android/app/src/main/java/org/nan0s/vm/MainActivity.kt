@@ -137,7 +137,13 @@ class MainActivity : Activity(), NanLoop.Listener {
         if (!restored) vm.load(asset())
         attachDefaultDisk()
         loop = NanLoop(vm, this)
-        view = NanView(this, vm, { loop.poke() }, { x, y -> handleWindowChromeTap(x, y) }) { keyCode -> if (keyCode == android.view.KeyEvent.KEYCODE_F6) { showWifi(); true } else false }
+        view = NanView(this, vm, { loop.poke() }, { x, y -> handleWindowChromeTap(x, y) }) { keyCode ->
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_F5 -> { showUnifiedSettings(); true }
+                android.view.KeyEvent.KEYCODE_F6 -> { showWifi(); true }
+                else -> false
+            }
+        }
         beeper = Beeper { vm.speakerHz() }
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
@@ -183,7 +189,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 when (i) {
                     2 -> { vm.keyEvent(0x102, true); vm.keyEvent(0x102, false); loop.poke(); view.requestFocus() }
                     3 -> { vm.keyEvent(0x103, true); vm.keyEvent(0x103, false); loop.poke(); view.requestFocus() }
-                    5 -> { vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke(); view.requestFocus() }
+                    5 -> showUnifiedSettings()
                     6 -> showWifi()
                     7 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke(); view.requestFocus() }
                     8 -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke(); view.requestFocus() }
