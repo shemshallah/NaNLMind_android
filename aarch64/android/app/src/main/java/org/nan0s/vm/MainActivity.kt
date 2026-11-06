@@ -180,6 +180,8 @@ class MainActivity : Activity(), NanLoop.Listener {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
                 when (i) {
+                    2 -> { vm.keyEvent(0x102, true); vm.keyEvent(0x102, false); loop.poke(); view.requestFocus() }
+                    3 -> { vm.keyEvent(0x103, true); vm.keyEvent(0x103, false); loop.poke(); view.requestFocus() }
                     5 -> { vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke(); view.requestFocus() }
                     6 -> showWifi()
                     7 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke(); view.requestFocus() }
@@ -644,7 +646,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         when {
             red >= 5 -> { vm.keyChar(27); loop.poke(); return true }
-            green >= 5 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); return true }
+            green >= 5 -> { vm.keyEvent(0x103, true); vm.keyEvent(0x103, false); loop.poke(); return true }
         }
         return false
     }
