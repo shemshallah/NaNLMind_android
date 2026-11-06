@@ -4,6 +4,32 @@ Status: local Android and hosted-runner corpus-profile paths are implemented. Na
 
 **Prototype boundary:** the current guest validates and profiles corpora, updates byte-frequency and byte-bigram count tables, and emits an isolated candidate checkpoint. This is not yet a neural language-model optimizer or a quality-evaluated model update. Candidate evaluation, fair contribution accounting, transactional merge, and a live authenticated runner gateway remain unfinished.
 
+## First-run device enrollment
+
+Set `NANNET_URL` to the public HTTPS service origin, then run:
+
+```sh
+python scripts/nannet_device.py --url "$NANNET_URL" register --consent
+```
+
+The client generates a 256-bit installation secret, records it in
+`~/.config/nanlmind/nannet-device.json` with owner-only file permissions,
+submits a minimal capability report, and receives the next available BS0
+community slot (HW4–HW255). Re-running registration with the same local state
+resumes that identity and rotates the bearer token. Use
+`python scripts/nannet_device.py heartbeat` while participating and
+`python scripts/nannet_device.py release` when leaving. Release is refused
+while uploads, validated/quarantined corpora, or unacknowledged evidence remain.
+Submit diagnostics with `python scripts/nannet_device.py report --type system_error --summary "..." --details "..."`.
+
+The Python state file is a bootstrap implementation with mode 0600, not a
+hardware-backed Android Keystore. Native Android integration must migrate the
+same installation secret into Android Keystore before production. The current
+repository contains the Termux/CLI client and protocol contract; it does not
+currently contain a Kotlin application source tree. No MAC address or
+hardware serial is collected, because MAC randomization is expected and is
+not an authentication primitive.
+
 ## NANNET ingress compatibility
 
 The Android route-diff client posts its small JSON artifact to `POST /v1/intake/route` on the NANNET HTTPS origin. The NANNET implementation in NaNLMind PR #3 verifies the canonical JSON digest, checks the token-bound `nan://GM0:SC0:MC0:BS0:HW1` identity against local node point 2, and stores the diff as **pending unverified evidence**. It does not apply route changes or write model/head state. The client sends `X-NaN-Address` as a consistency header; the server rejects a mismatch.
