@@ -238,18 +238,26 @@ my $insert = join "\n",
 $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
 
 
+my $settings_hotkey = join "\n",
+    'MOVI r1,78', 'PUTC r1', 'MOVI r1,49', 'PUTC r1',
+    'MOVI r1,54', 'PUTC r1', 'MOVI r1,72', 'PUTC r1',
+    'MOVI r1,79', 'PUTC r1', 'MOVI r1,83', 'PUTC r1',
+    'MOVI r1,84', 'PUTC r1', 'MOVI r1,58', 'PUTC r1',
+    'MOVI r1,83', 'PUTC r1', 'MOVI r1,69', 'PUTC r1',
+    'MOVI r1,84', 'PUTC r1', 'MOVI r1,84', 'PUTC r1',
+    'MOVI r1,73', 'PUTC r1', 'MOVI r1,78', 'PUTC r1',
+    'MOVI r1,71', 'PUTC r1', 'MOVI r1,83', 'PUTC r1',
+    'MOVI r1,10', 'PUTC r1', 'JMP @gk_ret';
 my $f7 = join "\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7', 'MOVI r1,6';
 $gui = replace_once($gui, $f7,
-    join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7',
-         'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret'),
-    "F7 opens the unified guest Settings window");
+    join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7', $settings_hotkey),
+    "F7 opens the unified Settings surface");
 my $f5 = join "\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2', 'JMP[NE] @gk_n5',
     'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret', 'gk_n5:';
 $gui = replace_once($gui, $f5,
     join("\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2', 'JMP[NE] @gk_n5',
-         'MOVI r1,4', 'CALL @gui_single', 'JMP @gk_ret', 'gk_n5:'),
-    "F5 and F7 share the unified guest Settings window");
-
+         $settings_hotkey, 'gk_n5:'),
+    "F5 and F7 open the same unified Settings surface");
 
 die "NSH full-command parser missing nannet-training\n"
     unless index($gui, "tk_check_training:") >= 0;
