@@ -45,6 +45,10 @@ class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var desktopSurface: FrameLayout
     private var nshWindow: View? = null
     private var nshMaximized = false
+    private var wifiStatusView: TextView? = null
+    private var wifiResultsView: LinearLayout? = null
+    private var wifiDialog: AlertDialog? = null
+    private var wifiScanAfterPermission = false
     private val log = StringBuilder()
     private val reqImage = 1
     private val reqDisk = 2
@@ -744,45 +748,70 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     // ---- real WiFi: status, scan, connect request ----
     private fun showWifi() {
-        // The manager and active-route status are always visible. Runtime location/nearby
-        // permissions are requested only when the user explicitly starts a Wi-Fi scan.
+        wifiDialog?.dismiss()
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(12), dp(18), dp(8))
+            setPadding(dp(14), dp(10), dp(14), dp(8))
             setBackgroundColor(Color.rgb(17, 22, 42))
         }
         val status = TextView(this).apply {
             text = WifiBridge.status(this@MainActivity)
             setTextColor(Color.rgb(180, 224, 220))
-            textSize = 14f
+            textSize = 13f
             typeface = android.graphics.Typeface.MONOSPACE
             setPadding(dp(12), dp(12), dp(12), dp(12))
             setBackgroundColor(Color.rgb(7, 12, 24))
         }
+        wifiStatusView = status
         panel.addView(TextView(this).apply {
-            text = "ANDROID HOST NETWORK  /  NANNET"
-            setTextColor(Color.rgb(115, 229, 214)); textSize = 13f
+            text = "NANNET  /  ANDROID NETWORK CONTROL"
+            setTextColor(Color.rgb(115, 229, 214))
+            textSize = 13f
             typeface = android.graphics.Typeface.MONOSPACE
         })
-        panel.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        panel.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         panel.addView(TextView(this).apply {
-            text = "The Android host owns Wi-Fi and cellular radios. NaNNet routes through Android's active network; a guest PCI adapter is not required. HTTPS works over Wi-Fi or mobile data/5G. Use Scan to list networks here, then select one to join."
-            setTextColor(Color.LTGRAY); textSize = 12f
-            setPadding(0, dp(10), 0, dp(8))
+            text = "Host-managed Wi-Fi + LTE/5G. The NaN16 guest does not need a PCI radio. Scan results appear below."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+            setPadding(0, dp(8), 0, dp(8))
         })
-        panel.addView(btn("Scan available Wi-Fi networks") { scanWifi() })
-        panel.addView(btn("Open Wi-Fi settings") { WifiBridge.openSettings(this) })
-        panel.addView(btn("Open mobile data / 5G settings") { WifiBridge.openMobileSettings(this) })
+        val results = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+        }
+        wifiResultsView = results
+        results.addView(TextView(this).apply {
+            text = "No scan performed. Select SCAN NETWORKS."
+            setTextColor(Color.rgb(180, 190, 205))
+            textSize = 12f
+        })
+        val scroll = ScrollView(this).apply { addView(results) }
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        panel.addView(btn("SCAN NETWORKS") { scanWifi() })
+        panel.addView(btn("ANDROID WI-FI SETTINGS") { WifiBridge.openSettings(this) })
+        panel.addView(btn("MOBILE DATA / 5G SETTINGS") { WifiBridge.openMobileSettings(this) })
         val dialog = AlertDialog.Builder(this)
             .setTitle("NaNNet Network Manager")
             .setView(panel)
-            .setPositiveButton("Scan Wi-Fi", null)
-            .setNeutralButton("Refresh status", null)
+            .setPositiveButton("Scan", null)
+            .setNeutralButton("Refresh", null)
             .setNegativeButton("Close", null)
             .create()
+        wifiDialog = dialog
+        dialog.setOnDismissListener {
+            if (wifiDialog === dialog) {
+                wifiDialog = null
+                wifiStatusView = null
+                wifiResultsView = null
+            }
+        }
         dialog.setOnShowListener {
+            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.78f).toInt())
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { scanWifi() }
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { status.text = WifiBridge.status(this) }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                status.text = WifiBridge.status(this)
+            }
         }
         dialog.show()
     }
@@ -815,26 +844,40 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun scanWifi() {
         if (!WifiBridge.hasPermission(this)) {
+            wifiScanAfterPermission = true
+            wifiStatusView?.text = WifiBridge.status(this) + "\n\nRequesting Android Wi-Fi scan permission…"
             WifiBridge.requestPermission(this, reqWifi)
             return
         }
-        Toast.makeText(this, "Scanning...", Toast.LENGTH_SHORT).show()
+        wifiResultsView?.removeAllViews()
+        wifiResultsView?.addView(TextView(this).apply {
+            text = "Scanning Android Wi-Fi cache/radio…"
+            setTextColor(Color.rgb(180, 190, 205))
+            textSize = 12f
+        })
         WifiBridge.scan(this) { aps ->
             runOnUiThread {
+                wifiStatusView?.text = WifiBridge.status(this)
+                val target = wifiResultsView ?: return@runOnUiThread
+                target.removeAllViews()
                 if (aps.isEmpty()) {
-                    AlertDialog.Builder(this)
-                         .setTitle("NaNNet Wi-Fi scan")
-                        .setMessage("Android returned no visible access points. Check Wi-Fi and Location are enabled. Android may throttle scans; try again shortly. Your current Wi-Fi or cellular connection can still carry gateway traffic.")
-                        .setPositiveButton("Settings") { _, _ -> WifiBridge.openSettings(this) }
-                        .setNegativeButton("Close", null)
-                        .show()
-                } else {
-                    val labels = aps.map { "${it.ssid}   ${it.level} dBm   ${it.security}" }.toTypedArray()
-                    AlertDialog.Builder(this)
-                        .setTitle("WiFi networks")
-                        .setItems(labels) { _, i -> joinWifi(aps[i]) }
-                        .setNegativeButton("Close", null)
-                        .show()
+                    target.addView(TextView(this).apply {
+                        text = "No visible scan results. Android may throttle active scans or hide SSIDs. Check Location and Wi-Fi settings; the active Wi-Fi/cellular route remains usable."
+                        setTextColor(Color.rgb(235, 190, 115))
+                        textSize = 12f
+                        setPadding(dp(6), dp(8), dp(6), dp(8))
+                    })
+                    return@runOnUiThread
+                }
+                target.addView(TextView(this).apply {
+                    text = "FOUND \${aps.size} NETWORK(S)  •  TAP TO JOIN"
+                    setTextColor(Color.rgb(115, 229, 214))
+                    textSize = 12f
+                })
+                aps.forEach { ap ->
+                    target.addView(btn("\${ap.ssid}   \${ap.level} dBm   \${ap.security}") {
+                        joinWifi(ap)
+                    }, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(3) })
                 }
             }
         }
@@ -867,9 +910,16 @@ class MainActivity : Activity(), NanLoop.Listener {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != reqWifi) return
-        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
-            Toast.makeText(this, "NaNNet scan permission granted. Tap Scan in the open manager.", Toast.LENGTH_SHORT).show()
-        else Toast.makeText(this, "Wi-Fi scan permission denied; active route status remains available.", Toast.LENGTH_LONG).show()
+        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            Toast.makeText(this, "NaNNet scan permission granted.", Toast.LENGTH_SHORT).show()
+            if (wifiScanAfterPermission) {
+                wifiScanAfterPermission = false
+                scanWifi()
+            }
+        } else {
+            wifiScanAfterPermission = false
+            Toast.makeText(this, "Wi-Fi scan permission denied; active route status remains available.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun pick(req: Int) {
