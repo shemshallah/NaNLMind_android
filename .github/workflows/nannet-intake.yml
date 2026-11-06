@@ -5,6 +5,7 @@ on:
       - "scripts/intake_client.py"
       - "scripts/nannet_device.py"
       - "scripts/route_diff.py"
+      - "scripts/nannet_device.py"
       - "tests/test_nannet_intake.py"
       - "config/android.env"
       - ".github/workflows/nannet-intake.yml"
