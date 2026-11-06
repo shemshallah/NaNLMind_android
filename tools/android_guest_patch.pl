@@ -186,7 +186,7 @@ my $command_token = join "\n",
     "ADDI r6,r5,2", "LD r4,r6,0", "MOVI r7,105", "CMP r4,r7", 'JMP[NE] @tk_check_training',
     "ADDI r6,r5,3", "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_check_training',
     "ADDI r6,r5,4", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_check_training',
-    "ADDI r6,r5,5", "LD r4,r6,0", "MOVI r7,32", "CMP r4,r7", 'JMP[NE] @tk_check_training',
+    "ADDI r6,r5,5", "LD r4,r6,0", "MOVI r7,32", "CMP r4,r7", 'JMP[NE] @tk_check_n16t',
     "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
     "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1",
     "MOVI r1,79", "PUTC r1", "MOVI r1,83", "PUTC r1",
@@ -199,6 +199,20 @@ my $command_token = join "\n",
     "MOVI r7,32", "CMP r4,r7", 'JMP[LE] @tk_write_done',
     "PUTC r4", "ADDI r6,r6,1", 'JMP @tk_write_loop',
     "tk_write_done:", "MOVI r1,10", "PUTC r1", "MOVI r4,0", 'JMP @tk_lc',
+    "tk_check_n16t:",
+    "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_check_training',
+    "ADDI r6,r5,1", "LD r4,r6,0", "MOVI r7,49", "CMP r4,r7", 'JMP[NE] @tk_check_training',
+    "ADDI r6,r5,2", "LD r4,r6,0", "MOVI r7,54", "CMP r4,r7", 'JMP[NE] @tk_check_training',
+    "ADDI r6,r5,3", "LD r4,r6,0", "MOVI r7,116", "CMP r4,r7", 'JMP[NE] @tk_check_training',
+    "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1",
+    "MOVI r1,79", "PUTC r1", "MOVI r1,83", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,71", "PUTC r1", "MOVI r1,65", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,69", "PUTC r1",
+    "MOVI r1,87", "PUTC r1", "MOVI r1,65", "PUTC r1",
+    "MOVI r1,89", "PUTC r1", "MOVI r1,10", "PUTC r1",
+    "MOVI r4,0", 'JMP @tk_lc',
     "tk_check_training:",
     "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check',
     "ADDI r6,r5,1", "LD r4,r6,0", "MOVI r7,97", "CMP r4,r7", 'JMP[NE] @tk_help_check',
@@ -234,7 +248,7 @@ my $command_token = join "\n",
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $command_token,
     "recognize exit, quit, nannet-training and --help as NaN16 NSH commands");
-my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t RAISE NSH\nf FOCUS NSH  s SETTINGS  n NANNET/WI-FI  u UTILITIES\nfiles LIST FILES  write NAME OPEN TEXT EDITOR\nnannet-training  OPEN TRAINING INTERFACE\nF5 SETTINGS  F6 NANNET  F7 SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t RAISE NSH\nf FOCUS NSH  s SETTINGS  n NANNET/WI-FI  u UTILITIES\nfiles LIST FILES  write NAME OPEN TEXT EDITOR\nn16t GATEWAY  nannet-training TRAINING\nF5 SETTINGS  F6 NANNET  F7 SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
 $gui =~ s/(s_help:\n)\.str "[^"]*"/$1$new_help/s
     or die "Android NSH help text patch target missing\n";
 
