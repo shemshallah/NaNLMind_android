@@ -220,14 +220,14 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun showRemoteGateway() {
         val input = EditText(this).apply {
-            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"
+            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")
+            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
         }
         AlertDialog.Builder(this)
             .setTitle("N16T HTTPS Gateway")
             .setMessage(
-                "N16T binary protocol endpoint: POST /n16t (not the browser /portal path). " +
+                "N16T binary protocol endpoint: POST /portal (also available at /n16t). " +
                     "Connect the persistent NaN16 guest for HELLO/CAPABILITIES. " +
                     "Corpus upload and merge are not enabled in this Android client yet. " +
                     "No GitHub token is requested or stored."
@@ -252,11 +252,9 @@ class MainActivity : Activity(), NanLoop.Listener {
             Toast.makeText(this, "Use an HTTPS URL without embedded credentials or fragments", Toast.LENGTH_LONG).show()
             return
         }
-        // N16T is the binary protocol route. /portal is only a browser path and
-        // the deployed authority currently returns 404 for POST /portal.
-        val endpoint = if (entered.path.isNullOrBlank() || entered.path == "/" || entered.path == "/portal") {
-            URI("https", null, entered.host, entered.port, "/n16t", entered.query, null)
-        } else entered
+        // The Koyeb service accepts the N16T binary handshake on /portal and /n16t.
+        // Keep the requested portal URL visible and send it unchanged.
+        val endpoint = entered
 
         val generation = remoteConnectGeneration + 1
         remoteConnectGeneration = generation
