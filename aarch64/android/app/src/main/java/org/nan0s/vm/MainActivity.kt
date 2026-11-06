@@ -124,7 +124,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         if (!restored) vm.load(asset())
         attachDefaultDisk()
         loop = NanLoop(vm, this)
-        view = NanView(this, vm, { loop.poke() }) { keyCode -> if (keyCode == android.view.KeyEvent.KEYCODE_F6) { showWifi(); true } else false }
+        view = NanView(this, vm, { loop.poke() }, { x, y -> handleWindowChromeTap(x, y) }) { keyCode -> if (keyCode == android.view.KeyEvent.KEYCODE_F6) { showWifi(); true } else false }
         beeper = Beeper { vm.speakerHz() }
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
@@ -166,7 +166,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         for (i in 1..12) {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
-                if (i == 5) showWifi()
+                if (i == 6) showWifi()
                 else { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
             }
             key.textSize = 11f
@@ -437,13 +437,68 @@ class MainActivity : Activity(), NanLoop.Listener {
             WifiBridge.requestPermission(this, reqWifi)
             return
         }
-        AlertDialog.Builder(this)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(12), dp(18), dp(8))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        val status = TextView(this).apply {
+            text = WifiBridge.status(this@MainActivity)
+            setTextColor(Color.rgb(180, 224, 220))
+            textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setBackgroundColor(Color.rgb(7, 12, 24))
+        }
+        panel.addView(TextView(this).apply {
+            text = "ANDROID HOST NETWORK  /  NANNET"
+            setTextColor(Color.rgb(115, 229, 214)); textSize = 13f
+            typeface = android.graphics.Typeface.MONOSPACE
+        })
+        panel.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        panel.addView(TextView(this).apply {
+            text = "The Android host owns Wi-Fi and cellular radios. NaNNet routes through Android's active network; a guest PCI adapter is not required. HTTPS works over Wi-Fi or mobile data/5G."
+            setTextColor(Color.LTGRAY); textSize = 12f
+            setPadding(0, dp(10), 0, dp(8))
+        })
+        val dialog = AlertDialog.Builder(this)
             .setTitle("NaNNet Network Manager")
-            .setMessage(WifiBridge.status(this) + "\n\nNaNNet uses Android's active network route. Wi-Fi and cellular data (including 5G) both carry HTTPS gateway traffic. Android radios are managed by the host OS; no guest PCI adapter is required.\n\nScan Wi-Fi or manage the active radio in Android settings.")
-            .setPositiveButton("Scan Wi-Fi") { _, _ -> scanWifi() }
-            .setNeutralButton("Network settings") { _, _ -> WifiBridge.openSettings(this) }
+            .setView(panel)
+            .setPositiveButton("Scan Wi-Fi", null)
+            .setNeutralButton("Android settings", null)
             .setNegativeButton("Close", null)
-            .show()
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { scanWifi() }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { WifiBridge.openSettings(this) }
+        }
+        dialog.show()
+    }
+
+    /** The guest window chrome is rendered by NaN16; translate taps on its close/enlarge
+     *  titlebar buttons into the same keyboard actions used by ESC/F3. */
+    private fun handleWindowChromeTap(x: Int, y: Int): Boolean {
+        if (!vm.graphics() || x < 0 || y < 0) return false
+        val width = vm.width()
+        val height = vm.height()
+        if (width <= 0 || height <= 0 || x >= width || y >= height) return false
+        val pixels = IntArray(width * height)
+        if (!vm.snapshotGfx(pixels)) return false
+        var red = 0
+        var green = 0
+        for (yy in (y - 6).coerceAtLeast(0)..(y + 6).coerceAtMost(height - 1)) {
+            for (xx in (x - 6).coerceAtLeast(0)..(x + 6).coerceAtMost(width - 1)) {
+                val c = pixels[yy * width + xx]
+                val r = Color.red(c); val g = Color.green(c); val b = Color.blue(c)
+                if (r > 100 && r > g * 1.35 && r > b * 1.35) red++
+                if (g > 90 && g > r * 1.25 && g > b * 1.15) green++
+            }
+        }
+        when {
+            red >= 5 -> { vm.keyChar(27); loop.poke(); return true }
+            green >= 5 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); return true }
+        }
+        return false
     }
 
     private fun scanWifi() {
