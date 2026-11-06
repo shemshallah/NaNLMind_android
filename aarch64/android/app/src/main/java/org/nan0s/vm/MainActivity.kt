@@ -583,6 +583,27 @@ class MainActivity : Activity(), NanLoop.Listener {
                 startActivityForResult(intent, reqTrain)
             }
         })
+        panel.addView(btn("OPEN /nsh TXT FILE") {
+            val files = File(filesDir, "nsh").apply { mkdirs() }
+                .listFiles()?.filter { it.isFile && it.extension.equals("txt", true) }.orEmpty()
+            if (files.isEmpty()) {
+                Toast.makeText(this, "No .txt files in /nsh. Use NSH: write test.txt", Toast.LENGTH_LONG).show()
+            } else {
+                val choosePanel = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(10), dp(8), dp(10), dp(8))
+                    setBackgroundColor(Color.rgb(17, 22, 42))
+                }
+                files.sortedBy { it.name.lowercase() }.forEach { file ->
+                    choosePanel.addView(btn(file.name + "  •  " + file.length() + " bytes") {
+                        if (prepareTraining()) Thread {
+                            runTraining(try { file.readBytes() } catch (_: Exception) { ByteArray(0) })
+                        }.start()
+                    })
+                }
+                showDesktopWindow("Select NSH Training Corpus", choosePanel, 300)
+            }
+        })
         panel.addView(btn("RUN BUILT-IN SAMPLE CORPUS") {
             if (prepareTraining()) Thread { runTraining(null) }.start()
         })
