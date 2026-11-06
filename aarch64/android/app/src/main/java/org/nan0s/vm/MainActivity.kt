@@ -52,6 +52,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private val reqCandidate = 5
     @Volatile private var trainingActive = false
     @Volatile private var remoteSession: N16RemoteSession? = null
+    private var gatewayStatusView: TextView? = null
     @Volatile private var remoteConnectGeneration = 0
     private var trainingState: ByteArray? = null
     private val remotePrefs get() = getSharedPreferences("n16_remote", MODE_PRIVATE)
@@ -349,6 +350,16 @@ class MainActivity : Activity(), NanLoop.Listener {
             textSize = 12f
             setPadding(0, 0, 0, dp(10))
         })
+        val sessionStatus = TextView(this).apply {
+            text = remoteSession?.connectionSummary() ?: "STATUS: DISCONNECTED\\nNo negotiated session yet."
+            setTextColor(Color.rgb(142, 224, 205))
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(dp(10), dp(9), dp(10), dp(9))
+            setBackgroundColor(Color.rgb(5, 10, 20))
+        }
+        gatewayStatusView = sessionStatus
+        panel.addView(sessionStatus, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
         val input = EditText(this).apply {
             hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
@@ -404,6 +415,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                         session.close()
                     } else {
                         remoteSession = session
+                        gatewayStatusView?.text = session.connectionSummary()
                         Toast.makeText(
                             this,
                             "N16T HELLO/CAPABILITIES accepted; route ${result.route.gateway}/${result.route.interfaceId}",
@@ -415,6 +427,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 session.close()
                 runOnUiThread {
                     if (generation == remoteConnectGeneration) {
+                        gatewayStatusView?.text = "STATUS: FAILED\\n${e.message}"
                         Toast.makeText(this, "N16T gateway handshake failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -427,6 +440,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         val active = remoteSession
         remoteSession = null
         if (active == null) {
+            gatewayStatusView?.text = "STATUS: DISCONNECTED"
             Toast.makeText(this, "No active N16T session", Toast.LENGTH_SHORT).show()
             return
         }
@@ -434,6 +448,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             try { active.closeRemote() } catch (_: Exception) { }
             active.close()
             runOnUiThread {
+                gatewayStatusView?.text = "STATUS: DISCONNECTED\\nSession closed."
                 Toast.makeText(this, "N16T session disconnected", Toast.LENGTH_SHORT).show()
             }
         }.start()
