@@ -162,9 +162,9 @@ my $command_token = join "\n",
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $command_token,
     "recognize exit, quit, nannet-training and --help as NaN16 NSH commands");
-my $old_help = '.str "h c v w b l m x t s n u f q\nb browser l lattice m monitor x hex\nt term w count c clear v ver\nn browser u utils\nf open terminal  q close desktop\n"';
 my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  f FILES\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
-$gui = replace_once($gui, $old_help, $new_help, "publish complete NSH command reference");
+$gui =~ s/(s_help:\n)\.str "[^"]*"/$1$new_help/s
+    or die "Android NSH help text patch target missing\n";
 
 
 my $marker = "gk_np:\nMOVI r2,0x105";
