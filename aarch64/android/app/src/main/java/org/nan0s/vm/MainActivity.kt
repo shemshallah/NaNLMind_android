@@ -489,7 +489,6 @@ class MainActivity : Activity(), NanLoop.Listener {
                         editPanel.addView(editor, LinearLayout.LayoutParams(-1, 0, 1f))
                         editPanel.addView(btn("SAVE FILE") {
                             append(nshWrite(arg, editor.text.toString()))
-                            desktopSurface.removeView(editPanel.parent as? View)
                         })
                         showDesktopWindow("Text Editor / " + arg, editPanel, 360)
                     }
