@@ -30,7 +30,6 @@ import java.io.File
 import java.net.URI
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.charset.CodingErrorAction
 
 /** Android host boundary: one persistent NaN16 guest, one desktop surface, and native OS services. Guest semantics stay in NaN16 cartridges. */
@@ -148,22 +147,22 @@ class MainActivity : Activity(), NanLoop.Listener {
         if (!restored) vm.load(asset())
         attachDefaultDisk()
         loop = NanLoop(vm, this)
-        view = NanView(this, vm, { loop.poke() }, { x, y -> handleWindowChromeTap(x, y) }) { keyCode ->
+        view = NanView(this, vm, { loop.poke() }, onGuestPointer = { x, y, action ->
+            vm.pointerEvent(x, y, action)
+            loop.poke()
+        }, onHostKey = { keyCode ->
             when (keyCode) {
                 android.view.KeyEvent.KEYCODE_F6 -> { showWifi(); true }
                 else -> false
             }
-        }
+        })
         beeper = Beeper { vm.speakerHz() }
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
-        root.addView(desktopBar(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(34)))
-        root.addView(functionRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(42)))
         desktopSurface = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 8, 18)) }
         desktopSurface.addView(view, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         root.addView(desktopSurface, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(keyRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-        root.addView(toolRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         setContentView(root)
         view.requestFocus()
         loop.start(); beeper.start()
@@ -258,52 +257,6 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-    private fun desktopBar(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(10), 0, dp(8), 0)
-        setBackgroundColor(Color.rgb(22, 28, 55))
-        addView(TextView(this@MainActivity).apply {
-            text = "NaNLMind  /  ANDROID DESKTOP"
-            setTextColor(Color.rgb(112, 231, 220)); textSize = 12f
-            typeface = android.graphics.Typeface.MONOSPACE
-        }, LinearLayout.LayoutParams(0, -1, 1f))
-        addView(TextView(this@MainActivity).apply {
-            text = "●  LOCAL"
-            setTextColor(Color.rgb(238, 194, 91)); textSize = 11f
-            typeface = android.graphics.Typeface.MONOSPACE
-        })
-    }
-
-    private fun functionRow(): View {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(3), dp(2), dp(3), dp(2))
-            setBackgroundColor(Color.rgb(31, 38, 70))
-        }
-        for (i in 1..12) {
-            val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
-            val key = btn("F$i") {
-                when (i) {
-                    2 -> { vm.keyEvent(0x3C, true); vm.keyEvent(0x3C, false); loop.poke(); view.requestFocus() }
-                    3 -> { vm.keyEvent(0x3D, true); vm.keyEvent(0x3D, false); loop.poke(); view.requestFocus() }
-                    5 -> showUnifiedSettings()
-                    6 -> showWifi()
-                    7 -> { vm.keyEvent(0x41, true); vm.keyEvent(0x41, false); loop.poke(); view.requestFocus() }
-                    8 -> { vm.keyEvent(0x42, true); vm.keyEvent(0x42, false); loop.poke(); view.requestFocus() }
-                    9 -> { vm.keyEvent(0x43, true); vm.keyEvent(0x43, false); loop.poke(); view.requestFocus() }
-                    10 -> { vm.keyEvent(0x44, true); vm.keyEvent(0x44, false); loop.poke(); view.requestFocus() }
-                    else -> { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
-                }
-            }
-            key.textSize = 11f
-            row.addView(key, LinearLayout.LayoutParams(0, dp(36), 1f).apply {
-                setMargins(dp(2), 0, dp(2), 0)
-            })
-        }
-        return row
-    }
-
     private fun btn(label: String, action: () -> Unit): Button = Button(this).apply {
         text = label; isAllCaps = false; minWidth = 0; minimumWidth = 0
         textSize = 11f
@@ -316,34 +269,15 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun keyRow(): View {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        row.addView(btn("Kbd") {
+            view.requestFocus()
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, 0)
+        })
         val keys = listOf("Esc" to 27, "Tab" to 9, "\u2190" to NanVm.LEFT, "\u2191" to NanVm.UP, "\u2193" to NanVm.DOWN, "\u2192" to NanVm.RIGHT,
             "~" to '~'.code, "Enter" to 13, "Bksp" to 8, "Home" to NanVm.HOME, "End" to NanVm.END, "PgUp" to NanVm.PGUP, "PgDn" to NanVm.PGDN)
         for ((label, code) in keys) row.addView(btn(label) {
             send(code)
         })
-        return HorizontalScrollView(this).apply { addView(row) }
-    }
-
-    private fun toolRow(): View {
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        row.addView(btn("Kbd") {
-            view.requestFocus()
-            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, 0)
-        })
-        row.addView(btn("Open") { pick(reqImage) })
-        row.addView(btn("Disk") { pick(reqDisk) })
-        row.addView(btn("Fs") { chooseFsSize() })
-        row.addView(btn("Reset") {
-            autosave.delete(); vm.detachDisk()
-            diskFile.delete(); fsFile.delete(); fsKey.delete()
-            seedDisk(); vm.load(asset()); attachDefaultDisk(); loop.rearm()
-        })
-        row.addView(btn("Scale") { view.integerScale = !view.integerScale; view.invalidate() })
-        row.addView(btn("Fit") { view.resetZoom() })
-        row.addView(btn("Log") { showLog() })
-        row.addView(btn("NaNNet") { showWifi() })
-        row.addView(btn("nannet-training") { showTrainingSuite() })
-        row.addView(btn("N16T Gateway") { showRemoteGateway() })
         return HorizontalScrollView(this).apply { addView(row) }
     }
 
@@ -712,48 +646,6 @@ class MainActivity : Activity(), NanLoop.Listener {
      * This avoids colour heuristics and focuses the exact tapped window before
      * dispatching close/enlarge. The guest remains the authority for WM actions.
      */
-    private fun handleWindowChromeTap(x: Int, y: Int): Boolean {
-        if (!vm.graphics() || x < 0 || y < 0 || x >= vm.width() || y >= vm.height()) return false
-        val windowBytes = vm.readBytes(0x58000 * 4, 8 * 32 * 4) ?: return false
-        val zBytes = vm.readBytes(0x58100 * 4, 8 * 4) ?: return false
-        val windows = ByteBuffer.wrap(windowBytes).order(ByteOrder.LITTLE_ENDIAN)
-        val zorder = ByteBuffer.wrap(zBytes).order(ByteOrder.LITTLE_ENDIAN)
-        val alive = (0 until 8).count { windows.getInt(it * 32 * 4) == 1 }
-        if (alive == 0) return false
-
-        for (index in alive - 1 downTo 0) {
-            val id = zorder.getInt(index * 4)
-            if (id !in 0..7) continue
-            val base = id * 32 * 4
-            if (windows.getInt(base) != 1) continue
-            val wx = windows.getInt(base + 1 * 4)
-            val wy = windows.getInt(base + 2 * 4)
-            val ww = windows.getInt(base + 3 * 4)
-            val wh = windows.getInt(base + 4 * 4)
-            if (ww <= 0 || wh <= 0 || x < wx || x >= wx + ww || y < wy || y >= wy + wh) continue
-
-            // wm_draw_window: close box [x+w-16, x+w-3), enlarge [x+w-31, x+w-18).
-            val inTitle = y >= wy + 1 && y < wy + 16
-            val closeHit = inTitle && x >= wx + ww - 16 && x < wx + ww - 3
-            val enlargeHit = inTitle && x >= wx + ww - 31 && x < wx + ww - 18
-
-            // TAB cycles the bottom guest window to the top. Focus the tapped window
-            // first so Escape/F3 always targets the window under the finger.
-            val cyclesToFocus = if (index == alive - 1) 0 else index + 1
-            repeat(cyclesToFocus) { vm.keyChar(9) }
-            when {
-                closeHit -> vm.keyChar(27)
-                enlargeHit -> {
-                    vm.keyEvent(0x3D, true)
-                    vm.keyEvent(0x3D, false)
-                }
-            }
-            loop.poke()
-            return true
-        }
-        return false
-    }
-
     private fun scanWifi() {
         if (!WifiBridge.hasPermission(this)) {
             wifiScanAfterPermission = true
