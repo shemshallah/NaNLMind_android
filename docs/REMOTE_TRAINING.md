@@ -4,6 +4,14 @@ Status: local Android and hosted-runner corpus-profile paths are implemented. Na
 
 **Prototype boundary:** the current guest validates and profiles corpora, updates byte-frequency and byte-bigram count tables, and emits an isolated candidate checkpoint. This is not yet a neural language-model optimizer or a quality-evaluated model update. Candidate evaluation, fair contribution accounting, transactional merge, and a live authenticated runner gateway remain unfinished.
 
+## NANNET ingress compatibility
+
+The Android route-diff client posts its small JSON artifact to `POST /v1/intake/route` on the NANNET HTTPS origin. The NANNET implementation in NaNLMind PR #3 verifies the canonical JSON digest, checks the token-bound `nan://GM0:SC0:MC0:BS0:HW1` identity against local node point 2, and stores the diff as **pending unverified evidence**. It does not apply route changes or write model/head state. The client sends `X-NaN-Address` as a consistency header; the server rejects a mismatch.
+
+This is distinct from N16T training sessions. The NANNET relay accepts the Android transport's `application/x-n16t` content-type alias and normalizes the upstream peer request, but a matching trusted NaN16 peer and a live deployed gateway are still required for HELLO/CAPABILITIES. Android GUI corpus upload and remote training-job control remain separate unfinished work.
+
+Set `NANLM_INTAKE_URL` to the deployed NANNET HTTPS origin, `NANLM_DEVICE_TOKEN` to an endpoint-scoped secret, and `NANLM_DEVICE_ADDRESS` to the issued canonical address. Never put the token in `config/android.env`, APK assets, or source control.
+
 ## Fixed topology
 
 - Point 1/256: overbootstrap control/routing portal for the GitHub Runner CPU Ring.
