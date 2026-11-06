@@ -111,6 +111,9 @@ $gui = replace_once($gui,
     "tm_quit:\nLD r1,r0,\@tm_id\nCALL \@wm_close\nJMP \@tm_done",
     "close the NSH child window without exiting the desktop");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
+$gui = replace_once($gui, "MOVI r2,\@s_banner\nCALL \@vc_puts",
+    "MOVI r2,\@s_banner\nCALL \@vc_puts\nLD r1,r0,\@ti_id\nMOVI r2,\@s_help\nCALL \@vc_puts",
+    "print full --help reference in the boot NSH window");
 $gui = replace_once($gui, '.str "MHZ"', '.str "MIPS"', "label VM instruction throughput honestly");
 my $settings_host = join "\n", "tm_set:", "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
     "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1", "MOVI r1,79", "PUTC r1",
