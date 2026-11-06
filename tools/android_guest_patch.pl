@@ -120,8 +120,25 @@ my $help_token = join "\n",
     "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
     "MOVI r4,104", 'JMP @tk_lc',
     "tk_firstchar:", "LD r4,r5,0";
-$gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $help_token,
-    "recognize the complete --help token in NaN16 NSH");
+my @training_chars = split //, "nannet-training";
+my @training_check = ("ADD r5,r1,r5", "LD r4,r5,0", "MOVI r7,110", "CMP r4,r7", 'JMP[NE] @tk_help_check');
+for my $i (1 .. $#training_chars) {
+    push @training_check, "ADDI r6,r5,$i", "LD r4,r6,0",
+        "MOVI r7," . ord($training_chars[$i]), "CMP r4,r7", 'JMP[NE] @tk_help_check';
+}
+push @training_check, "MOVI r1,78", "PUTC r1", "MOVI r1,49", "PUTC r1",
+    "MOVI r1,54", "PUTC r1", "MOVI r1,72", "PUTC r1", "MOVI r1,79", "PUTC r1",
+    "MOVI r1,83", "PUTC r1", "MOVI r1,84", "PUTC r1", "MOVI r1,58", "PUTC r1",
+    "MOVI r1,84", "PUTC r1", "MOVI r1,82", "PUTC r1", "MOVI r1,65", "PUTC r1",
+    "MOVI r1,73", "PUTC r1", "MOVI r1,78", "PUTC r1", "MOVI r1,10", "PUTC r1",
+    "MOVI r4,0", 'JMP @tk_lc', "tk_help_check:";
+my $training_token = join "\n", @training_check;
+$gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $training_token . "\n" . $help_token,
+    "recognize nannet-training and --help as complete NaN16 NSH commands");
+
+my $old_help = '.str "h c v w b l m x t s n u f q\nb browser l lattice m monitor x hex\nt term w count c clear v ver\ns settings n browser u utils\nf files (nsh) q quit gui\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  f FILES\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS  q CLOSE\n"';
+$gui = replace_once($gui, $old_help, $new_help, "publish complete NSH command reference");
 
 
 my $marker = "gk_np:\nMOVI r2,0x105";
