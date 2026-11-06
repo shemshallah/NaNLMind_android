@@ -147,16 +147,6 @@ jobs:
           s = s.replace('.str "TERMINAL"', '.str "NSH TERMINAL"', 1)
           s = s.replace('.str "f files (nsh) q quit gui\\n"', '.str "f open terminal  q close desktop\\n"', 1)
           p.write_text(s)
-          # If the desktop guest returns, relaunch its boot cart rather than
-          # exposing the exhibit/museum catalog on Android.
-          p = Path("src/museum/shell.nas")
-          s = p.read_text()
-          old = "sh_after_prog:\\nMOVI r13,1\\nJMP @sh_redraw"
-          new = "sh_after_prog:\\nMOVI r13,1\\nLA r10,@boot_rec\\nLD r1,r10,0\\nCMP r1,r0\\nJMP[NE] @sh_run\\nJMP @sh_redraw"
-          if old not in s:
-              raise SystemExit("Android shell return block not found")
-          s = s.replace(old, new, 1)
-          p.write_text(s)
           PY
           sh tools/build.sh
           sh tools/browser_gate.sh
