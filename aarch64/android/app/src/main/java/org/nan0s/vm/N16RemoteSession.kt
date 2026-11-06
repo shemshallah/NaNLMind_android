@@ -23,6 +23,7 @@ internal class N16RemoteSession(
     private val guest = N16GuestProtocol(context)
     private val transport = N16HttpsTransport(endpoint)
     private var closed = false
+    private var lastRoute: N16GuestProtocol.Route? = null
 
     /** Send one guest-built frame and return the opaque peer frame without decoding it. */
     @Synchronized
@@ -56,7 +57,23 @@ internal class N16RemoteSession(
         require(type != 13) { "Use closeRemote() for the terminal CLOSE message" }
         val response = send(type, payload)
         val route = acceptPeerFrame(response)
+        lastRoute = route
         return ExchangeResult(response, route)
+    }
+
+    @Synchronized
+    fun connectionSummary(): String = buildString {
+        append("STATUS: CONNECTED\\n")
+        append("ENDPOINT: ").append(transport.endpointText).append('\\n')
+        append("HTTP: ").append(transport.lastHttpStatus).append('\\n')
+        lastRoute?.let {
+            append("N16T ROUTE: gateway=0x").append(it.gateway.toString(16).uppercase())
+                .append(" interface=").append(it.interfaceId)
+                .append(" logical-point=0x").append(it.logicalPoint.toString(16).uppercase()).append('\\n')
+        }
+        append("SESSION FINGERPRINT (SHA-256/64): ").append(guest.sessionFingerprint()).append('\\n')
+        append("TLS CIPHER: ").append(transport.lastCipherSuite).append('\\n')
+        append("SERVER PUBLIC KEY SHA-256/96: ").append(transport.lastPeerKeyFingerprint)
     }
 
     @Synchronized
