@@ -170,8 +170,12 @@ class MainActivity : Activity(), NanLoop.Listener {
         for (i in 1..12) {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
-                if (i == 6) showWifi()
-                else { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
+                when (i) {
+                    5 -> { vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke(); view.requestFocus() }
+                    6 -> showWifi()
+                    7 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke(); view.requestFocus() }
+                    else -> { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
+                }
             }
             key.textSize = 11f
             row.addView(key, LinearLayout.LayoutParams(0, dp(36), 1f).apply {
