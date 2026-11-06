@@ -30,6 +30,7 @@ import java.io.File
 import java.net.URI
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.charset.CodingErrorAction
 
 /** Android host boundary: one persistent NaN16 guest, one desktop surface, and native OS services. Guest semantics stay in NaN16 cartridges. */
@@ -189,6 +190,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             setTextColor(Color.rgb(128, 232, 218))
         }
         chrome.addView(caption, LinearLayout.LayoutParams(0, dp(32), 1f))
+        val initialWidth = minOf(dp(760), (resources.displayMetrics.widthPixels - dp(24)).coerceAtLeast(dp(280)))
         val minimize = btn("−") { shell.visibility = View.GONE }
         var maximized = false
         var maximizeButton: Button? = null
@@ -201,7 +203,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 lp.setMargins(0, 0, 0, 0)
                 lp.gravity = Gravity.TOP or Gravity.START
             } else {
-                lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+                lp.width = initialWidth
                 lp.height = dp(heightDp)
                 lp.setMargins(dp(8), dp(8), dp(8), dp(8))
                 lp.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -225,7 +227,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         shell.addView(chrome)
         shell.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         desktopSurface.addView(shell, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, dp(heightDp), Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            initialWidth, dp(heightDp), Gravity.TOP or Gravity.CENTER_HORIZONTAL
         ).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
         desktopWindows[shell] = title
         var rawX = 0f
@@ -237,7 +239,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     rawX = event.rawX; rawY = event.rawY
-                    originX = lp.leftMargin; originY = lp.topMargin
+                    originX = shell.left; originY = shell.top
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -268,18 +270,42 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
     private fun send(c: Int) { vm.keyChar(c); loop.poke(); view.requestFocus() }
 
+    private fun dispatchFunctionKey(index: Int) {
+        when (index) {
+            4, 6 -> showUnifiedSettings()
+            5 -> showWifi()
+            else -> send(0x101 + index)
+        }
+    }
+
     private fun keyRow(): View {
+        val stack = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(9, 13, 27))
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+        }
+        val functionKeys = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for (index in 0 until 12) {
+            val label = "F" + (index + 1)
+            functionKeys.addView(btn(label) { dispatchFunctionKey(index) },
+                LinearLayout.LayoutParams(0, dp(38), 1f).apply { setMargins(dp(1), 0, dp(1), 0) })
+        }
+        stack.addView(HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            addView(functionKeys)
+        })
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(btn("Kbd") {
             view.requestFocus()
             (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, 0)
         })
-        val keys = listOf("Esc" to 27, "Tab" to 9, "\u2190" to NanVm.LEFT, "\u2191" to NanVm.UP, "\u2193" to NanVm.DOWN, "\u2192" to NanVm.RIGHT,
-            "~" to '~'.code, "Enter" to 13, "Bksp" to 8, "Home" to NanVm.HOME, "End" to NanVm.END, "PgUp" to NanVm.PGUP, "PgDn" to NanVm.PGDN)
-        for ((label, code) in keys) row.addView(btn(label) {
-            send(code)
-        })
-        return HorizontalScrollView(this).apply { addView(row) }
+        val keys = listOf("Esc" to 27, "Tab" to 9, "\u2190" to NanVm.LEFT, "\u2191" to NanVm.UP,
+            "\u2193" to NanVm.DOWN, "\u2192" to NanVm.RIGHT, "~" to '~'.code, "Enter" to 13,
+            "Bksp" to 8, "Home" to NanVm.HOME, "End" to NanVm.END, "PgUp" to NanVm.PGUP,
+            "PgDn" to NanVm.PGDN)
+        for ((label, code) in keys) row.addView(btn(label) { send(code) })
+        stack.addView(HorizontalScrollView(this).apply { addView(row) })
+        return stack
     }
 
     private fun showBrowserWindow(initialUrl: String) {
