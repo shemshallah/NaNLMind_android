@@ -124,7 +124,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         if (!restored) vm.load(asset())
         attachDefaultDisk()
         loop = NanLoop(vm, this)
-        view = NanView(this, vm) { loop.poke() }
+        view = NanView(this, vm, { loop.poke() }) { keyCode -> if (keyCode == android.view.KeyEvent.KEYCODE_F6) { showWifi(); true } else false }
         beeper = Beeper { vm.speakerHz() }
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
@@ -166,7 +166,8 @@ class MainActivity : Activity(), NanLoop.Listener {
         for (i in 1..12) {
             val scan = when (i) { in 1..10 -> 0x3A + i; 11 -> 0x57; else -> 0x58 }
             val key = btn("F$i") {
-                vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus()
+                if (i == 6) showWifi()
+                else { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
             }
             key.textSize = 11f
             row.addView(key, LinearLayout.LayoutParams(0, dp(36), 1f).apply {
