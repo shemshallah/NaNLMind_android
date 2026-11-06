@@ -39,20 +39,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch pinned NaN0S boot image
+      - name: Fetch pinned NaN0S sources
         uses: actions/checkout@v4
         with:
           repository: shemshallah/NaN0S
           ref: ad2225f2a61a888287a0f5631aca63fe091296f1
           path: .nan0s-upstream
-          sparse-checkout: |
-            aarch64/android/app/src/main/assets/nan0s.img
-          sparse-checkout-cone-mode: false
-      - name: Stage and verify boot image
+      - name: Build Android desktop-only boot image
         run: |
-          mkdir -p aarch64/android/app/src/main/assets
-          cp .nan0s-upstream/aarch64/android/app/src/main/assets/nan0s.img aarch64/android/app/src/main/assets/nan0s.img
-          test "$(wc -c < aarch64/android/app/src/main/assets/nan0s.img)" -eq 1474560
+          sudo apt-get update
+          sudo apt-get install -y gawk xxd
+          cd .nan0s-upstream
+          # Android stays in the desktop shell after a guest app (including NSH) returns.
+          # The museum catalog is therefore never entered on this Android boot path.
+          sed -i '/^sh_after_prog:$/,/^JMP @sh_redraw$/c\
+          sh_after_prog:\
+          LA r10,@boot_rec\
+          LD r1,r10,0\
+          CMP r1,r0\
+          JMP[EQ] @sh_after_menu\
+          JMP @sh_run\
+          sh_after_menu:\
+          MOVI r13,1\
+          JMP @sh_redraw' src/museum/shell.nas
+          sh tools/build.sh
+          mkdir -p ../aarch64/android/app/src/main/assets
+          cp aarch64/android/app/src/main/assets/nan0s.img ../aarch64/android/app/src/main/assets/nan0s.img
+          test "$(wc -c < ../aarch64/android/app/src/main/assets/nan0s.img)" -eq 1474560
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
