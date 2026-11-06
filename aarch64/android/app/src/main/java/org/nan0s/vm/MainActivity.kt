@@ -620,26 +620,33 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun showRemoteGateway() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "N16T binary frames use POST /n16t. /portal is the human-facing web page. A successful HELLO/CAPABILITIES exchange does not mean remote training or merge is deployed."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+            setPadding(0, 0, 0, dp(10))
+        })
         val input = EditText(this).apply {
             hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
             setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
         }
-        AlertDialog.Builder(this)
-            .setTitle("N16T HTTPS Gateway")
-            .setMessage(
-                "N16T binary protocol endpoint: POST /n16t (canonical). GET /portal is the human-readable portal page. Entering /portal here routes the binary handshake to /n16t. " +
-                    "Connect the persistent NaN16 guest for HELLO/CAPABILITIES. " +
-                    "Corpus upload and merge are not enabled in this Android client yet. " +
-                    "No GitHub token is requested or stored."
-            )
-            .setView(input)
-            .setPositiveButton("Connect") { _, _ ->
-                connectRemoteGateway(input.text.toString().trim())
-            }
-            .setNeutralButton("Disconnect") { _, _ -> disconnectRemoteGateway() }
-            .setNegativeButton("Cancel", null)
-            .show()
+        panel.addView(input, LinearLayout.LayoutParams(-1, -2))
+        panel.addView(btn("CONNECT / HELLO + CAPABILITIES") {
+            connectRemoteGateway(input.text.toString().trim())
+        })
+        panel.addView(btn("DISCONNECT SESSION") { disconnectRemoteGateway() })
+        panel.addView(btn("OPEN HUMAN PORTAL") {
+            showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
+        })
+        showDesktopWindow("N16T Gateway", panel, 330)
     }
 
     private fun connectRemoteGateway(raw: String) {
