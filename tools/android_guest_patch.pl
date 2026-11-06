@@ -41,6 +41,10 @@ $wm = replace_once($wm, "CALL \@fb_text7\nST r0,r0,\@da_i",
     "CALL \@fb_text7\nCALL \@wm_fkeybar\nST r0,r0,\@da_i", "draw NaN16 F-key strip");
 $wm = replace_once($wm, 'F7 SYSTEM', 'F7 SETTINGS', 'label F7 as unified Settings');
 $wm = replace_once($wm, 'F7 SYS', 'F7 SET', 'label compact F7 hint as Settings');
+$wm = replace_once($wm, '.equ C_BAR 0', '.equ C_BAR 1', 'classic blue desktop bars');
+$wm = replace_once($wm, '.equ C_BLUR 8', '.equ C_BLUR 7', 'silver inactive window chrome');
+$wm = replace_once($wm, '.equ C_TITLE_F 1', '.equ C_TITLE_F 15', 'white title text');
+$wm = replace_once($wm, '.equ C_TITLE_B 8', '.equ C_TITLE_B 1', '90s blue title bars');
 write_file($wm_path, $wm);
 
 my $gui_path = 'src/exhibits/gui_cart.nas';
