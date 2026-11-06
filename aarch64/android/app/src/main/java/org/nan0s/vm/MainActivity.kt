@@ -715,34 +715,47 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun showTrainingSuite() {
-        AlertDialog.Builder(this)
-             .setTitle("NaNNet Training")
-            .setMessage("N16TXT corpus training interface. Training runs in an isolated VM snapshot and restores the live desktop session afterward. The current guest emits a local candidate checkpoint; remote corpus transfer and candidate merge are not enabled yet.")
-            .setPositiveButton("Choose TXT") { _, _ ->
-                if (prepareTraining()) {
-                    val i = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "text/plain"
-                    }
-                    startActivityForResult(i, reqTrain)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "N16TXT corpus training. The NaN16 guest validates UTF-8 records and builds an isolated candidate. The active desktop universe is restored after the run. Candidate merge and remote corpus transfer are not yet enabled."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+            setPadding(0, 0, 0, dp(10))
+        })
+        panel.addView(btn("CHOOSE UTF-8 TXT CORPUS") {
+            if (prepareTraining()) {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "text/plain"
                 }
+                startActivityForResult(intent, reqTrain)
             }
-            .setNeutralButton("Run sample") { _, _ ->
-                if (prepareTraining()) Thread { runTraining(null) }.start()
-            }
-            .setNegativeButton("Export candidate") { _, _ ->
-                if (!candidateFile.isFile) {
-                    Toast.makeText(this, "Run a successful corpus first", Toast.LENGTH_SHORT).show()
-                } else {
-                    val export = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "application/octet-stream"
-                        putExtra(Intent.EXTRA_TITLE, "n16_candidate.nan1")
-                    }
-                    startActivityForResult(export, reqCandidate)
+        })
+        panel.addView(btn("RUN BUILT-IN SAMPLE CORPUS") {
+            if (prepareTraining()) Thread { runTraining(null) }.start()
+        })
+        panel.addView(btn("EXPORT LOCAL CANDIDATE") {
+            if (!candidateFile.isFile) {
+                Toast.makeText(this, "Run a successful corpus first", Toast.LENGTH_SHORT).show()
+            } else {
+                val export = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/octet-stream"
+                    putExtra(Intent.EXTRA_TITLE, "n16_candidate.nan1")
                 }
+                startActivityForResult(export, reqCandidate)
             }
-            .show()
+        })
+        panel.addView(btn("TRAINING STATUS / LIMITS") {
+            AlertDialog.Builder(this).setTitle("Training boundary")
+                .setMessage("The current guest builds a temporary byte-frequency/byte-bigram candidate. It is not yet a neural optimizer, remote runner job, or automatic merge. Corpus data never executes as instructions.")
+                .setPositiveButton("OK", null).show()
+        })
+        showDesktopWindow("NaNNet Training", panel, 360)
     }
 
     private fun prepareTraining(): Boolean {
