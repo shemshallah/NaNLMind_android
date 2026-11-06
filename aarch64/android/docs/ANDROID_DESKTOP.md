@@ -8,33 +8,29 @@ The desktop child-window manager provides title bars, drag, minimize, maximize/r
 
 ## NSH commands
 
-Type `--help` in NSH for the live command reference. The command dispatcher supports:
+The boot terminal is the guest's NaN16 window (kind 0), opened on the desktop automatically. It prints the same command reference shown by \`--help\`. \`exit\`, \`quit\`, or \`q\` closes only this NSH window; the desktop and VM continue running.
 
-- File operations under the app-private `/nsh` sandbox: `pwd`, `ls`, `dir`, `files`, `write`, `touch`, `cat`, `type`, `read`, `mkdir`, `rm`, `del`.
-- Desktop applications: `apps`, `run lattice|monitor|hex|settings|nannet|system|training|gateway|browser`, `windows`, `wm`.
-- System windows: `settings`, `wifi`, `nannet`, `nannet-training`, `n16t`, `gateway`, `browser`, `log`, `disk`, `fs`.
-- Display and lifecycle: `fit`, `scale`, `system`, `desktop`, `reset`, `version`, `ver`, `clear`, `cls`, `exit`, `quit`.
+Implemented commands:
+
+- \`--help\`, \`h\`: print the command reference.
+- \`c\`, \`v\`, \`w\`: clear the terminal, show version, report guest window count.
+- \`l\`, \`m\`, \`x\`, \`t\`, \`u\`: open Lattice, Monitor, Hex, raise the same NSH window, and guest utilities.
+- \`s\`, \`n\`, \`b\`: open the unified Settings, NaNNet manager, and isolated Browser Launcher as desktop child windows.
+- \`nannet-training\`: open the same NaNNet Training interface as the desktop button.
+- \`files\`: open the internal \`/nsh\` file manager.
+- \`write FILENAME\`: open an internal text editor for a file in \`/nsh\`. Filenames are limited to 64 ASCII letters, digits, dot, dash, or underscore; path traversal and subdirectories are rejected.
+- \`f\`: raise the existing NSH window rather than creating a second terminal.
+- \`exit\`, \`quit\`, \`q\`: close only NSH, not the desktop.
+
+The \`/nsh\` workspace is app-private Android storage, not the guest NaNFS volume. The file manager and editor are Android host-service windows opened only when NaN16 emits a bounded command request. Corpus content is treated as data and is never executed as instructions.
 
 The Android host shell is a UI/OS boundary. Guest applications, NaN16 protocol state, corpus validation, and training calculations remain NaN16 guest responsibilities. The Android shell does not execute corpus text as commands.
 
 ## Function keys and guest windows
 
-The on-screen row injects actual PC keyboard scan codes, not synthetic extended-key values:
+A 12-key F1-F12 strip is drawn by NaN16 at the top of the desktop, with a matching Android soft-key row. The host routes F5/F7 to the one unified Settings window and F6 to NaNNet; other keys are dispatched to guest windows. F2 is move mode, F3 enlarges/restores, and Escape closes the focused guest child window. F8-F10 launch Lattice, Monitor, and Hex.
 
-| Key | Android action |
-|---|---|
-| F1 | Guest F1 |
-| F2 | Guest move mode |
-| F3 | Guest enlarge/restore |
-| F5 | Unified Android desktop settings |
-| F6 | NaNNet manager |
-| F7 | Guest system utilities |
-| F8 | Guest Lattice |
-| F9 | Guest Monitor |
-| F10 | Guest Hex |
-| F11/F12 | Guest function-key input |
-
-Touching guest window title-bar controls is translated into the same Escape/F3 guest actions. The guest window manager itself is NaN16; the Android layer only maps touch coordinates to those existing guest key actions.
+Guest window hit-testing, z-order, drag, close, and maximize remain NaN16-owned through the pointer mailbox. Android sends pointer coordinates/actions only. The Android child-window layer separately provides desktop windows for host services such as the text editor, Wi-Fi manager, training interface, and gateway.
 
 ## NaNNet network model
 
@@ -57,4 +53,4 @@ The current Android training guest validates N16TXT/1 input and produces a tempo
 
 ## Android host-shell correction (2026-11-06)
 
-The Android Activity must not create, display, or launch an Android-native NSH terminal. The only terminal visible at boot is the guest desktop's NaN16 window (kind 0). The host Activity is limited to VM display/input and Android hardware/service boundaries. The desktop's F7 shortcut is routed into the guest and opens the guest Settings window; it must not be intercepted by an Android settings panel.
+The Android Activity does not create an Android-native NSH terminal. The only terminal visible at boot is the guest desktop's NaN16 window (kind 0), and the guest shell reloads the desktop rather than the museum catalog on return. F5 and F7 are host shortcuts for the same unified Settings window; F6 opens the Android-backed NaNNet manager. No parallel guest Settings window is exposed through the normal desktop controls.
