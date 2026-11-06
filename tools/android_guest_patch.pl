@@ -306,6 +306,8 @@ die "NSH full-command parser missing files/write handlers\n"
     unless index($gui, "tk_check_files:") >= 0 &&
            index($gui, "tk_check_write:") >= 0 &&
            index($gui, "tk_write_loop:") >= 0;
+die "NSH full-command parser missing n16t gateway command\n"
+    unless index($gui, "tk_check_n16t:") >= 0;
 die "NSH full-command parser missing nannet-training\n"
     unless index($gui, "tk_check_training:") >= 0;
 die "NSH exit no longer closes only its child window\n"
@@ -318,6 +320,12 @@ die "F7 does not open the unified Settings window\n"
 die "F5 does not open the same unified Settings window\n"
     unless index($gui, join("\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2',
         'JMP[NE] @gk_n5', 'MOVI r1,78', 'PUTC r1')) >= 0;
+die "NSH settings command does not use the unified Settings host window\n"
+    unless index($gui, join("\n", 'tm_set:', 'MOVI r1,78', 'PUTC r1')) >= 0;
+die "NSH NaNNet command does not use the Android network manager\n"
+    unless index($gui, join("\n", 'tm_net:', 'MOVI r1,78', 'PUTC r1')) >= 0;
+die "NSH browser command does not use the host browser launcher\n"
+    unless index($gui, join("\n", 'tm_br:', 'MOVI r1,78', 'PUTC r1')) >= 0;
 die "NSH help omits the training command\n"
     unless index($gui, "nannet-training TRAINING") >= 0;
 
