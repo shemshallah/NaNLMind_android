@@ -27,6 +27,10 @@ jobs:
           mkdir -p aarch64/android/app/src/main/assets
           cp .nan0s-upstream/aarch64/android/app/src/main/assets/nan0s.img aarch64/android/app/src/main/assets/nan0s.img
           test "$(wc -c < aarch64/android/app/src/main/assets/nan0s.img)" -eq 1474560
+      - name: Assert NSH is guest-owned, not an Android overlay
+        run: |
+          ! grep -q 'showNshWindow' aarch64/android/app/src/main/java/org/nan0s/vm/MainActivity.kt
+          ! grep -q 'nshHelp()' aarch64/android/app/src/main/java/org/nan0s/vm/MainActivity.kt
       - name: Run native regression suite
         working-directory: aarch64/android
         run: |
