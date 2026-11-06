@@ -49,7 +49,45 @@ static uint8_t *build_training_guest(size_t *len) {
   *len = n;
   return b;
 }
+static void print_help(void) {
+  puts("NaN16 / NaNNet command-line runner");
+  puts("");
+  puts("Usage:");
+  puts("  nan_cli --img FILE [options]");
+  puts("  nan_cli --nannet-train [CORPUS.txt] [--candidate-out FILE]");
+  puts("  nan_cli nannet-training [CORPUS.txt]");
+  puts("  nan_cli --corpus FILE [--candidate-out FILE]");
+  puts("");
+  puts("Commands and options:");
+  puts("  --help, -h             Show all commands");
+  puts("  --img FILE             Boot a NaN16 image");
+  puts("  --nannet-train [FILE]  Launch the NaNNet training guest/interface");
+  puts("  nannet-training [FILE] Alias for --nannet-train");
+  puts("  --corpus FILE          Train from N16TXT/1 or plain UTF-8 text");
+  puts("  --candidate-out FILE   Save a successful isolated candidate checkpoint");
+  puts("  --disk FILE            Attach a writable disk image");
+  puts("  --keys LIST            Inject keys: ESC,ENTER,TAB, arrows, or @step delays");
+  puts("  --steps N              Maximum instruction count (default 50000000)");
+  puts("  --clock steps:N        Guest milliseconds per N executed steps");
+  puts("  --serial               Print COM1 output");
+  puts("  --dump-text            Print the VGA text screen");
+  puts("  --dump-vga FILE        Save the 80x25 text-cell buffer");
+  puts("  --dump-ppm FILE        Save graphics mode as PPM");
+  puts("  --peek ADDR[:LEN]      Dump guest words");
+  puts("  --no-trim              Preserve trailing spaces in text output");
+  puts("");
+  puts("TXT: N16TXT/1 followed by UTF-8 text; max 1 MiB; NUL bytes are rejected.");
+  puts("Corpus input is data only and is never executed as instructions.");
+  puts("");
+  puts("Examples:");
+  puts("  nan_cli --img nan0s.img --serial");
+  puts("  nan_cli nannet-training corpus.txt --candidate-out candidate.nan1");
+}
 int main(int argc, char **argv) {
+  if (argc > 1 && !strcmp(argv[1], "nannet-training")) argv[1] = "--nannet-train";
+  if (argc == 1 || !strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) {
+    print_help(); return 0;
+  }
   const char *vga = NULL, *img = NULL, *keys = NULL, *ppm = NULL, *disk = NULL, *peek = NULL, *corpus = NULL, *candidate_out = NULL; uint64_t steps = 50000000ull, per_ms = 1000;
   int train_mode = 0;
   int dump_text = 0, serial = 0, trim = 1;
@@ -68,7 +106,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--dump-text")) dump_text = 1;
     else if (!strcmp(argv[i], "--no-trim")) trim = 0;
     else if (!strcmp(argv[i], "--serial")) serial = 1;
-    else { fprintf(stderr, "usage: nan_cli [--img f] [--nannet-train [corpus.txt]] [--candidate-out state.nan1] [--steps N] [--keys \"1,ESC,~,@5000000\"] [--serial] [--dump-text] [--dump-ppm f] [--peek ADDR[:LEN]] [--disk f] [--clock steps:N]\n"); return 2; }
+    else { fprintf(stderr, "unknown or incomplete option: %s\nRun nan_cli --help for the complete command list.\n", argv[i]); return 2; }
   }
   if (!img && !train_mode) { fprintf(stderr, "need --img or --nannet-train\n"); return 2; }
   size_t len = 0;
