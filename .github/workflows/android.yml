@@ -131,19 +131,17 @@ jobs:
           ST r1,r0,@br_tab""", """          MOVI r1,0
           ST r1,r0,@br_tab""", 1)
           # No final-window auto-exit: closing a window returns to the desktop.
-          s = s.replace("""          LD r1,r0,@wm_zn
-          CMP r1,r0
-          JMP[EQ] @g_exit
-          CALL @kbd_poll""", """          CALL @kbd_poll""", 1)
-          # "f" no longer transfers control to the hidden storage-shell cart.
-          s = s.replace("""          tm_nsh:
-          MOVI r1,4800
-          MOVI r2,10
-          ST r2,r1,0
-          MOVI r1,1
-          ST r1,r0,@g_quit""", """          tm_nsh:
-          MOVI r1,0
-          CALL @gui_open_new""", 1)
+          # Keep the desktop alive even after the last guest window closes.
+          loop_exit = chr(10).join(["LD r1,r0,@wm_zn", "CMP r1,r0", "JMP[EQ] @g_exit", "CALL @kbd_poll"])
+          if loop_exit not in s:
+              raise SystemExit("desktop empty-window exit block not found")
+          s = s.replace(loop_exit, "CALL @kbd_poll", 1)
+          # NSH never transfers control to the legacy hidden storage-shell cart.
+          old_nsh = chr(10).join(["tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", "MOVI r1,1", "ST r1,r0,@g_quit"])
+          new_nsh = chr(10).join(["tm_nsh:", "MOVI r1,0", "CALL @gui_open_new"])
+          if old_nsh not in s:
+              raise SystemExit("legacy NSH handoff block not found")
+          s = s.replace(old_nsh, new_nsh, 1)
           s = s.replace('.str "TERMINAL"', '.str "NSH TERMINAL"', 1)
           s = s.replace('.str "f files (nsh) q quit gui\\n"', '.str "f open terminal  q close desktop\\n"', 1)
           # Add direct desktop hotkeys for the three guest apps that NSH can launch.
