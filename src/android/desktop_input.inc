@@ -88,7 +88,9 @@ MOVI r2,44
 CMP r1,r2
 JMP[GE] @wp_scan_start
 LD r1,r0,@wp_x
-MOVI r2,85
+LD r2,r0,@fb_w
+MOVI r3,12
+DIVU r2,r2,r3
 DIVU r1,r1,r2
 MOVI r2,12
 CMP r1,r2
