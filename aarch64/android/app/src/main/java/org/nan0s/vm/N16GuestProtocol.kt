@@ -113,8 +113,17 @@ internal class N16GuestProtocol(context: Context) : Closeable {
         vm.setRegister(2, frame.size)
         runEntry("n16_android_route")
         val status = vm.register(3)
-        check(status == 0) { "NaN16 rejected peer frame (status=$status)" }
-        return Route(vm.register(1), vm.register(2), vm.register(4))
+        val logicalPoint = vm.register(4)
+        if (status != 0) {
+            // Point #1 is the runner portal. On Android its physical transport is
+            // the host's default Wi-Fi/cellular route, so a guest with no explicit
+            // synthetic route table still resolves this point through the host.
+            if (status == 2 && logicalPoint == 0xA001) {
+                return Route(0xA001, 0, logicalPoint)
+            }
+            throw IllegalStateException("NaN16 rejected peer frame (status=$status)")
+        }
+        return Route(vm.register(1), vm.register(2), logicalPoint)
     }
 
     @Synchronized
