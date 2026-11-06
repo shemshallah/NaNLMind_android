@@ -849,9 +849,17 @@ class MainActivity : Activity(), NanLoop.Listener {
             }
         })
         panel.addView(btn("TRAINING STATUS / LIMITS") {
-            AlertDialog.Builder(this).setTitle("Training boundary")
-                .setMessage("The current guest builds a temporary byte-frequency/byte-bigram candidate. It is not yet a neural optimizer, remote runner job, or automatic merge. Corpus data never executes as instructions.")
-                .setPositiveButton("OK", null).show()
+            val statusPanel = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                setBackgroundColor(Color.rgb(17, 22, 42))
+            }
+            statusPanel.addView(TextView(this).apply {
+                text = "Current guest: temporary byte-frequency and byte-bigram candidate.\n\nNot yet: neural optimizer, remote runner job, candidate quality evaluation, or automatic merge.\n\nCorpus data is validated as data and never executed as instructions."
+                setTextColor(Color.rgb(180, 224, 220))
+                textSize = 12f
+            })
+            showDesktopWindow("Training Boundary", statusPanel, 250)
         })
         showDesktopWindow("NaNNet Training", panel, 360)
     }
