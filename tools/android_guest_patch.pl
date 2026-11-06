@@ -111,8 +111,8 @@ $gui = replace_once($gui,
     "tm_quit:\nLD r1,r0,\@tm_id\nCALL \@wm_close\nJMP \@tm_done",
     "close the NSH child window without exiting the desktop");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
-$gui =~ s/(s_banner:\\n)\\.str "[^"]*"/$1.str "NaNLMind NSH\\n"/s
-    or die "NSH boot banner patch target missing\\n";
+$gui =~ s/(s_banner:\n)\.str "[^"]*"/$1.str "NaNLMind NSH\n"/s
+    or die "NSH boot banner patch target missing\n";
 my $boot_banner = join "\n", 'MOVI r2,@s_banner', 'CALL @vc_puts';
 my $boot_help = join "\n",
     'MOVI r2,@s_banner', 'CALL @vc_puts',
