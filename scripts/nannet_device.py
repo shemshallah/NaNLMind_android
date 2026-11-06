@@ -163,6 +163,8 @@ def main(argv=None) -> int:
             if args.command == "heartbeat":
                 result = request(args.url, "/v1/devices/heartbeat", token, {})
                 state["lease_expires_at"] = result["lease_expires_at"]
+                if result.get("token"):
+                    state["token"] = result["token"]
                 write_state(path, state)
                 print(json.dumps(result, indent=2))
             elif args.command == "release":
