@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
  *  - "resolution" adjust on the fly = the zoom over the current fit; integerScale snaps the
  *    base stage to whole pixels for a crisp blit (guest VGA mode is untouched).
  */
-class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit) : View(context) {
+class NanView(context: Context, private val vm: NanVm, private val onInput: () -> Unit, private val onHostKey: (Int) -> Boolean = { false }) : View(context) {
     companion object {
         private const val MAX_ZOOM = 8f
         private const val CELL_ASPECT = 0.5f   // VGA text cell width/height = 8/16
@@ -192,6 +192,7 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean = key(keyCode, event, false) || super.onKeyUp(keyCode, event)
 
     private fun key(code: Int, e: KeyEvent, down: Boolean): Boolean {
+        if (down && onHostKey(code)) return true
         if (vm.rawKeyboard()) {
             val sc = KeyMap.scancode(code)
             if (sc < 0) return false
