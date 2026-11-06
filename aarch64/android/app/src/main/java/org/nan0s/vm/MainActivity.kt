@@ -190,6 +190,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         chrome.addView(caption, LinearLayout.LayoutParams(0, dp(32), 1f))
         val minimize = btn("−") { shell.visibility = View.GONE }
         var maximized = false
+        var maximizeButton: Button? = null
         val maximize = btn("□") {
             val lp = shell.layoutParams as FrameLayout.LayoutParams
             maximized = !maximized
@@ -205,8 +206,9 @@ class MainActivity : Activity(), NanLoop.Listener {
                 lp.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             }
             shell.layoutParams = lp
-            maximize.text = if (maximized) "❐" else "□"
+            maximizeButton?.text = if (maximized) "❐" else "□"
         }
+        maximizeButton = maximize
         val close = btn("×") {
             desktopSurface.removeView(shell)
         }
