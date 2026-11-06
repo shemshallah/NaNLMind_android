@@ -220,6 +220,11 @@ class MainActivity : Activity(), NanLoop.Listener {
         maximizeButton = maximize
         val close = btn("×") {
             desktopWindows.remove(shell)
+            if (wifiWindow === shell) {
+                wifiWindow = null
+                wifiStatusView = null
+                wifiResultsView = null
+            }
             desktopSurface.removeView(shell)
         }
         chrome.addView(minimize, LinearLayout.LayoutParams(dp(40), dp(32)))
@@ -970,7 +975,7 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     // ---- real WiFi: status, scan, connect request ----
     private fun showWifi() {
-        wifiWindow?.let { desktopSurface.removeView(it) }
+        wifiWindow?.let { desktopWindows.remove(it); desktopSurface.removeView(it) }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(10), dp(14), dp(8))
