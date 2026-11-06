@@ -45,7 +45,7 @@ internal class N16HttpsTransport(
             connection.doOutput = true
             connection.useCaches = false
             connection.setRequestProperty("Content-Type", MEDIA_TYPE)
-            connection.setRequestProperty("Accept", MEDIA_TYPE)
+            connection.setRequestProperty("Accept", "$MEDIA_TYPE, $LEGACY_MEDIA_TYPE")
             connection.setRequestProperty("Cache-Control", "no-store")
             connection.setFixedLengthStreamingMode(frame.size)
             connection.outputStream.use { it.write(frame) }
@@ -58,7 +58,7 @@ internal class N16HttpsTransport(
                     if (detail.isEmpty()) "" else ": $detail")
             }
             val responseType = connection.contentType?.substringBefore(';')?.trim()
-            if (responseType != MEDIA_TYPE) {
+            if (responseType != MEDIA_TYPE && responseType != LEGACY_MEDIA_TYPE) {
                 throw IOException("N16 gateway returned an unexpected content type")
             }
             val body = connection.inputStream.use { readBounded(it, maxFrameBytes) }
@@ -83,5 +83,6 @@ internal class N16HttpsTransport(
 
     companion object {
         const val MEDIA_TYPE = "application/x-n16t"
+        const val LEGACY_MEDIA_TYPE = "application/vnd.nan16.n16t"
     }
 }
