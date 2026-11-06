@@ -760,9 +760,9 @@ class MainActivity : Activity(), NanLoop.Listener {
             Toast.makeText(this, "Use an HTTPS URL without embedded credentials or fragments", Toast.LENGTH_LONG).show()
             return
         }
-        // The Koyeb service accepts the N16T binary handshake on /portal and /n16t.
-        // Keep the requested portal URL visible and send it unchanged.
-        val endpoint = if (entered.path.trimEnd('/') == "/portal") {
+        // /portal is a browser page, not the binary POST handler. Normalize it to
+        // the N16T route so a portal-page 404 cannot be mistaken for a protocol failure.
+        val endpoint = if (entered.path.trimEnd('/') == "/portal" || entered.path.isBlank() || entered.path == "/") {
             URI("https", entered.userInfo, entered.host, entered.port, "/n16t", entered.query, null)
         } else entered
 
