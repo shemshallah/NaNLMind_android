@@ -503,20 +503,24 @@ class MainActivity : Activity(), NanLoop.Listener {
                     else -> append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
                 }
                 "apps" -> {
-                    val apps = arrayOf("Lattice", "Monitor", "Hex viewer", "Settings", "NaNNet", "System utilities", "NaNNet training", "N16T gateway", "Browser")
-                    AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps) { _, which ->
-                        when (which) {
-                            0 -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke() }
-                            1 -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke() }
-                            2 -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke() }
-                            3 -> showUnifiedSettings()
-                            4 -> showWifi()
-                            5 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
-                            6 -> showTrainingSuite()
-                            7 -> showRemoteGateway()
-                            8 -> showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
-                        }
-                    }.setNegativeButton("Close", null).show()
+                    val menu = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(dp(10), dp(8), dp(10), dp(8))
+                        setBackgroundColor(Color.rgb(17, 22, 42))
+                    }
+                    fun app(label: String, action: () -> Unit) {
+                        menu.addView(btn(label, action), LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(3) })
+                    }
+                    app("LATTICE") { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke() }
+                    app("MONITOR") { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke() }
+                    app("HEX VIEWER") { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke() }
+                    app("SETTINGS") { showUnifiedSettings() }
+                    app("NANNET NETWORK MANAGER") { showWifi() }
+                    app("SYSTEM UTILITIES") { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke() }
+                    app("NANNET TRAINING") { showTrainingSuite() }
+                    app("N16T GATEWAY") { showRemoteGateway() }
+                    app("BROWSER") { showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") }
+                    showDesktopWindow("Desktop Applications", ScrollView(this).apply { addView(menu) }, 420)
                 }
                 "windows", "wm" -> append("Guest windows: Lattice, Monitor, Hex. Host windows: NSH, Settings, NaNNet, Training, N16T.")
                 "version", "ver" -> append("NaNLMind_ANDROID • NaN16 guest • Android host services")
