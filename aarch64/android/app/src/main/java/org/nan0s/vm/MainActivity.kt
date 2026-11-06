@@ -183,6 +183,9 @@ class MainActivity : Activity(), NanLoop.Listener {
                     5 -> { vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke(); view.requestFocus() }
                     6 -> showWifi()
                     7 -> { vm.keyEvent(0x107, true); vm.keyEvent(0x107, false); loop.poke(); view.requestFocus() }
+                    8 -> { vm.keyEvent(0x108, true); vm.keyEvent(0x108, false); loop.poke(); view.requestFocus() }
+                    9 -> { vm.keyEvent(0x109, true); vm.keyEvent(0x109, false); loop.poke(); view.requestFocus() }
+                    10 -> { vm.keyEvent(0x10A, true); vm.keyEvent(0x10A, false); loop.poke(); view.requestFocus() }
                     else -> { vm.keyEvent(scan, true); vm.keyEvent(scan, false); loop.poke(); view.requestFocus() }
                 }
             }
