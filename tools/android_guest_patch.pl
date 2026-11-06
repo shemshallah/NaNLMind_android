@@ -92,7 +92,7 @@ my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", 
 my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_open_new";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
-$gui = replace_once($gui, '.str "f files (nsh) q quit gui\n"', '.str "f open terminal  q close desktop\n"', "desktop terminal hint");
+$gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
 
 my $marker = "gk_np:\nMOVI r2,0x105";
 my $insert = join "\n",
