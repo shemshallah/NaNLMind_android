@@ -33,8 +33,17 @@ my $cold = "LA r10,\@boot_rec\nLD r1,r10,0\nCMP r1,r0\nJMP[EQ] \@sh_redraw\nJMP 
 $shell = replace_once($shell, $cold, "LA r10,\@boot_rec\nJMP \@sh_run", "disable museum menu cold-boot fallback");
 write_file($shell_path, $shell);
 
+
+my $wm_path = 'src/lib/wm.nas';
+my $wm = read_file($wm_path);
+$wm = replace_once($wm, '.equ TOPH 17', '.equ TOPH 44', 'desktop top strip height');
+$wm = replace_once($wm, "CALL \@fb_text7\nST r0,r0,\@da_i",
+    "CALL \@fb_text7\nCALL \@wm_fkeybar\nST r0,r0,\@da_i", "draw NaN16 F-key strip");
+write_file($wm_path, $wm);
+
 my $gui_path = 'src/exhibits/gui_cart.nas';
 my $gui = read_file($gui_path);
+$gui = replace_once($gui, ".include \"../lib/wm.nas\"", ".include \"../lib/wm.nas\"\n.include \"android_desktop_input.inc\"", "include NaN16DE guest pointer/window controls");
 $gui = replace_once($gui, "CALL \@pci_scan\nCALL \@pci_nic",
     "CALL \@wm_wbase\nMOVI r2,3\nST r2,r1,#W_A3", "replace guest PCI NaNNet probe");
 $gui =~ s/\.str "NaNNet  NETWORK CONTROL  \(DRIVER PENDING\)"/.str "NaNNet  ANDROID NETWORK MANAGER"/
@@ -89,7 +98,7 @@ $gui = replace_once($gui, "CALL \@term_fit\nMOVI r1,0\nST r1,r0,\@br_tab",
     "MOVI r1,0\nST r1,r0,\@br_tab", "remove terminal redraw from browser init");
 
 my $loop_exit = join "\n", "LD r1,r0,\@wm_zn", "CMP r1,r0", "JMP[EQ] \@g_exit", "CALL \@kbd_poll";
-$gui = replace_once($gui, $loop_exit, "CALL \@kbd_poll", "keep desktop alive when no windows remain");
+$gui = replace_once($gui, $loop_exit, "CALL \@wm_pointer_poll\nCALL \@kbd_poll", "keep desktop alive and dispatch guest pointer events");
 my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", "MOVI r1,1", "ST r1,r0,\@g_quit";
 my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_single";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
@@ -123,6 +132,10 @@ $gui = replace_once($gui, $f7,
     join("\n", "gk_n7:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_notf3", "MOVI r1,4"),
     "F7 opens the guest desktop settings window");
 
+$gui = replace_once($gui, "MOVI r5,40\nADD r3,r3,r5\nCALL \@gui_open_at", "MOVI r5,60\nADD r3,r3,r5\nCALL \@gui_open_at", "open windows below the F-key strip");
+$gui = replace_once($gui, "MOVI r3,40\nCALL \@gui_open_at", "MOVI r3,60\nCALL \@gui_open_at", "centre single-instance windows below the F-key strip");
+$gui = replace_once($gui, "CMP r4,r0\nJMP[EQ] \@tm_done", "CMP r4,r0\nJMP[EQ] \@tm_done\nMOVI r5,45\nCMP r4,r5\nJMP[EQ] \@tm_help", "support --help in guest NSH");
+$gui = replace_once($gui, '.str "NaN/0S TERMINAL', '.str "NaN16 NSH', "boot terminal identity");
 write_file($gui_path, $gui);
 
 my $check_shell = read_file($shell_path);
