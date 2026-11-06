@@ -87,10 +87,7 @@ jobs:
           # desktop child window; do not create a second guest terminal at boot.
           p = Path("src/exhibits/gui_cart.nas")
           s = p.read_text()
-          boot = """MOVI r1,0
-          CALL @gui_open_new
-          MOVI r1,1
-          ST r1,r0,@wm_redraw"""
+          boot = "MOVI r1,0\\nCALL @gui_open_new\\nMOVI r1,1\\nST r1,r0,@wm_redraw"
           if boot not in s:
               raise SystemExit("desktop boot-window block not found")
           s = s.replace(boot, """MOVI r1,1
