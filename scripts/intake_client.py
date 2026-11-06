@@ -14,17 +14,28 @@ from pathlib import Path
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("diff", nargs="?", default="state/android-route.json")
-    parser.add_argument("--url", default=os.environ.get("NANLM_INTAKE_URL", ""))
+    parser.add_argument("--url", default=os.environ.get("NANNET_URL", os.environ.get("NANLM_INTAKE_URL", "")))
     args = parser.parse_args()
 
     token = os.environ.get("NANLM_DEVICE_TOKEN", "")
-    address = os.environ.get("NANLM_DEVICE_ADDRESS", "nan://GM0:SC0:MC0:BS0:HW1")
+    address = os.environ.get("NANLM_DEVICE_ADDRESS", "")
+    if not token:
+        state_path = Path(os.environ.get(
+            "NANLM_DEVICE_STATE",
+            str(Path.home() / ".config" / "nanlmind" / "nannet-device.json"),
+        )).expanduser()
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            token = state.get("token", "")
+            address = address or state.get("address", "")
+        except (OSError, json.JSONDecodeError):
+            pass
     parsed = urlsplit(args.url)
     if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
         print("NANLM_INTAKE_URL must be a public HTTPS origin", flush=True)
         return 2
     if not token or not address.startswith("nan://"):
-        print("NANLM_DEVICE_TOKEN and NANLM_DEVICE_ADDRESS are required", flush=True)
+        print("Register first with scripts/nannet_device.py register --consent", flush=True)
         print("DEEPREPO_PAT is never used by this client", flush=True)
         return 2
     payload = Path(args.diff).read_bytes()
