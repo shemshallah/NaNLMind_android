@@ -1,6 +1,6 @@
 # NaNLMind Remote Training (NaN16-first)
 
-Status: local Android and hosted-runner corpus-profile paths are implemented. NaN16 now validates N16T frames, binds one 128-bit session identity, rejects replay/cross-session frames, enforces message-specific payload bounds and legal session transitions, and routes accepted frames. Candidate evaluation/transactional merge and a deployed live gateway are not yet implemented.
+Status: local Android and hosted-runner corpus-profile paths are implemented. NaN16 now validates N16T frames, binds one 128-bit session identity, rejects replay/cross-session frames, enforces message-specific payload bounds and legal session transitions, and routes accepted frames. The bounded HTTPS byte-transport adapter is merged and the Android APK packages successfully. Candidate evaluation/transactional merge and a deployed live gateway are not yet implemented.
 
 **Prototype boundary:** the current guest validates and profiles corpora, updates byte-frequency and byte-bigram count tables, and emits an isolated candidate checkpoint. This is not yet a neural language-model optimizer or a quality-evaluated model update. Candidate evaluation, fair contribution accounting, transactional merge, and a live authenticated runner gateway remain unfinished.
 
@@ -37,7 +37,7 @@ CLI: --nannet-train ───────────┤
                   NaN16 route + peer dispatch
 ~~~
 
-The intended training suite, codec rules, sample scheduler, update policy, merge logic, and protocol state transitions belong in NaN16 guest programs. Implemented today: the corpus scanner/count tables; N16T framing and CRC validation; session ownership; per-session monotonic replay checks; message-specific payload bounds; state transitions; and point routing. The sequence cursor is currently single-direction rather than independently tracked per direction. The Android HTTPS adapter and JNI frame bridge compile, but the Android UI does not yet invoke a remote session. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
+The intended training suite, codec rules, sample scheduler, update policy, merge logic, and protocol state transitions belong in NaN16 guest programs. Implemented today: the corpus scanner/count tables; N16T framing and CRC validation; session ownership; per-session monotonic replay checks; message-specific payload bounds; state transitions; and point routing. The sequence cursor is currently single-direction rather than independently tracked per direction. The Android HTTPS adapter and JNI frame bridge compile, but the Android UI does not yet invoke a remote session. The adapter accepts only complete opaque N16T frames, enforces HTTPS, finite timeouts, no redirects, content-type checks, and bounded request/response sizes; guest-side frame construction and response validation are still required. C is restricted to hardware-facing drivers: socket/file descriptor operations, bounded byte transfer, and conversion between host byte buffers and NaN16 memory/port conventions. C must not parse corpus semantics, choose examples, calculate training weights, or mutate model state.
 
 The current Android VM already exposes a JNI-backed NaN16 interpreter. The GUI shell may present controls and SAF file selection, but it must not implement training policy. The guest owns those decisions.
 
@@ -114,7 +114,7 @@ Do not put PATs, repository write tokens, signing keys, or runner secrets in APK
 5. [x] Add runner invocation using the shared NaN16 guest program.
 6. [x] Add Android GUI menu entry and CLI --nannet-train launch path.
 7. [x] Add N16T session ownership, replay rejection, message-specific payload bounds, state transitions, and CLOSE/reset handling. [ ] Add transactional intake, candidate evaluation, and fair merge.
-8. [ ] Add APK allowlist + artifact inspection proving nannetsuite is absent.
-9. [ ] Build and install the APK; run identical corpus vectors on runner and Android and compare pipeline outputs.
+8. [x] Add an explicit APK runtime-asset allowlist enforced during the Android build. [ ] Inspect the packaged APK against that allowlist.
+9. [x] Build and package the debug APK in CI. [ ] Install it on a device; run identical corpus vectors on runner and Android and compare pipeline outputs.
 
 A milestone is complete only with an artifact and a reproducible test result. Architecture documents are not implementation evidence.
