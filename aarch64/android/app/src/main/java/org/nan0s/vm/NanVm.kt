@@ -31,7 +31,14 @@ class NanVm : AutoCloseable {
      */
     fun pointerEvent(x: Int, y: Int, action: Int): Boolean = synchronized(lock) {
         if (h == 0L) return@synchronized false
-        pointerSequence += 1
+        // The guest's last-seen sequence is part of autosaved VM memory. Rebase
+        // after restore so the first touch is never discarded as a duplicate.
+        val mailbox = NanNative.readBytes(h, 0x168000, 4)
+        val guestSequence = mailbox?.let {
+            ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN).int
+        } ?: 0
+        if (pointerSequence <= guestSequence) pointerSequence = guestSequence
+        pointerSequence = if (pointerSequence == Int.MAX_VALUE) 1 else pointerSequence + 1
         val payload = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
             .putInt(pointerSequence).putInt(x).putInt(y).putInt(action).array()
         NanNative.writeBytes(h, 0x168000, payload)
