@@ -83,6 +83,73 @@ jobs:
           if "NONE ON PCI BUS 0" in s or "NO ADAPTER FOUND" in s:
               raise SystemExit("Android NaNNet PCI-only status remains")
           p.write_text(s)
+          # Android boots straight into the GUI desktop. NSH is the Android-host
+          # desktop child window; do not create a second guest terminal at boot.
+          p = Path("src/exhibits/gui_cart.nas")
+          s = p.read_text()
+          boot = """MOVI r1,0
+          CALL @gui_open_new
+          MOVI r1,1
+          ST r1,r0,@wm_redraw"""
+          if boot not in s:
+              raise SystemExit("desktop boot-window block not found")
+          s = s.replace(boot, """MOVI r1,1
+          ST r1,r0,@wm_redraw""", 1)
+          # The browser demo used terminal-buffer redraw on every WM paint.
+          # Render a small static browser window directly to the framebuffer;
+          # network browsing is provided by the Android host from NSH.
+          start = s.index("br_show:")
+          end = s.index("br_init:", start)
+          safe_show = """br_show:
+          ST r15,r0,@bs_ret
+          LD r1,r0,@br_id
+          CALL @g_clr
+          LD r1,r0,@br_id
+          CALL @tx_org
+          MOVI r1,0
+          MOVI r2,0
+          MOVI r3,@br_tabs
+          MOVI r4,#C_CY
+          CALL @tx_s
+          MOVI r1,0
+          MOVI r2,2
+          MOVI r3,@br_status
+          MOVI r4,#C_DIM
+          CALL @tx_s
+          LD r1,r0,@br_tab
+          SHL r1,r1,2
+          MOVI r2,@br_pages
+          ADD r1,r1,r2
+          LD r3,r1,0
+          LD r1,r0,@br_id
+          MOVI r2,4
+          MOVI r4,#C_TXT
+          CALL @tx_s
+          LD r15,r0,@bs_ret
+          RET
+          """
+          s = s[:start] + safe_show + s[end:]
+          s = s.replace("""          CALL @term_fit
+          MOVI r1,0
+          ST r1,r0,@br_tab""", """          MOVI r1,0
+          ST r1,r0,@br_tab""", 1)
+          # No final-window auto-exit: closing a window returns to the desktop.
+          s = s.replace("""          LD r1,r0,@wm_zn
+          CMP r1,r0
+          JMP[EQ] @g_exit
+          CALL @kbd_poll""", """          CALL @kbd_poll""", 1)
+          # "f" no longer transfers control to the hidden storage-shell cart.
+          s = s.replace("""          tm_nsh:
+          MOVI r1,4800
+          MOVI r2,10
+          ST r2,r1,0
+          MOVI r1,1
+          ST r1,r0,@g_quit""", """          tm_nsh:
+          MOVI r1,0
+          CALL @gui_open_new""", 1)
+          s = s.replace('.str "TERMINAL"', '.str "NSH TERMINAL"', 1)
+          s = s.replace('.str "f files (nsh) q quit gui\\n"', '.str "f open terminal  q close desktop\\n"', 1)
+          p.write_text(s)
           PY
           sh tools/build.sh
           mkdir -p ../aarch64/android/app/src/main/assets
