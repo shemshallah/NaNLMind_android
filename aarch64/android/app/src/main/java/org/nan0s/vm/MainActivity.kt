@@ -272,7 +272,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "nannet-training","training"->{dialog.dismiss();showTrainingSuite()}
                 "wifi","nannet"->{dialog.dismiss();showWifi()}
                 "n16t","gateway"->{dialog.dismiss();showRemoteGateway()}
-                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
+                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
                 "settings"->{dialog.dismiss();showUnifiedSettings()}
                 "open","load"->{
                     if(arg.isBlank()){dialog.dismiss();pick(reqImage)}
@@ -295,11 +295,11 @@ class MainActivity : Activity(), NanLoop.Listener {
                         "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
                         "training"->{dialog.dismiss();showTrainingSuite()}
                         "gateway","n16t"->{dialog.dismiss();showRemoteGateway()}
-                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}
+                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")}
                         else->append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
                     }
                 }
-                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}}.setNegativeButton("Close",null).show()}
+                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")}}.setNegativeButton("Close",null).show()}
                 "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. Use run <app> or apps.")
                 "files"->append("Files are sandboxed in /nsh. Use ls, write, cat, mkdir and rm.")
                 "version","ver"->append("NaNLMind_ANDROID • NaN16 guest • Android host services")
@@ -376,14 +376,14 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun showRemoteGateway() {
         val input = EditText(this).apply {
-            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"
+            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
+            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")
         }
         AlertDialog.Builder(this)
             .setTitle("N16T HTTPS Gateway")
             .setMessage(
-                "N16T binary protocol endpoint: POST /portal (also available at /n16t). " +
+                "N16T binary protocol endpoint: POST /n16t (canonical). GET /portal is the human-readable portal page. " +
                     "Connect the persistent NaN16 guest for HELLO/CAPABILITIES. " +
                     "Corpus upload and merge are not enabled in this Android client yet. " +
                     "No GitHub token is requested or stored."
@@ -617,11 +617,13 @@ class MainActivity : Activity(), NanLoop.Listener {
         })
         panel.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         panel.addView(TextView(this).apply {
-            text = "The Android host owns Wi-Fi and cellular radios. NaNNet routes through Android's active network; a guest PCI adapter is not required. HTTPS works over Wi-Fi or mobile data/5G."
+            text = "The Android host owns Wi-Fi and cellular radios. NaNNet routes through Android's active network; a guest PCI adapter is not required. HTTPS works over Wi-Fi or mobile data/5G. Use Scan to list networks here, then select one to join."
             setTextColor(Color.LTGRAY); textSize = 12f
             setPadding(0, dp(10), 0, dp(8))
         })
-        panel.addView(btn("Open Android network settings") { WifiBridge.openSettings(this) })
+        panel.addView(btn("Scan available Wi-Fi networks") { scanWifi() })
+        panel.addView(btn("Open Wi-Fi settings") { WifiBridge.openSettings(this) })
+        panel.addView(btn("Open mobile data / 5G settings") { WifiBridge.openMobileSettings(this) })
         val dialog = AlertDialog.Builder(this)
             .setTitle("NaNNet Network Manager")
             .setView(panel)
