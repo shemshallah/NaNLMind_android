@@ -220,16 +220,17 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun showRemoteGateway() {
         val input = EditText(this).apply {
-            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"
+            hint = "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
+            setText(remotePrefs.getString("endpoint", "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t") ?: "https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")
         }
         AlertDialog.Builder(this)
             .setTitle("N16T HTTPS Gateway")
             .setMessage(
-                "Connect the persistent NaN16 protocol guest and perform HELLO/CAPABILITIES only. " +
-                    "Remote corpus upload and the server-side runner response path are not enabled yet. " +
-                    "This client does not request or store a GitHub token."
+                "N16T binary protocol endpoint: POST /n16t (not the browser /portal path). " +
+                    "Connect the persistent NaN16 guest for HELLO/CAPABILITIES. " +
+                    "Corpus upload and merge are not enabled in this Android client yet. " +
+                    "No GitHub token is requested or stored."
             )
             .setView(input)
             .setPositiveButton("Connect") { _, _ ->
@@ -242,15 +243,20 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun connectRemoteGateway(raw: String) {
         val normalized = raw.trim().let { if (it.startsWith("https://", true)) it else "https://$it" }
-        val endpoint = try { URI(normalized) } catch (e: Exception) {
+        val entered = try { URI(normalized) } catch (e: Exception) {
             Toast.makeText(this, "Invalid gateway URL", Toast.LENGTH_LONG).show()
             return
         }
-        if (endpoint.scheme != "https" || endpoint.host.isNullOrBlank() ||
-            endpoint.userInfo != null || endpoint.fragment != null) {
+        if (entered.scheme != "https" || entered.host.isNullOrBlank() ||
+            entered.userInfo != null || entered.fragment != null) {
             Toast.makeText(this, "Use an HTTPS URL without embedded credentials or fragments", Toast.LENGTH_LONG).show()
             return
         }
+        // N16T is the binary protocol route. /portal is only a browser path and
+        // the deployed authority currently returns 404 for POST /portal.
+        val endpoint = if (entered.path.isNullOrBlank() || entered.path == "/" || entered.path == "/portal") {
+            URI("https", null, entered.host, entered.port, "/n16t", entered.query, null)
+        } else entered
 
         val generation = remoteConnectGeneration + 1
         remoteConnectGeneration = generation
