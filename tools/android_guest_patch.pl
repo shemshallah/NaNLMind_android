@@ -254,9 +254,10 @@ $gui = replace_once($gui, $f5,
 die "NSH full-command parser missing nannet-training\n"
     unless index($gui, "tk_check_training:") >= 0;
 die "NSH exit no longer closes only its child window\n"
-    unless index($gui, "tm_quit:\\nLD r1,r0,\\@tm_id\\nCALL \\@wm_close") >= 0;
+    unless index($gui, join("\n", 'tm_quit:', 'LD r1,r0,@tm_id', 'CALL @wm_close')) >= 0;
 die "F7 does not open the unified Settings window\n"
-    unless $gui =~ /gk_n6:\\nMOVI r2,0x107\\nCMP r1,r2\\nJMP\\[NE\\] \\@gk_n7\\nMOVI r1,4\\nCALL \\@gui_single/;
+    unless index($gui, join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2',
+        'JMP[NE] @gk_n7', 'MOVI r1,4', 'CALL @gui_single')) >= 0;
 die "NSH help omits the training command\n"
     unless index($gui, "nannet-training  OPEN NaNNet TRAINING INTERFACE") >= 0;
 
