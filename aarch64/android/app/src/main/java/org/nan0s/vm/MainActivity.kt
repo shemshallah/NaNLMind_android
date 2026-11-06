@@ -345,7 +345,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         for (index in 0 until 12) {
             val label = "F" + (index + 1)
             functionKeys.addView(btn(label) { dispatchFunctionKey(index) },
-                LinearLayout.LayoutParams(0, dp(38), 1f).apply { setMargins(dp(1), 0, dp(1), 0) })
+                LinearLayout.LayoutParams(dp(40), dp(38)).apply { setMargins(dp(1), 0, dp(1), 0) })
         }
         stack.addView(HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
