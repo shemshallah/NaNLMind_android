@@ -3,6 +3,8 @@ package org.nan0s.vm
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
@@ -73,19 +75,40 @@ object WifiBridge {
 
     @Suppress("DEPRECATION")
     fun scan(c: Context, done: (List<Ap>) -> Unit) {
-        val w = wifi(c)
-        if (!w.isWifiEnabled || !locationEnabled(c)) { done(emptyList()); return }
-        try { w.startScan() } catch (_: Exception) { }
-        // Android throttles scans; use the refreshed cache instead of treating a delayed scan as missing hardware.
-        Handler(Looper.getMainLooper()).postDelayed({
+        val app = c.applicationContext
+        val w = wifi(app)
+        if (!w.isWifiEnabled || !locationEnabled(app)) { done(emptyList()); return }
+        val handler = Handler(Looper.getMainLooper())
+        var completed = false
+        var receiver: BroadcastReceiver? = null
+        fun deliver() {
+            if (completed) return
+            completed = true
+            try { receiver?.let { app.unregisterReceiver(it) } } catch (_: Exception) { }
             val list = try {
-                w.scanResults.asSequence().filter { it.SSID.isNotBlank() }
+                w.scanResults.asSequence().filter { it.SSID.isNotBlank() && it.SSID != "<unknown ssid>" }
                     .distinctBy { it.SSID }
                     .map { Ap(it.SSID, it.level, security(it.capabilities)) }
                     .sortedByDescending { it.level }.toList()
             } catch (_: Exception) { emptyList() }
             done(list)
-        }, 2200)
+        }
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) deliver()
+            }
+        }
+        try {
+            val filter = IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+            if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            else app.registerReceiver(receiver, filter)
+            val accepted = w.startScan()
+            // Android can throttle scans. A broadcast is preferred, but the cache is
+            // still returned after the timeout if the platform declines the request.
+            handler.postDelayed({ deliver() }, if (accepted) 8_000L else 1_000L)
+        } catch (_: Exception) {
+            deliver()
+        }
     }
 
     private fun locationEnabled(c: Context): Boolean = try {
