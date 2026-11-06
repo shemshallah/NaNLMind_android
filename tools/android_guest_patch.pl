@@ -59,7 +59,9 @@ die "Android NaNNet still contains PCI-only status\n"
     if $gui =~ /NONE ON PCI BUS 0|NO ADAPTER FOUND/;
 
 my $boot = join "\n", "MOVI r1,0", "CALL \@gui_open_new", "MOVI r1,1", "ST r1,r0,\@wm_redraw";
-$gui = replace_once($gui, $boot, "MOVI r1,1\nST r1,r0,\@wm_redraw", "boot desktop without modal duplicate terminal");
+$gui = replace_once($gui, $boot,
+    "MOVI r1,0\nCALL \@gui_open_new\nMOVI r1,1\nST r1,r0,\@wm_redraw",
+    "boot desktop with NSH as its first child window");
 
 my $browser_start = index($gui, "br_show:\n");
 my $browser_end = index($gui, "br_init:\n", $browser_start);
@@ -135,8 +137,12 @@ $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
 
 my $f7 = join "\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_n7", "MOVI r1,6";
 $gui = replace_once($gui, $f7,
-    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_n7", "MOVI r1,4"),
-    "F7 opens the guest desktop settings window");
+    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_n7", "JMP \@gk_ret"),
+    "F7 delegates to the single Android desktop settings surface");
+my $f5 = join "\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \@gk_n5", "MOVI r1,4", "CALL \@gui_single", "JMP \@gk_ret", "gk_n5:";
+$gui = replace_once($gui, $f5,
+    join("\n", "gk_f5:", "MOVI r2,0x105", "CMP r1,r2", "JMP[NE] \@gk_n5", "JMP \@gk_ret", "gk_n5:"),
+    "F5 delegates to the single Android desktop settings surface");
 
 write_file($gui_path, $gui);
 
