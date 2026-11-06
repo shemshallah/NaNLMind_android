@@ -350,8 +350,15 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun showUnifiedSettings(){
-        AlertDialog.Builder(this).setTitle("NaNLMind Desktop Settings").setMessage("Unified Android-host settings. NaNNet uses the active Wi-Fi or cellular route.")
-            .setPositiveButton("NaNNet / Wi-Fi"){_,_->showWifi()}.setNeutralButton("Training"){_,_->showTrainingSuite()}.setNegativeButton("Close",null).show()
+        val items=arrayOf("Display / guest window settings","NaNNet / Wi-Fi / cellular","NaNNet training","N16T gateway","Viewport fit / scale")
+        AlertDialog.Builder(this).setTitle("NaNLMind Desktop Settings")
+            .setItems(items){_,which->when(which){
+                0->{vm.keyEvent(0x105,true);vm.keyEvent(0x105,false);loop.poke()}
+                1->showWifi()
+                2->showTrainingSuite()
+                3->showRemoteGateway()
+                4->{view.resetZoom();view.integerScale=!view.integerScale;view.invalidate()}
+            }}.setNegativeButton("Close",null).show()
     }
 
     private fun showRemoteGateway() {
