@@ -108,18 +108,19 @@ $gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 
     or die "Android VM throughput label comment missing\n";
 $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
 $gui = replace_once($gui, 's settings n browser u utils\n', 'n browser u utils\n', "remove duplicate guest settings menu");
-my $help_token = join "\\n",
+my $help_token = join "\n",
     "ADD r5,r1,r5",
-    "LD r4,r5,0", "MOVI r7,45", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "ADD r6,r5,r13", "LD r4,r6,0", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", "JMP[NE] \\@tk_firstchar",
-    "MOVI r4,104", "JMP \\@tk_lc",
+    "LD r4,r5,0", "MOVI r7,45", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "ADD r6,r5,r13", "LD r4,r6,0", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
+    "MOVI r4,104", "JMP \@tk_lc",
     "tk_firstchar:", "LD r4,r5,0";
-$gui = replace_once($gui, "ADD r5,r1,r5\\nLD r4,r5,0", $help_token,
+$gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $help_token,
     "recognize the complete --help token in NaN16 NSH");
+
 
 my $marker = "gk_np:\nMOVI r2,0x105";
 my $insert = join "\n",
