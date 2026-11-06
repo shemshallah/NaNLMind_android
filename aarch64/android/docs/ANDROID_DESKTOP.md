@@ -23,7 +23,7 @@ Implemented commands:
 - `f`: raise the existing NSH window rather than creating a second terminal.
 - `exit`, `quit`, `q`: close only NSH, not the desktop.
 
-The `/nsh` workspace is app-private Android storage, not the guest NaNFS volume. The file manager and editor are Android host-service windows opened only when NaN16 emits a bounded command request. Corpus content is treated as data and is never executed as instructions.
+The `/nsh` workspace is app-private Android storage, not the guest NaNFS volume. The file manager and editor are Android host-service windows opened only when NaN16 emits a bounded command request. The NaNNet Training window can select `.txt` files directly from `/nsh`, as well as Android's document picker. Corpus content is treated as data and is never executed as instructions.
 
 The Android host shell is a UI/OS boundary. Guest applications, NaN16 protocol state, corpus validation, and training calculations remain NaN16 guest responsibilities. The Android shell does not execute corpus text as commands.
 
