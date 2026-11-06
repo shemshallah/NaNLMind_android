@@ -68,23 +68,8 @@ jobs:
           from pathlib import Path
           p = Path("src/exhibits/gui_cart.nas")
           s = p.read_text()
-          old = """nn_init:
-          ST r15,r14,0
-          ADD r14,r14,r13
-          CALL @pci_scan
-          CALL @pci_nic
-          SUB r14,r14,r13
-          LD r15,r14,0
-          RET"""
-          new = """nn_init:
-          ST r15,r14,0
-          ADD r14,r14,r13
-          CALL @wm_wbase
-          MOVI r2,3
-          ST r2,r1,#W_A3
-          SUB r14,r14,r13
-          LD r15,r14,0
-          RET"""
+          old = "CALL @pci_scan\nCALL @pci_nic"
+          new = "CALL @wm_wbase\nMOVI r2,3\nST r2,r1,#W_A3"
           if old not in s:
               raise SystemExit("Android NaNNet init patch target not found")
           s = s.replace(old, new, 1)
