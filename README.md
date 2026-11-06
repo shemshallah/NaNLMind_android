@@ -34,7 +34,7 @@ The current upstream boot image is 1,474,560 bytes. It is not the full 8 MiB run
 
 The Android boot path enters the NaN16 GUI desktop directly. NSH opens as a guest child window on the desktop at startup and prints the live `--help` reference. `exit`, `quit`, or `q` closes only NSH; it does not leave the desktop or return to the museum catalog. Minimized host child windows can be restored from the desktop task strip.
 
-Implemented NSH commands: `--help`/`h`, `c`, `v`, `w`, `l`, `m`, `x`, `t`, `u`, `s`, `n`, `b`, `f`, `files`, `write FILENAME`, `nannet-training`, `exit`, `quit`, and `q`. `s`, `n`, and `b` open the unified Settings, NaNNet manager, and Browser Launcher. `files` opens the internal app-private `/nsh` file manager; `write FILENAME` opens its text editor. The `nannet-training` command opens the same training interface as the desktop button. The full live reference is printed at boot and by `--help`.
+Implemented NSH commands: `--help`/`h`, `c`, `v`, `w`, `l`, `m`, `x`, `t`, `u`, `s`, `n`, `b`, `f`, `files`, `write FILENAME`, `nannet-training`, `n16t`, `exit`, `quit`, and `q`. `s`, `n`, and `b` open the unified Settings, NaNNet manager, and Browser Launcher. `files` opens the internal app-private `/nsh` file manager; `write FILENAME` opens its text editor. The `nannet-training` command opens the same training interface as the desktop button. The full live reference is printed at boot and by `--help`.
 
 NSH, Settings, NaNNet, Training, N16T Gateway, Browser launcher, COM1 Log, filesystem utility, and applications menu use a shared internal desktop child-window layer with drag, minimize/restore, maximize/restore, and close. Android document pickers and the external browser remain Android-owned system surfaces.
 
