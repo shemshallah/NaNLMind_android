@@ -108,14 +108,6 @@ $gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 
     or die "Android VM throughput label comment missing\n";
 $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q close desktop\n', "desktop terminal hint");
 $gui = replace_once($gui, 's settings n browser u utils\n', 'n browser u utils\n', "remove duplicate guest settings menu");
-$gui = replace_once($gui, 'F5 SETTINGS', 'F5 HOST SETTINGS', "desktop unified settings hint");
-$gui = replace_once($gui, 'F5 SET  F6 NET', 'F5 HOST  F6 NET', "compact desktop unified settings hint");
-$gui = replace_once($gui, "tm_set:\nMOVI r1,4\nCALL \@gui_single\nJMP \@tm_done",
-    "tm_set:\nJMP \@tm_done", "route settings to the single Android settings surface");
-$gui = replace_once($gui, "gk_f5:\nMOVI r2,0x105\nCMP r1,r2\nJMP[NE] \@gk_n5\nMOVI r1,4\nCALL \@gui_single\nJMP \@gk_ret\ngk_n5:",
-    "gk_f5:\nMOVI r2,0x105\nCMP r1,r2\nJMP[NE] \@gk_n5\nJMP \@gk_ret\ngk_n5:",
-    "route guest F5 through unified Android settings");
-
 my $marker = "gk_np:\nMOVI r2,0x105";
 my $insert = join "\n",
     "gk_np:", "MOVI r2,0x108", "CMP r1,r2", "JMP[NE] \@gk_n9",
@@ -127,15 +119,11 @@ my $insert = join "\n",
     "gk_f5:", "MOVI r2,0x105";
 $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
 
-my $f7 = join "\n", "gk_n7:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_notf3", "MOVI r1,6";
+my $f7 = join "\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7", "MOVI r1,6";
 $gui = replace_once($gui, $f7,
-    join("\n", "gk_n7:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_notf3", "MOVI r1,4"),
+    join("\n", "gk_n6:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \\@gk_n7", "MOVI r1,4"),
     "F7 opens the guest desktop settings window");
 
-$gui = replace_once($gui, "MOVI r5,40\nADD r3,r3,r5\nCALL \@gui_open_at", "MOVI r5,60\nADD r3,r3,r5\nCALL \@gui_open_at", "open windows below the F-key strip");
-$gui = replace_once($gui, "MOVI r3,40\nCALL \@gui_open_at", "MOVI r3,60\nCALL \@gui_open_at", "centre single-instance windows below the F-key strip");
-$gui = replace_once($gui, "CMP r4,r0\nJMP[EQ] \@tm_done", "CMP r4,r0\nJMP[EQ] \@tm_done\nMOVI r5,45\nCMP r4,r5\nJMP[EQ] \@tm_help", "support --help in guest NSH");
-$gui = replace_once($gui, '.str "NaN/0S TERMINAL', '.str "NaN16 NSH', "boot terminal identity");
 write_file($gui_path, $gui);
 
 my $check_shell = read_file($shell_path);
