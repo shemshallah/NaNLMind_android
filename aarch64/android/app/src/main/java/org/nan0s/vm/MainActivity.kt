@@ -19,10 +19,6 @@ import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.ScrollView
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceError
 import android.view.inputmethod.InputMethodManager
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -36,7 +32,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 
-/** Thin shell: one NanVm, one run thread, the display view, a key row and a few buttons. Everything NaN16 lives in the C core. */
+/** Android host boundary: one persistent NaN16 guest, one desktop surface, and native OS services. Guest semantics stay in NaN16 cartridges. */
 class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var vm: NanVm
     private lateinit var view: NanView
