@@ -319,7 +319,7 @@ die "F5 does not open the same unified Settings window\n"
     unless index($gui, join("\n", 'gk_f5:', 'MOVI r2,0x105', 'CMP r1,r2',
         'JMP[NE] @gk_n5', 'MOVI r1,78', 'PUTC r1')) >= 0;
 die "NSH help omits the training command\n"
-    unless index($gui, "nannet-training  OPEN TRAINING INTERFACE") >= 0;
+    unless index($gui, "nannet-training TRAINING") >= 0;
 
 $gui .= "\n" . join("\n", 's_prompt:', '.str "> "');
 write_file($gui_path, $gui);
