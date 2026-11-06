@@ -2,7 +2,7 @@ CORE ?= .nanlmind
 CORE_REPO ?= https://github.com/shemshallah/NaNLMind.git
 BUILD := build
 
-.PHONY: all core bootstrap verify route-diff test-intake clean
+.PHONY: all core bootstrap verify route-diff submit-observation test-intake clean
 
 all: core
 
@@ -20,6 +20,10 @@ verify: core
 
 route-diff: core
 	python3 scripts/route_diff.py --out state/android-route.json
+
+submit-observation:
+	@test -n "$(EVENT)" || (echo "Usage: make submit-observation EVENT=state/observation.json"; exit 2)
+	python3 scripts/submit_endpoint_observation.py "$(EVENT)"
 
 test-intake:
 	python3 -m unittest discover -s tests -p 'test_nannet_intake.py' -v
