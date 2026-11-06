@@ -15,6 +15,8 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.Gravity
+import android.view.MotionEvent
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.ScrollView
 import android.webkit.WebView
@@ -40,7 +42,9 @@ class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var view: NanView
     private lateinit var loop: NanLoop
     private lateinit var beeper: Beeper
-    private var nshDialog: AlertDialog? = null
+    private lateinit var desktopSurface: FrameLayout
+    private var nshWindow: View? = null
+    private var nshMaximized = false
     private val log = StringBuilder()
     private val reqImage = 1
     private val reqDisk = 2
@@ -149,7 +153,9 @@ class MainActivity : Activity(), NanLoop.Listener {
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
         root.addView(desktopBar(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(34)))
         root.addView(functionRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(42)))
-        root.addView(view, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        desktopSurface = FrameLayout(this).apply { setBackgroundColor(Color.rgb(4, 8, 18)) }
+        desktopSurface.addView(view, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        root.addView(desktopSurface, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(keyRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         root.addView(toolRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         setContentView(root)
@@ -221,8 +227,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         val keys = listOf("Esc" to 27, "Tab" to 9, "\u2190" to NanVm.LEFT, "\u2191" to NanVm.UP, "\u2193" to NanVm.DOWN, "\u2192" to NanVm.RIGHT,
             "~" to '~'.code, "Enter" to 13, "Bksp" to 8, "Home" to NanVm.HOME, "End" to NanVm.END, "PgUp" to NanVm.PGUP, "PgDn" to NanVm.PGDN)
         for ((label, code) in keys) row.addView(btn(label) {
-            if (label == "Esc" && nshDialog?.isShowing == true) nshDialog?.dismiss()
-            else send(code)
+            send(code)
         })
         return HorizontalScrollView(this).apply { addView(row) }
     }
