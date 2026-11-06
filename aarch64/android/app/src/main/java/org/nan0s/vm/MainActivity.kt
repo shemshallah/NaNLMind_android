@@ -863,6 +863,88 @@ class MainActivity : Activity(), NanLoop.Listener {
         }.start()
     }
 
+    private fun nshFile(name: String): File? {
+        val safe = name.trim()
+        if (safe.isEmpty() || safe == "." || safe == ".." ||
+            !safe.matches(Regex("[A-Za-z0-9._-]{1,64}"))) return null
+        val root = File(filesDir, "nsh").apply { mkdirs() }.canonicalFile
+        val file = File(root, safe).canonicalFile
+        return if (file.parentFile == root) file else null
+    }
+
+    private fun showNshEditor(name: String) {
+        val file = nshFile(name)
+        if (file == null) {
+            Toast.makeText(this, "NSH filename must use letters, numbers, dot, dash or underscore (max 64)", Toast.LENGTH_LONG).show()
+            return
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "APP-PRIVATE NSH WORKSPACE  /  " + file.name
+            setTextColor(Color.rgb(128, 232, 218))
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+        })
+        val editor = EditText(this).apply {
+            minLines = 8
+            gravity = Gravity.TOP
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+            hint = "Write file contents…"
+            if (file.isFile) setText(try { file.readText(Charsets.UTF_8) } catch (_: Exception) { "" })
+        }
+        panel.addView(ScrollView(this).apply { addView(editor) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        panel.addView(btn("SAVE FILE") {
+            try {
+                file.parentFile?.mkdirs()
+                file.writeText(editor.text.toString(), Charsets.UTF_8)
+                Toast.makeText(this, "Saved /nsh/" + file.name, Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "WRITE NO: " + e.message, Toast.LENGTH_LONG).show()
+            }
+        })
+        showDesktopWindow("NSH Editor / " + file.name, panel, 430)
+    }
+
+    private fun showNshFiles() {
+        val root = File(filesDir, "nsh").apply { mkdirs() }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "NSH WORKSPACE  /nsh  •  APP-PRIVATE TEXT FILES"
+            setTextColor(Color.rgb(128, 232, 218))
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+        })
+        panel.addView(btn("NEW TEXT FILE") {
+            val name = EditText(this).apply { hint = "example.txt"; setTextColor(Color.WHITE) }
+            AlertDialog.Builder(this).setTitle("New NSH file").setView(name)
+                .setPositiveButton("CREATE") { _, _ -> showNshEditor(name.text.toString()) }
+                .setNegativeButton("CANCEL", null).show()
+        })
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.listFiles()?.sortedBy { it.name.lowercase() }?.forEach { file ->
+            if (file.isFile) list.addView(btn(file.name + "   •   " + file.length() + " bytes") {
+                showNshEditor(file.name)
+            })
+        }
+        if (list.childCount == 0) list.addView(TextView(this).apply {
+            text = "No files yet. Use NEW TEXT FILE or type: write test.txt"
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+        })
+        panel.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        showDesktopWindow("NSH Files /nsh", panel, 390)
+    }
+
     private fun showLog() {
         val logText = synchronized(log) { log.toString() }
         val panel = LinearLayout(this).apply {
@@ -890,13 +972,22 @@ class MainActivity : Activity(), NanLoop.Listener {
     override fun onSerial(bytes: ByteArray) {
         val received = String(bytes, Charsets.ISO_8859_1)
         val openTraining = received.contains("N16HOST:TRAIN\n")
-        val visible = received.replace("N16HOST:TRAIN\n", "")
+        val openFiles = received.contains("N16HOST:FILES\n")
+        val writeRequest = Regex("N16HOST:WRITE:([^\\r\\n]*)\\n").find(received)
+        var visible = received.replace("N16HOST:TRAIN\n", "").replace("N16HOST:FILES\n", "")
+        if (writeRequest != null) visible = visible.replace(writeRequest.value, "")
         if (visible.isNotEmpty()) synchronized(log) {
             log.append(visible)
             if (log.length > 65536) log.delete(0, log.length - 49152)
         }
-        if (openTraining) runOnUiThread {
-            if (!isFinishing && !isDestroyed) showTrainingSuite()
+        if (openTraining || openFiles || writeRequest != null) runOnUiThread {
+            if (isFinishing || isDestroyed) return@runOnUiThread
+            if (openTraining) showTrainingSuite()
+            if (openFiles) showNshFiles()
+            writeRequest?.groupValues?.getOrNull(1)?.let { name ->
+                if (name.isBlank()) Toast.makeText(this, "Usage: write FILENAME", Toast.LENGTH_LONG).show()
+                else showNshEditor(name)
+            }
         }
     }
     override fun onHalt(trap: String) {
