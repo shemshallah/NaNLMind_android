@@ -209,6 +209,7 @@ class NanView(context: Context, private val vm: NanVm, private val onInput: () -
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean = key(keyCode, event, false) || super.onKeyUp(keyCode, event)
 
     private fun key(code: Int, e: KeyEvent, down: Boolean): Boolean {
+        if (down && code in hostKeysDown) return true
         if (down && onHostKey(code)) {
             hostKeysDown.add(code)
             return true
