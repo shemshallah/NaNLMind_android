@@ -104,6 +104,10 @@ $gui = replace_once($gui, $loop_exit, "CALL \@wm_pointer_poll\nCALL \@kbd_poll",
 my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", "MOVI r1,1", "ST r1,r0,\@g_quit";
 my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_single";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
+$gui = replace_once($gui,
+    "tm_quit:\nMOVI r1,1\nST r1,r0,\@g_quit\nJMP \@tm_done",
+    "tm_quit:\nLD r1,r0,\@tm_id\nCALL \@wm_close\nJMP \@tm_done",
+    "close the NSH child window without exiting the desktop");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
 $gui = replace_once($gui, '.str "MHZ"', '.str "MIPS"', "label VM instruction throughput honestly");
 $gui =~ s/TSC over >= 500 ms of TICK -> MHz/guest instruction steps over >= 500 ms of TICK -> MIPS/
@@ -137,7 +141,7 @@ $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $training_token . "\n" . $
     "recognize nannet-training and --help as complete NaN16 NSH commands");
 
 my $old_help = '.str "h c v w b l m x t s n u f q\nb browser l lattice m monitor x hex\nt term w count c clear v ver\ns settings n browser u utils\nf files (nsh) q quit gui\n"';
-my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  f FILES\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS  q CLOSE\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t TERMINAL\ns SETTINGS  n NaNNet  u UTILITIES  f FILES\nnannet-training  OPEN NaNNet TRAINING INTERFACE\nF5 SETTINGS  F6 NaNNet  F7 SYSTEM SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
 $gui = replace_once($gui, $old_help, $new_help, "publish complete NSH command reference");
 
 
