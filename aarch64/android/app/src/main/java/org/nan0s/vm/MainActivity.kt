@@ -40,6 +40,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private lateinit var view: NanView
     private lateinit var loop: NanLoop
     private lateinit var beeper: Beeper
+    private var nshDialog: AlertDialog? = null
     private val log = StringBuilder()
     private val reqImage = 1
     private val reqDisk = 2
@@ -213,7 +214,10 @@ class MainActivity : Activity(), NanLoop.Listener {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val keys = listOf("Esc" to 27, "Tab" to 9, "\u2190" to NanVm.LEFT, "\u2191" to NanVm.UP, "\u2193" to NanVm.DOWN, "\u2192" to NanVm.RIGHT,
             "~" to '~'.code, "Enter" to 13, "Bksp" to 8, "Home" to NanVm.HOME, "End" to NanVm.END, "PgUp" to NanVm.PGUP, "PgDn" to NanVm.PGDN)
-        for ((label, code) in keys) row.addView(btn(label) { send(code) })
+        for ((label, code) in keys) row.addView(btn(label) {
+            if (label == "Esc" && nshDialog?.isShowing == true) nshDialog?.dismiss()
+            else send(code)
+        })
         return HorizontalScrollView(this).apply { addView(row) }
     }
 
@@ -249,6 +253,8 @@ class MainActivity : Activity(), NanLoop.Listener {
         val input=EditText(this).apply { singleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
         panel.addView(input,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         val dialog=AlertDialog.Builder(this).setTitle("NSH  /  DESKTOP TERMINAL").setView(panel).setPositiveButton("Close window",null).setNeutralButton("Help",null).create()
+        nshDialog = dialog
+        dialog.setOnDismissListener { if (nshDialog === dialog) nshDialog = null }
         fun append(line:String){ output.append(line+"\n"); scroll.post{scroll.fullScroll(View.FOCUS_DOWN)} }
         fun runCommand(){
             val command=input.text.toString().trim(); if(command.isEmpty()) return
@@ -304,6 +310,11 @@ class MainActivity : Activity(), NanLoop.Listener {
             }
         }
         input.setOnEditorActionListener{_,action,_->if(action==EditorInfo.IME_ACTION_DONE||action==EditorInfo.IME_NULL){runCommand();true}else false}
+        input.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_ESCAPE && event.action == android.view.KeyEvent.ACTION_UP) {
+                dialog.dismiss(); true
+            } else false
+        }
         dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss()};dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{append(nshHelp())};input.requestFocus();input.post{(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT)}}
         dialog.show()
     }
