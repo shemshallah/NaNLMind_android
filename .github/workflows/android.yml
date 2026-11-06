@@ -153,9 +153,9 @@ jobs:
               "MOVI r1,1", "CALL @gui_single", "JMP @gk_ret",
               "gk_n9:", "MOVI r2,0x109", "CMP r1,r2", "JMP[NE] @gk_n10",
               "MOVI r1,2", "CALL @gui_single", "JMP @gk_ret",
-              "gk_n10:", "MOVI r2,0x10A", "CMP r1,r2", "JMP[NE] @gk_n5",
+              "gk_n10:", "MOVI r2,0x10A", "CMP r1,r2", "JMP[NE] @gk_f5",
               "MOVI r1,3", "CALL @gui_single", "JMP @gk_ret",
-              "gk_n5:", "MOVI r2,0x105"
+              "gk_f5:", "MOVI r2,0x105"
           ])
           if marker not in s:
               raise SystemExit("desktop global hotkey insertion point missing")
