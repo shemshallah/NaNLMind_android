@@ -975,11 +975,15 @@ class MainActivity : Activity(), NanLoop.Listener {
             textSize = 11f
             typeface = android.graphics.Typeface.MONOSPACE
         })
-        panel.addView(btn("NEW TEXT FILE") {
-            val name = EditText(this).apply { hint = "example.txt"; setTextColor(Color.WHITE) }
-            AlertDialog.Builder(this).setTitle("New NSH file").setView(name)
-                .setPositiveButton("CREATE") { _, _ -> showNshEditor(name.text.toString()) }
-                .setNegativeButton("CANCEL", null).show()
+        val newName = EditText(this).apply {
+            hint = "example.txt"
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        }
+        panel.addView(newName, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        panel.addView(btn("CREATE / OPEN TEXT FILE") {
+            showNshEditor(newName.text.toString())
         })
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.listFiles()?.sortedBy { it.name.lowercase() }?.forEach { file ->
