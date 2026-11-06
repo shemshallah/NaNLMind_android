@@ -1,0 +1,34 @@
+name: Android endpoint client tests
+
+on:
+  pull_request:
+    paths:
+      - "scripts/submit_endpoint_observation.py"
+      - "tests/test_submit_endpoint_observation.py"
+      - ".github/workflows/endpoint-client.yml"
+      - "Makefile"
+      - "README.md"
+  push:
+    branches: [main, endpoint-observation-client]
+    paths:
+      - "scripts/submit_endpoint_observation.py"
+      - "tests/test_submit_endpoint_observation.py"
+      - ".github/workflows/endpoint-client.yml"
+      - "Makefile"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  endpoint-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test scoped endpoint publisher
+        run: python -m unittest discover -s tests -p "test_submit_endpoint_observation.py" -v
+      - name: Validate Makefile target
+        run: make -n submit-observation EVENT=state/observation.json
