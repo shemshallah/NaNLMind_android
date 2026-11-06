@@ -47,7 +47,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private var nshMaximized = false
     private var wifiStatusView: TextView? = null
     private var wifiResultsView: LinearLayout? = null
-    private var wifiDialog: AlertDialog? = null
+    private var wifiWindow: View? = null
     private var wifiScanAfterPermission = false
     private val log = StringBuilder()
     private val reqImage = 1
@@ -166,6 +166,84 @@ class MainActivity : Activity(), NanLoop.Listener {
         view.requestFocus()
         loop.start(); beeper.start()
         view.post { if (!isFinishing && !isDestroyed) showNshWindow() }
+    }
+
+    private fun showDesktopWindow(title: String, content: View, heightDp: Int = 340): View {
+        val shell = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setBackgroundColor(Color.rgb(9, 13, 27))
+            elevation = dp(14).toFloat()
+        }
+        val chrome = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(3), dp(4), dp(3))
+            setBackgroundColor(Color.rgb(37, 53, 91))
+        }
+        val caption = TextView(this).apply {
+            text = title.uppercase()
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(Color.rgb(128, 232, 218))
+        }
+        chrome.addView(caption, LinearLayout.LayoutParams(0, dp(32), 1f))
+        val minimize = btn("−") { shell.visibility = View.GONE }
+        var maximized = false
+        val maximize = btn("□") {
+            val lp = shell.layoutParams as FrameLayout.LayoutParams
+            maximized = !maximized
+            if (maximized) {
+                lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+                lp.height = FrameLayout.LayoutParams.MATCH_PARENT
+                lp.setMargins(0, 0, 0, 0)
+                lp.gravity = Gravity.TOP or Gravity.START
+            } else {
+                lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+                lp.height = dp(heightDp)
+                lp.setMargins(dp(8), dp(8), dp(8), dp(8))
+                lp.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            }
+            shell.layoutParams = lp
+            maximize.text = if (maximized) "❐" else "□"
+        }
+        val close = btn("×") {
+            desktopSurface.removeView(shell)
+        }
+        chrome.addView(minimize, LinearLayout.LayoutParams(dp(40), dp(32)))
+        chrome.addView(maximize, LinearLayout.LayoutParams(dp(40), dp(32)))
+        chrome.addView(close, LinearLayout.LayoutParams(dp(40), dp(32)))
+        shell.addView(chrome)
+        shell.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
+        desktopSurface.addView(shell, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, dp(heightDp), Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        ).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
+        var rawX = 0f
+        var rawY = 0f
+        var originX = 0
+        var originY = 0
+        chrome.setOnTouchListener { _, event ->
+            val lp = shell.layoutParams as FrameLayout.LayoutParams
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    rawX = event.rawX; rawY = event.rawY
+                    originX = lp.leftMargin; originY = lp.topMargin
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (!maximized) {
+                        lp.gravity = Gravity.TOP or Gravity.START
+                        lp.leftMargin = (originX + event.rawX - rawX).toInt().coerceIn(0, (desktopSurface.width - shell.width).coerceAtLeast(0))
+                        lp.topMargin = (originY + event.rawY - rawY).toInt().coerceIn(0, (desktopSurface.height - shell.height).coerceAtLeast(0))
+                        shell.layoutParams = lp
+                    }
+                    true
+                }
+                else -> true
+            }
+        }
+        shell.bringToFront()
+        return shell
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
