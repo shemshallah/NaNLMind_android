@@ -44,30 +44,34 @@ object WifiBridge {
     fun status(c: Context): String {
         val w = wifi(c)
         val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val n = cm.activeNetwork
-        val caps = if (n != null) cm.getNetworkCapabilities(n) else null
-        if (caps == null) return "NaNNet: no active Android network"
-        val sb = StringBuilder()
+        val active = cm.activeNetwork
+        val caps = if (active != null) cm.getNetworkCapabilities(active) else null
+        val info = w.connectionInfo
+        val connectedWifi = w.isWifiEnabled && info.networkId >= 0
+        val ssid = info.ssid?.takeIf { it.isNotBlank() && it != "<unknown ssid>" } ?: "SSID hidden"
+        val sb = StringBuilder("NANNET • ANDROID HOST NETWORK MANAGER\n")
+        sb.append("Wi-Fi radio: ").append(if (w.isWifiEnabled) "ON" else "OFF")
+        if (connectedWifi) {
+            sb.append("\nWi-Fi SSID: ").append(ssid)
+            sb.append("\nWi-Fi signal: ").append(info.rssi).append(" dBm")
+            if (info.linkSpeed > 0) sb.append(" • ").append(info.linkSpeed).append(" Mbps link")
+        } else sb.append("\nWi-Fi association: not connected")
+        sb.append("\nActive route: ")
         when {
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                val info = w.connectionInfo
-                val ssid = info.ssid?.takeIf { it.isNotBlank() && it != "<unknown ssid>" } ?: "SSID hidden"
-                sb.append("WI-FI • ").append(if (w.isWifiEnabled) "ON" else "OFF")
-                    .append("\nSSID: ").append(ssid)
-                    .append("\nSignal: ").append(info.rssi).append(" dBm")
-                if (info.linkSpeed > 0) sb.append(" • ").append(info.linkSpeed).append(" Mbps link")
-            }
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                sb.append("CELLULAR • connected\nMobile data is the active route")
-                if (Build.VERSION.SDK_INT >= 29) sb.append("\nDownstream: ").append(caps.linkDownstreamBandwidthKbps).append(" kbps")
-                sb.append("\n5G/LTE selection is controlled by Android and the carrier")
-            }
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> sb.append("ETHERNET • connected")
-            else -> sb.append("ANDROID NETWORK • connected")
+            caps == null -> sb.append("OFFLINE / no default network")
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> sb.append("WI-FI")
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> sb.append("CELLULAR (LTE/5G selected by Android)")
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> sb.append("ETHERNET")
+            else -> sb.append("ANDROID NETWORK")
         }
-        sb.append("\nInternet: ").append(if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) "available" else "local only")
-        sb.append("\nValidated: ").append(if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) "yes" else "not verified")
-        sb.append("\nNaNNet route: Android default network")
+        if (caps != null) {
+            sb.append("\nInternet: ").append(if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) "available" else "local only")
+            sb.append("\nValidated: ").append(if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) "yes" else "not verified")
+            if (Build.VERSION.SDK_INT >= 29 && caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
+                sb.append("\nCellular downstream: ").append(caps.linkDownstreamBandwidthKbps).append(" kbps")
+        }
+        sb.append("\nNaNNet adapter: Android ConnectivityManager (no guest PCI device)")
+        sb.append("\nGateway traffic uses the active Wi-Fi OR cellular data route.")
         return sb.toString()
     }
 
@@ -153,6 +157,14 @@ object WifiBridge {
     }
 
     fun openSettings(c: Context) {
-        c.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        c.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    fun openMobileSettings(c: Context) {
+        val intent = Intent(Settings.ACTION_DATA_ROAMING_SETTINGS)
+        try { c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        catch (_: Exception) {
+            c.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
     }
 }
