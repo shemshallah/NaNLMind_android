@@ -272,7 +272,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "nannet-training","training"->{dialog.dismiss();showTrainingSuite()}
                 "wifi","nannet"->{dialog.dismiss();showWifi()}
                 "n16t","gateway"->{dialog.dismiss();showRemoteGateway()}
-                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
+                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
                 "settings"->{dialog.dismiss();showUnifiedSettings()}
                 "open","load"->{
                     if(arg.isBlank()){dialog.dismiss();pick(reqImage)}
@@ -295,11 +295,11 @@ class MainActivity : Activity(), NanLoop.Listener {
                         "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
                         "training"->{dialog.dismiss();showTrainingSuite()}
                         "gateway","n16t"->{dialog.dismiss();showRemoteGateway()}
-                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")}
+                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}
                         else->append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
                     }
                 }
-                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/n16t")}}.setNegativeButton("Close",null).show()}
+                "apps"->{val apps=arrayOf("Sierpinski / Lattice","Monitor","Hex viewer","Settings","NaNNet","System utilities","NaNNet training","N16T gateway","Browser");AlertDialog.Builder(this).setTitle("Desktop applications").setItems(apps){_,which->when(which){0->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke()};1->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke()};2->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke()};3->showUnifiedSettings();4->showWifi();5->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()};6->showTrainingSuite();7->showRemoteGateway();8->showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}}.setNegativeButton("Close",null).show()}
                 "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. Use run <app> or apps.")
                 "files"->append(nshHome.listFiles()?.sortedBy{it.name}?.joinToString("\n"){if(it.isDirectory)it.name+"/" else it.name+"  ("+it.length()+" bytes)"}?.ifBlank{"(empty /nsh)"}?:"(empty /nsh)")
                 "version","ver"->append("NaNLMind_ANDROID • NaN16 guest • Android host services")
