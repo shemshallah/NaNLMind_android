@@ -253,9 +253,18 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "n16t","gateway"->{dialog.dismiss();showRemoteGateway()}
                 "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening external browser: "+target);try{startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse(target)))}catch(e:Exception){append("BROWSER NO: "+e.message)}}
                 "settings"->{dialog.dismiss();showUnifiedSettings()}
+                "open","load"->{dialog.dismiss();pick(reqImage)}
+                "disk"->{dialog.dismiss();pick(reqDisk)}
+                "fs"->{dialog.dismiss();chooseFsSize()}
+                "log"->{dialog.dismiss();showLog()}
+                "fit"->{view.resetZoom();append("Display fitted to desktop.")}
+                "scale"->{view.integerScale=!view.integerScale;view.invalidate();append("Integer scaling: "+view.integerScale)}
+                "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
                 "windows","wm"->append("Desktop windows: Sierpinski, Monitor, Hex, Settings, NaNNet, System Utilities. F5/F6/F7 open system windows.")
+                "files"->append("Files are sandboxed in /nsh. Use ls, write, cat, mkdir and rm.")
                 "version","ver"->append("NaNLMind_ANDROID • NaN16 guest • Android host services")
                 "desktop"->append("Desktop remains active behind this NSH window.")
+                "reset"->{dialog.dismiss();AlertDialog.Builder(this).setTitle("Reset desktop").setMessage("Restore the bundled NaN16 desktop and discard the current unsaved VM session?").setPositiveButton("Reset"){_,_->autosave.delete();vm.detachDisk();diskFile.delete();fsFile.delete();fsKey.delete();seedDisk();vm.load(asset());attachDefaultDisk();loop.rearm()}.setNegativeButton("Cancel",null).show()}
                 "exit","quit"->{dialog.dismiss();return}
                 else->append("command not found: "+verb+" (type --help)")
             }
@@ -265,7 +274,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         dialog.show()
     }
     private fun nshHelp():String =
-        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nwindows            List desktop apps\nversion            Show system version\nexit               Close NSH; desktop stays running"
+        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nwindows            List desktop apps\nfiles              Show file commands\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
     private fun nshFile(name:String):File{
         require(name.isNotBlank()&&!name.startsWith("/")&&!name.contains("\\"))
         val base=nshHome.canonicalFile;val file=File(base,name).canonicalFile
