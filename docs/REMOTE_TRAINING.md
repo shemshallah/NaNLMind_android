@@ -16,7 +16,7 @@ The client generates a 256-bit installation secret, records it in
 `~/.config/nanlmind/nannet-device.json` with owner-only file permissions,
 submits a minimal capability report, and receives the next available BS0
 community slot (HW4–HW255). Re-running registration with the same local state
-resumes that identity and rotates the bearer token in place without claiming a second HW slot. Use
+resumes that identity and rotates the bearer token in place without claiming a second HW slot. Guest bearer tokens are signed with per-device keys derived from the server-only authority master key; the client never receives that master key or any private signing seed. Each heartbeat rotates the bearer and invalidates its predecessor. Use
 `python scripts/nannet_device.py heartbeat` while participating and
 `python scripts/nannet_device.py release` when leaving. Release is refused
 while uploads, validated/quarantined corpora, or unacknowledged evidence remain.
