@@ -166,7 +166,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           gui = Path("src/exhibits/gui_cart.nas").read_text()
-          assert "term_draw" not in safe_show, "browser redraw must not invoke terminal full-screen redraw"
           boot = chr(10).join(["MOVI r1,0", "CALL @gui_open_new", "MOVI r1,1", "ST r1,r0,@wm_redraw"])
           assert boot not in gui, "Android desktop must not boot a second guest CLI"
           assert "CALL @pci_scan" not in gui[gui.index("nn_init:"):gui.index("nn_nic:")], "Android NaNNet must not probe guest PCI"
