@@ -286,7 +286,7 @@ die "NSH full-command parser missing nannet-training\n"
 die "NSH exit no longer closes only its child window\n"
     unless index($gui, join("\n", 'tm_quit:', 'LD r1,r0,@tm_id', 'CALL @wm_close')) >= 0;
 die "F6 does not open the live NANNET manager\n"
-    unless index($gui, join("\\n", 'gk_n5:', 'MOVI r2,0x106', 'CMP r1,r2',
+    unless index($gui, join("\n", 'gk_n5:', 'MOVI r2,0x106', 'CMP r1,r2',
         'JMP[NE] @gk_n6', 'MOVI r1,78', 'PUTC r1')) >= 0;
 die "F7 does not open the unified Settings window\n"
     unless index($gui, join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2',
