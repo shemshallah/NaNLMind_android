@@ -302,6 +302,9 @@ $gui = replace_once($gui, $f5,
          $settings_hotkey, 'gk_n5:'),
     "F5 and F7 open the same unified Settings surface");
 
+die "NaN16 desktop boot does not open its NSH child window\n"
+    unless index($gui, join("\n", 'MOVI r1,0', 'CALL @gui_open_new',
+        'MOVI r1,1', 'ST r1,r0,@wm_redraw')) >= 0;
 die "NSH full-command parser missing files/write handlers\n"
     unless index($gui, "tk_check_files:") >= 0 &&
            index($gui, "tk_check_write:") >= 0 &&
