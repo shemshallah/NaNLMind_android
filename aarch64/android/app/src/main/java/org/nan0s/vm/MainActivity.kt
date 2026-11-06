@@ -581,16 +581,37 @@ class MainActivity : Activity(), NanLoop.Listener {
      * Delegate browsing to Androids isolated browser process. The old embedded WebView
      * could stall the guest UI while rendering script-heavy pages.
      */
-    private fun showBrowserWindow(initialUrl:String) {
-        try {
-            val uri = URI(initialUrl.trim())
-            require((uri.scheme == "https" || uri.scheme == "http") && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null) {
-                "Enter an HTTP(S) URL without credentials or fragments"
-            }
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri.toString())), "Open with browser"))
-        } catch (e: Exception) {
-            Toast.makeText(this, "Browser could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
+    private fun showBrowserWindow(initialUrl: String) {
+        val uri = try { URI(initialUrl.trim()) } catch (e: Exception) {
+            Toast.makeText(this, "Invalid browser URL", Toast.LENGTH_LONG).show()
+            return
         }
+        if ((uri.scheme != "https" && uri.scheme != "http") || uri.host.isNullOrBlank() ||
+            uri.userInfo != null || uri.fragment != null) {
+            Toast.makeText(this, "Use an HTTP(S) URL without credentials or fragments", Toast.LENGTH_LONG).show()
+            return
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "ISOLATED BROWSER LAUNCHER\n\n" + uri.toString() + "\n\nThe page opens in Android's separate browser process. It cannot block the NaN16 VM or desktop rendering thread."
+            setTextColor(Color.rgb(180, 224, 220))
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(0, 0, 0, dp(12))
+        })
+        panel.addView(btn("OPEN IN ANDROID BROWSER") {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri.toString()))
+                startActivity(Intent.createChooser(intent, "Open with browser"))
+            } catch (e: Exception) {
+                Toast.makeText(this, "No browser available: " + e.message, Toast.LENGTH_LONG).show()
+            }
+        })
+        showDesktopWindow("Browser", panel, 260)
     }
 
     private fun showUnifiedSettings() {
@@ -850,11 +871,18 @@ class MainActivity : Activity(), NanLoop.Listener {
         loop.paused = false
         loop.rearm()
         runOnUiThread {
-            val dialog = AlertDialog.Builder(this)
-                .setTitle("NaNLMind Remote Training")
-                .setMessage(if (restored) message else "$message\nWarning: the previous VM snapshot could not be restored.")
-                .setPositiveButton("Close", null)
-            dialog.show()
+            val panel = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                setBackgroundColor(Color.rgb(17, 22, 42))
+            }
+            panel.addView(TextView(this).apply {
+                text = if (restored) message else "$message\nWarning: the previous VM snapshot could not be restored."
+                setTextColor(Color.rgb(180, 224, 220))
+                textSize = 12f
+                typeface = android.graphics.Typeface.MONOSPACE
+            })
+            showDesktopWindow("NaNNet Training Result", panel, 300)
         }
     }
 
@@ -1073,11 +1101,24 @@ class MainActivity : Activity(), NanLoop.Listener {
 
     private fun showLog() {
         val text = synchronized(log) { log.toString() }
-        AlertDialog.Builder(this).setTitle("COM1 / serial log").setMessage(if (text.isEmpty()) "(empty)" else text)
-            .setPositiveButton("Close", null)
-            .setNeutralButton("Copy") { _, _ ->
-                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("nan0s log", text))
-            }.show()
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setBackgroundColor(Color.rgb(3, 7, 14))
+        }
+        val body = TextView(this).apply {
+            text = if (text.isEmpty()) "(empty)" else text
+            setTextColor(Color.rgb(180, 225, 218))
+            typeface = android.graphics.Typeface.MONOSPACE
+            textSize = 11f
+        }
+        panel.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        panel.addView(btn("COPY LOG") {
+            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                .setPrimaryClip(ClipData.newPlainText("nan0s log", text))
+            Toast.makeText(this, "Log copied", Toast.LENGTH_SHORT).show()
+        })
+        showDesktopWindow("COM1 / Serial Log", panel, 360)
     }
 
     // ---- NanLoop.Listener (called on the run thread) ----
