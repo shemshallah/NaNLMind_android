@@ -1,7 +1,7 @@
+package org.nan0s.vm
+
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-
-package org.nan0s.vm
 
 /** Thread-safe wrapper: the UI thread (input, drawing) and the run thread share one nan_vm. All calls take the same lock. */
 class NanVm : AutoCloseable {
