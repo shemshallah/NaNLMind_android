@@ -82,6 +82,6 @@ internal class N16HttpsTransport(
     }
 
     companion object {
-        const val MEDIA_TYPE = "application/vnd.nan16.n16t"
+        const val MEDIA_TYPE = "application/x-n16t"
     }
 }
