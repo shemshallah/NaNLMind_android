@@ -17,6 +17,7 @@ Implemented commands:
 - `l`, `m`, `x`, `t`, `u`: open Lattice, Monitor, Hex, raise the same NSH window, and guest utilities.
 - `s`, `n`, `b`: open the unified Settings, NaNNet manager, and isolated Browser Launcher as desktop child windows.
 - `nannet-training`: open the same NaNNet Training interface as the desktop button.
+- `n16t`: open the N16T Gateway as an internal desktop child window.
 - `files`: open the internal `/nsh` file manager.
 - `write FILENAME`: open an internal text editor for a file in `/nsh`. Filenames are limited to 64 ASCII letters, digits, dot, dash, or underscore; path traversal and subdirectories are rejected.
 - `f`: raise the existing NSH window rather than creating a second terminal.
