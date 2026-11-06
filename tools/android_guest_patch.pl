@@ -107,6 +107,10 @@ my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", 
 my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_single";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
 $gui = replace_once($gui,
+    "tm_term:\nMOVI r1,0\nCALL \@gui_open_new\nJMP \@tm_done",
+    "tm_term:\nMOVI r1,0\nCALL \@gui_single\nJMP \@tm_done",
+    "make the terminal command raise the single NSH child window");
+$gui = replace_once($gui,
     "tm_quit:\nMOVI r1,1\nST r1,r0,\@g_quit\nJMP \@tm_done",
     "tm_quit:\nLD r1,r0,\@tm_id\nCALL \@wm_close\nJMP \@tm_done",
     "close the NSH child window without exiting the desktop");
@@ -230,7 +234,7 @@ my $command_token = join "\n",
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $command_token,
     "recognize exit, quit, nannet-training and --help as NaN16 NSH commands");
-my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t NEW TERMINAL\nf FOCUS NSH  s SETTINGS  n NANNET/WI-FI  u UTILITIES\nfiles LIST FILES  write NAME OPEN TEXT EDITOR\nnannet-training  OPEN TRAINING INTERFACE\nF5 SETTINGS  F6 NANNET  F7 SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
+my $new_help = '.str "NSH --help / h HELP  c CLEAR  v VERSION  w WINDOWS\nb BROWSER  l LATTICE  m MONITOR  x HEX  t RAISE NSH\nf FOCUS NSH  s SETTINGS  n NANNET/WI-FI  u UTILITIES\nfiles LIST FILES  write NAME OPEN TEXT EDITOR\nnannet-training  OPEN TRAINING INTERFACE\nF5 SETTINGS  F6 NANNET  F7 SETTINGS\nexit / quit / q  CLOSE NSH WINDOW\n"';
 $gui =~ s/(s_help:\n)\.str "[^"]*"/$1$new_help/s
     or die "Android NSH help text patch target missing\n";
 
