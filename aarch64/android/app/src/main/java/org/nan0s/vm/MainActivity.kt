@@ -1120,14 +1120,14 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun showLog() {
-        val text = synchronized(log) { log.toString() }
+        val logText = synchronized(log) { log.toString() }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(8), dp(10), dp(8))
             setBackgroundColor(Color.rgb(3, 7, 14))
         }
         val body = TextView(this).apply {
-            text = if (text.isEmpty()) "(empty)" else text
+            text = if (logText.isEmpty()) "(empty)" else logText
             setTextColor(Color.rgb(180, 225, 218))
             typeface = android.graphics.Typeface.MONOSPACE
             textSize = 11f
@@ -1135,7 +1135,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         panel.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
         panel.addView(btn("COPY LOG") {
             (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                .setPrimaryClip(ClipData.newPlainText("nan0s log", text))
+                .setPrimaryClip(ClipData.newPlainText("nan0s log", logText))
             Toast.makeText(this, "Log copied", Toast.LENGTH_SHORT).show()
         })
         showDesktopWindow("COM1 / Serial Log", panel, 360)
