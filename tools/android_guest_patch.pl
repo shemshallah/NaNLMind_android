@@ -110,13 +110,13 @@ $gui = replace_once($gui, 'f files (nsh) q quit gui\n', 'f open terminal  q clos
 $gui = replace_once($gui, 's settings n browser u utils\n', 'n browser u utils\n', "remove duplicate guest settings menu");
 my $help_token = join "\n",
     "ADD r5,r1,r5",
-    "LD r4,r5,0", "MOVI r7,45", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "ADD r6,r5,r13", "LD r4,r6,0", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", "JMP[NE] \@tk_firstchar",
-    "MOVI r4,104", "JMP \@tk_lc",
+    "LD r4,r5,0", "MOVI r7,45", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADD r6,r5,r13", "LD r4,r6,0", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,104", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,101", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,108", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "ADD r6,r6,r13", "LD r4,r6,0", "MOVI r7,112", "CMP r4,r7", 'JMP[NE] @tk_firstchar',
+    "MOVI r4,104", 'JMP @tk_lc',
     "tk_firstchar:", "LD r4,r5,0";
 $gui = replace_once($gui, "ADD r5,r1,r5\nLD r4,r5,0", $help_token,
     "recognize the complete --help token in NaN16 NSH");
