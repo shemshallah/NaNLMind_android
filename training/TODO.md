@@ -22,8 +22,8 @@
 7. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
 8. [x] Add manual GitHub Runner CPU Ring workflow using the same guest and corpus format.
 9. [ ] Add candidate evaluator, contribution accounting, and transactional merge.
-10. [x] Add explicit Android runtime asset allowlist. [ ] Add packaged APK artifact scan.
-11. [ ] Wire the Android UI to NaN16-generated N16T frames and the HTTPS adapter; deploy the authenticated TLS gateway.
+10. [x] Add explicit Android runtime asset allowlist and enforce it at build time. [ ] Add packaged APK artifact scan.
+11. [x] Add bounded Android HTTPS opaque-frame transport. [ ] Expose persistent NaN16 frame-build/validate calls through the Android VM ABI, wire the UI to that guest interface, and deploy the authenticated TLS gateway.
 12. [x] Build APK and run the shared corpus pipeline on the GitHub runner. [ ] Install APK on a device and run identical corpus vectors on Android.
 
 ## Acceptance gate
