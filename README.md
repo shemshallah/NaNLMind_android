@@ -55,6 +55,35 @@ make route-diff
 
 No 2 GiB map is created, uploaded, or cached here.
 
+## Endpoint observation transport
+
+The Android edge node can submit a version-1, hardware-neutral observation to
+the shared NaNLMind intake gateway. The gateway assigns `my_android` from the
+scoped device token; the payload cannot choose its own endpoint identity or
+claim a verified outcome.
+
+Set the gateway base URL and the scoped token in the Termux session (never in
+the APK, source tree, or route-diff artifact):
+
+```sh
+export NANLM_INTAKE_URL="https://YOUR_GATEWAY"
+export NANLM_DEVICE_TOKEN="(revocable device token)"
+```
+
+Create an observation envelope from the local runner's actual trace summary,
+then submit it:
+
+```sh
+make submit-observation EVENT=state/observation.json
+```
+
+The event contains only its SHA-256 event ID, base generation, and active
+head indices. The client rejects caller-supplied correctness labels and uses
+Python's standard library, so it is not tied to ARM, x86, Android API level,
+or an accelerator. The gateway queues the observation; it does **not** mean
+the canonical 256-head state has been updated. The runner ring must validate
+and ingest it before it can affect Overbootstrap.
+
 ## Security
 
 `DEEPREPO_PAT` is never used here and must never be shipped in the APK or kept on
