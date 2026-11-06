@@ -701,13 +701,10 @@ class MainActivity : Activity(), NanLoop.Listener {
             textSize = 12f
             setPadding(0, 0, 0, dp(8))
         })
-        panel.addView(btn("DISPLAY / GUEST SETTINGS") {
-            vm.keyEvent(0x3F, true); vm.keyEvent(0x3F, false); loop.poke()
-        })
+        panel.addView(btn("FIT DESKTOP VIEWPORT") { view.resetZoom(); view.invalidate() })
         panel.addView(btn("NANNET / WI-FI / CELLULAR") { showWifi() })
         panel.addView(btn("NANNET TRAINING") { showTrainingSuite() })
         panel.addView(btn("N16T GATEWAY") { showRemoteGateway() })
-        panel.addView(btn("FIT DESKTOP VIEWPORT") { view.resetZoom(); view.invalidate() })
         panel.addView(btn("TOGGLE INTEGER SCALING") {
             view.integerScale = !view.integerScale
             view.invalidate()
