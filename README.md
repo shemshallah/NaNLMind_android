@@ -69,10 +69,12 @@ the runner ring, Android reference endpoint, Hermes, and Clocked.
     python scripts/nannet_device.py release
 
 The device CLI creates a random 256-bit installation secret and stores the
-local state at ~/.config/nanlmind/nannet-device.json with mode 0600. Repeated
-registration with that state resumes the same active lease. Release revokes
-the bearer token and frees the slot only after pending uploads and observations
-have been handled. The route-diff client automatically reads the token/address
+local state at ~/.config/nanlmind/nannet-device.json with mode 0600. The portal
+derives a distinct guest signing key for this device identity from the
+server-only NANNET authority master key; the device receives only its signed,
+scoped bearer. Heartbeat rotates the bearer and revokes its predecessor, so
+the client must persist the returned token. Release revokes the active bearer
+and frees the slot only after pending uploads and observations have been handled. The route-diff client automatically reads the token/address
 from this state file; environment variables can override them.
 
 This repository currently contains the Termux/CLI enrollment path and network
