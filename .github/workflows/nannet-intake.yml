@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "scripts/intake_client.py"
+      - "scripts/nannet_device.py"
       - "scripts/route_diff.py"
       - "tests/test_nannet_intake.py"
       - "config/android.env"
