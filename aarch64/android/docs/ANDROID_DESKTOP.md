@@ -53,3 +53,8 @@ The Android-specific guest image is patched from the pinned NaN0S source revisio
 ## Current training boundary
 
 The current Android training guest validates N16TXT/1 input and produces a temporary byte-frequency/byte-bigram candidate snapshot. It restores the active desktop VM afterward. This is not yet a neural optimizer, remote corpus-upload client, candidate quality evaluator, or transactional merge pipeline. The UI labels this boundary explicitly and does not claim a remote training merge is complete.
+
+
+## Android host-shell correction (2026-11-06)
+
+The Android Activity must not create, display, or launch an Android-native NSH terminal. The only terminal visible at boot is the guest desktop's NaN16 window (kind 0). The host Activity is limited to VM display/input and Android hardware/service boundaries. The desktop's F7 shortcut is routed into the guest and opens the guest Settings window; it must not be intercepted by an Android settings panel.
