@@ -325,7 +325,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         dialog.show()
     }
     private fun nshHelp():String =
-        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open internal browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nrun APP            Launch a desktop application\napps               Open application menu\nwindows            List desktop apps\nfiles              List files in /nsh\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
+        "COMMANDS\n--help, help       Show commands\nls, dir            List /nsh files\npwd                Current directory\nwrite NAME [TEXT]  Create/overwrite file\ncat NAME           Read file\nmkdir NAME         Create directory\nrm NAME            Delete file\nclear              Clear output\nnannet-training    Open training interface\nwifi, nannet       Open Wi-Fi/cellular manager\nn16t, gateway      Open HTTPS gateway\nbrowser [URL], b   Open Android browser\nsettings           Unified desktop settings\nopen FILE          Load a NaN16 program\ndisk               Attach a disk image\nfs                 Create sparse filesystem image\nlog                View serial log\nfit, scale         Adjust desktop viewport\nsystem             Open system utilities\nrun APP            Launch a desktop application\napps               Open application menu\nwindows            List desktop apps\nfiles              List files in /nsh\nreset              Restore bundled desktop\nversion            Show system version\nexit               Close NSH; desktop stays running"
     private fun nshFile(name:String):File{
         require(name.isNotBlank()&&!name.startsWith("/")&&!name.contains("\\"))
         val base=nshHome.canonicalFile;val file=File(base,name).canonicalFile
@@ -713,8 +713,9 @@ class MainActivity : Activity(), NanLoop.Listener {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != reqWifi) return
-        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) showWifi()
-        else Toast.makeText(this, "WiFi permission denied", Toast.LENGTH_LONG).show()
+        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
+            Toast.makeText(this, "NaNNet scan permission granted. Tap Scan in the open manager.", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(this, "Wi-Fi scan permission denied; active route status remains available.", Toast.LENGTH_LONG).show()
     }
 
     private fun pick(req: Int) {
