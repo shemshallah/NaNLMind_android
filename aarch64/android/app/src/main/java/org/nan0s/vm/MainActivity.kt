@@ -252,13 +252,40 @@ class MainActivity : Activity(), NanLoop.Listener {
     }
 
     private fun showNshWindow() {
-        val panel = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(12),dp(10),dp(12),dp(8)); setBackgroundColor(Color.rgb(12,17,31)) }
+        val panel = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(8),dp(8),dp(8),dp(8)); setBackgroundColor(Color.rgb(12,17,31)) }
+        val chrome = LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
+            setPadding(dp(8),dp(3),dp(4),dp(3)); setBackgroundColor(Color.rgb(34,48,83))
+        }
+        val caption = TextView(this).apply {
+            text="NSH  /  NaNLMind terminal"; textSize=12f
+            typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.rgb(128,232,218))
+        }
+        chrome.addView(caption,LinearLayout.LayoutParams(0,dp(34),1f))
+        val minimize = btn("−") {}
+        val maximize = btn("□") {}
+        val close = btn("×") {}
+        chrome.addView(minimize,LinearLayout.LayoutParams(dp(42),dp(34)))
+        chrome.addView(maximize,LinearLayout.LayoutParams(dp(42),dp(34)))
+        chrome.addView(close,LinearLayout.LayoutParams(dp(42),dp(34)))
+        panel.addView(chrome)
         val output = TextView(this).apply { textSize=12f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.rgb(180,225,218)); setPadding(dp(10),dp(8),dp(10),dp(8)); text="NaNLMind NSH  •  NaN16 desktop shell\nType --help for commands. Files are sandboxed in /nsh.\n\n"+nshHelp(); setBackgroundColor(Color.rgb(3,7,14)) }
         val scroll=ScrollView(this).apply { addView(output) }
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val input=EditText(this).apply { isSingleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
         panel.addView(input,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
-        val dialog=AlertDialog.Builder(this).setTitle("NSH  /  DESKTOP TERMINAL").setView(panel).setPositiveButton("Minimize",null).setNeutralButton("Help",null).create()
+        val dialog=AlertDialog.Builder(this).setView(panel).setPositiveButton("Minimize",null).setNeutralButton("Help",null).create()
+        var maximized = false
+        close.setOnClickListener { dialog.dismiss() }
+        minimize.setOnClickListener { dialog.dismiss() }
+        maximize.setOnClickListener {
+            maximized = !maximized
+            dialog.window?.setLayout(
+                if (maximized) LinearLayout.LayoutParams.MATCH_PARENT else (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+                if (maximized) LinearLayout.LayoutParams.MATCH_PARENT else (resources.displayMetrics.heightPixels * 0.72f).toInt()
+            )
+            maximize.text = if (maximized) "❐" else "□"
+        }
         nshDialog = dialog
         dialog.setOnDismissListener { if (nshDialog === dialog) nshDialog = null }
         fun append(line:String){ output.append(line+"\n"); scroll.post{scroll.fullScroll(View.FOCUS_DOWN)} }
@@ -321,7 +348,13 @@ class MainActivity : Activity(), NanLoop.Listener {
                 dialog.dismiss(); true
             } else false
         }
-        dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss()};dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{append(nshHelp())};input.requestFocus();input.post{(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT)}}
+        dialog.setOnShowListener{
+            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.76f).toInt())
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss()}
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{append(nshHelp())}
+            input.requestFocus()
+            input.post{(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(input,InputMethodManager.SHOW_IMPLICIT)}
+        }
         dialog.show()
     }
     private fun nshHelp():String =
