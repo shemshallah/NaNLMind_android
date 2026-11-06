@@ -3,6 +3,7 @@ package org.nan0s.vm
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.URI
+import java.security.MessageDigest
 import javax.net.ssl.HttpsURLConnection
 
 /**
@@ -19,6 +20,14 @@ internal class N16HttpsTransport(
     private val readTimeoutMs: Int = 30_000,
     private val maxFrameBytes: Int = 65_572
 ) {
+    @Volatile var lastHttpStatus: Int = 0
+        private set
+    @Volatile var lastCipherSuite: String = "not negotiated"
+        private set
+    @Volatile var lastPeerKeyFingerprint: String = "not available"
+        private set
+    val endpointText: String get() = endpoint.toASCIIString()
+
     init {
         require(endpoint.scheme.equals("https", ignoreCase = true)) {
             "N16 gateway must use HTTPS"
@@ -51,6 +60,14 @@ internal class N16HttpsTransport(
             connection.outputStream.use { it.write(frame) }
 
             val status = connection.responseCode
+            lastHttpStatus = status
+            lastCipherSuite = connection.cipherSuite ?: "unknown"
+            lastPeerKeyFingerprint = try {
+                val key = connection.serverCertificates.firstOrNull()?.publicKey?.encoded
+                    ?: throw IOException("peer key unavailable")
+                MessageDigest.getInstance("SHA-256").digest(key).take(12)
+                    .joinToString(":") { "%02X".format(it) }
+            } catch (_: Exception) { "unavailable" }
             if (status !in 200..299) {
                 val error = connection.errorStream?.use { readBounded(it, 1024) }
                 val detail = error?.toString(Charsets.UTF_8)?.take(256).orEmpty()
