@@ -146,6 +146,14 @@ jobs:
           CALL @gui_open_new""", 1)
           s = s.replace('.str "TERMINAL"', '.str "NSH TERMINAL"', 1)
           s = s.replace('.str "f files (nsh) q quit gui\\n"', '.str "f open terminal  q close desktop\\n"', 1)
+          # Add direct desktop hotkeys for the three guest apps that NSH can launch.
+          p = Path("src/exhibits/gui_cart.nas")
+          s = p.read_text()
+          marker = "gk_np:\\nMOVI r2,0x105"
+          insert = "gk_np:\\nMOVI r2,0x108\\nCMP r1,r2\\nJMP[NE] @gk_n9\\nMOVI r1,1\\nCALL @gui_single\\nJMP @gk_ret\\ngk_n9:\\nMOVI r2,0x109\\nCMP r1,r2\\nJMP[NE] @gk_n10\\nMOVI r1,2\\nCALL @gui_single\\nJMP @gk_ret\\ngk_n10:\\nMOVI r2,0x10A\\nCMP r1,r2\\nJMP[NE] @gk_n5\\nMOVI r1,3\\nCALL @gui_single\\nJMP @gk_ret\\ngk_n5:\\nMOVI r2,0x105"
+          if marker not in s:
+              raise SystemExit("desktop global hotkey insertion point missing")
+          s = s.replace(marker, insert, 1)
           p.write_text(s)
           PY
           sh tools/build.sh
