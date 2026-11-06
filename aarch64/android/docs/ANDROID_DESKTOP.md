@@ -8,21 +8,21 @@ The desktop child-window manager provides title bars, drag, minimize, maximize/r
 
 ## NSH commands
 
-The boot terminal is the guest's NaN16 window (kind 0), opened on the desktop automatically. It prints the same command reference shown by \`--help\`. \`exit\`, \`quit\`, or \`q\` closes only this NSH window; the desktop and VM continue running.
+The boot terminal is the guest's NaN16 window (kind 0), opened on the desktop automatically. It prints the same command reference shown by `--help`. `exit`, `quit`, or `q` closes only this NSH window; the desktop and VM continue running.
 
 Implemented commands:
 
-- \`--help\`, \`h\`: print the command reference.
-- \`c\`, \`v\`, \`w\`: clear the terminal, show version, report guest window count.
-- \`l\`, \`m\`, \`x\`, \`t\`, \`u\`: open Lattice, Monitor, Hex, raise the same NSH window, and guest utilities.
-- \`s\`, \`n\`, \`b\`: open the unified Settings, NaNNet manager, and isolated Browser Launcher as desktop child windows.
-- \`nannet-training\`: open the same NaNNet Training interface as the desktop button.
-- \`files\`: open the internal \`/nsh\` file manager.
-- \`write FILENAME\`: open an internal text editor for a file in \`/nsh\`. Filenames are limited to 64 ASCII letters, digits, dot, dash, or underscore; path traversal and subdirectories are rejected.
-- \`f\`: raise the existing NSH window rather than creating a second terminal.
-- \`exit\`, \`quit\`, \`q\`: close only NSH, not the desktop.
+- `--help`, `h`: print the command reference.
+- `c`, `v`, `w`: clear the terminal, show version, report guest window count.
+- `l`, `m`, `x`, `t`, `u`: open Lattice, Monitor, Hex, raise the same NSH window, and guest utilities.
+- `s`, `n`, `b`: open the unified Settings, NaNNet manager, and isolated Browser Launcher as desktop child windows.
+- `nannet-training`: open the same NaNNet Training interface as the desktop button.
+- `files`: open the internal `/nsh` file manager.
+- `write FILENAME`: open an internal text editor for a file in `/nsh`. Filenames are limited to 64 ASCII letters, digits, dot, dash, or underscore; path traversal and subdirectories are rejected.
+- `f`: raise the existing NSH window rather than creating a second terminal.
+- `exit`, `quit`, `q`: close only NSH, not the desktop.
 
-The \`/nsh\` workspace is app-private Android storage, not the guest NaNFS volume. The file manager and editor are Android host-service windows opened only when NaN16 emits a bounded command request. Corpus content is treated as data and is never executed as instructions.
+The `/nsh` workspace is app-private Android storage, not the guest NaNFS volume. The file manager and editor are Android host-service windows opened only when NaN16 emits a bounded command request. Corpus content is treated as data and is never executed as instructions.
 
 The Android host shell is a UI/OS boundary. Guest applications, NaN16 protocol state, corpus validation, and training calculations remain NaN16 guest responsibilities. The Android shell does not execute corpus text as commands.
 
