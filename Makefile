@@ -2,7 +2,7 @@ CORE ?= .nanlmind
 CORE_REPO ?= https://github.com/shemshallah/NaNLMind.git
 BUILD := build
 
-.PHONY: all core bootstrap verify route-diff clean
+.PHONY: all core bootstrap verify route-diff test-intake clean
 
 all: core
 
@@ -20,6 +20,9 @@ verify: core
 
 route-diff: core
 	python3 scripts/route_diff.py --out state/android-route.json
+
+test-intake:
+	python3 -m unittest discover -s tests -p 'test_nannet_intake.py' -v
 
 clean:
 	rm -rf $(CORE) $(BUILD) state
