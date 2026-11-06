@@ -52,18 +52,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gawk xxd
           cd .nan0s-upstream
-          # Android stays in the desktop shell after a guest app (including NSH) returns.
-          # The museum catalog is therefore never entered on this Android boot path.
-          sed -i '/^sh_after_prog:$/,/^JMP @sh_redraw$/c\
-          sh_after_prog:\
-          LA r10,@boot_rec\
-          LD r1,r10,0\
-          CMP r1,r0\
-          JMP[EQ] @sh_after_menu\
-          JMP @sh_run\
-          sh_after_menu:\
-          MOVI r13,1\
-          JMP @sh_redraw' src/museum/shell.nas
           perl ../tools/android_guest_patch.pl
           sh tools/build.sh
           mkdir -p ../aarch64/android/app/src/main/assets
