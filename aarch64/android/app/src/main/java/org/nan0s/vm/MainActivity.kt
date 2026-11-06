@@ -258,7 +258,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         panel.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val input=EditText(this).apply { isSingleLine=true; textSize=14f; typeface=android.graphics.Typeface.MONOSPACE; setTextColor(Color.WHITE); hint="nsh> command"; setPadding(dp(10),dp(8),dp(10),dp(8)); setBackgroundColor(Color.rgb(30,39,61)); imeOptions=EditorInfo.IME_ACTION_DONE }
         panel.addView(input,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
-        val dialog=AlertDialog.Builder(this).setTitle("NSH  /  DESKTOP TERMINAL").setView(panel).setPositiveButton("Close window",null).setNeutralButton("Help",null).create()
+        val dialog=AlertDialog.Builder(this).setTitle("NSH  /  DESKTOP TERMINAL").setView(panel).setPositiveButton("Minimize",null).setNeutralButton("Help",null).create()
         nshDialog = dialog
         dialog.setOnDismissListener { if (nshDialog === dialog) nshDialog = null }
         fun append(line:String){ output.append(line+"\n"); scroll.post{scroll.fullScroll(View.FOCUS_DOWN)} }
@@ -275,33 +275,33 @@ class MainActivity : Activity(), NanLoop.Listener {
                 "cat","type","read"->append(if(arg.isBlank())"usage: cat <filename>" else try{nshFile(arg).readText(Charsets.UTF_8)}catch(e:Exception){"READ NO: "+e.message})
                 "mkdir"->append(if(arg.isBlank())"usage: mkdir <directory>" else try{val f=nshFile(arg);if(f.mkdirs()||f.isDirectory)"OK: "+arg else "MKDIR NO"}catch(e:Exception){"MKDIR NO: "+e.message})
                 "rm","del"->append(if(arg.isBlank())"usage: rm <filename>" else try{if(nshFile(arg).delete())"DELETED: "+arg else "DELETE NO"}catch(e:Exception){"DELETE NO: "+e.message})
-                "nannet-training","training"->{dialog.dismiss();showTrainingSuite()}
-                "wifi","nannet"->{dialog.dismiss();showWifi()}
-                "n16t","gateway"->{dialog.dismiss();showRemoteGateway()}
-                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening internal browser window: "+target);dialog.dismiss();showBrowserWindow(target)}
-                "settings"->{dialog.dismiss();showUnifiedSettings()}
+                "nannet-training","training"->{showTrainingSuite()}
+                "wifi","nannet"->{showWifi()}
+                "n16t","gateway"->{showRemoteGateway()}
+                "browser","b"->{val u=arg.ifBlank{"https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal"};val target=if(u.startsWith("https://")||u.startsWith("http://"))u else "https://"+u;append("Opening Android browser safely: "+target);showBrowserWindow(target)}
+                "settings"->{showUnifiedSettings()}
                 "open","load"->{
                     if(arg.isBlank()){dialog.dismiss();pick(reqImage)}
                     else try{val kind=vm.load(nshFile(arg).readBytes());loop.rearm();append(if(kind!=null)"Loaded NaN16 program: "+kind else "OPEN NO: not a NaN16 program")}
                     catch(e:Exception){append("OPEN NO: "+e.message)}
                 }
-                "disk"->{dialog.dismiss();pick(reqDisk)}
-                "fs"->{dialog.dismiss();chooseFsSize()}
-                "log"->{dialog.dismiss();showLog()}
+                "disk"->{pick(reqDisk)}
+                "fs"->{chooseFsSize()}
+                "log"->{showLog()}
                 "fit"->{view.resetZoom();append("Display fitted to desktop.")}
                 "scale"->{view.integerScale=!view.integerScale;view.invalidate();append("Integer scaling: "+view.integerScale)}
-                "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
+                "system"->{vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
                 "run"->{
                     when(arg.lowercase()){
                         "lattice"->{vm.keyEvent(0x108,true);vm.keyEvent(0x108,false);loop.poke();append("Opened Sierpinski desktop window.")}
                         "monitor"->{vm.keyEvent(0x109,true);vm.keyEvent(0x109,false);loop.poke();append("Opened Monitor desktop window.")}
                         "hex"->{vm.keyEvent(0x10A,true);vm.keyEvent(0x10A,false);loop.poke();append("Opened Hex desktop window.")}
                         "settings"->{dialog.dismiss();showUnifiedSettings()}
-                        "nannet","wifi"->{dialog.dismiss();showWifi()}
+                        "nannet","wifi"->{showWifi()}
                         "system"->{dialog.dismiss();vm.keyEvent(0x107,true);vm.keyEvent(0x107,false);loop.poke()}
-                        "training"->{dialog.dismiss();showTrainingSuite()}
-                        "gateway","n16t"->{dialog.dismiss();showRemoteGateway()}
-                        "browser"->{dialog.dismiss();showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}
+                        "training"->{showTrainingSuite()}
+                        "gateway","n16t"->{showRemoteGateway()}
+                        "browser"->{showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")}
                         else->append("usage: run lattice|monitor|hex|settings|nannet|system|training|gateway|browser")
                     }
                 }
@@ -331,41 +331,30 @@ class MainActivity : Activity(), NanLoop.Listener {
         val base=nshHome.canonicalFile;val file=File(base,name).canonicalFile
         require(file.path==base.path||file.path.startsWith(base.path+File.separator)){"path escapes /nsh"};return file
     }
-    private fun nshWrite(name:String,contents:String):String=try{val f=nshFile(name);f.parentFile?.mkdirs();f.writeText(contents,Charsets.UTF_8);"WRITE OK: /nsh/"+name+" ("+f.length()+" bytes)"}catch(e:Exception){"WRITE NO: "+e.message}
+    private fun nshWrite(name:String,contents:String):String=try{
+        val f=nshFile(name)
+        val parent=f.parentFile ?: throw IllegalArgumentException("missing parent directory")
+        if(!parent.exists() && !parent.mkdirs()) throw java.io.IOException("cannot create /nsh directory")
+        val tmp=File(parent,f.name+".nsh-tmp")
+        tmp.writeText(contents,Charsets.UTF_8)
+        if(f.exists() && !f.delete()) { tmp.delete(); throw java.io.IOException("cannot replace existing file") }
+        if(!tmp.renameTo(f)) { tmp.copyTo(f,overwrite=true); tmp.delete() }
+        "WRITE OK: /nsh/"+name+" ("+f.length()+" bytes)"
+    }catch(e:Exception){"WRITE NO: "+(e.message ?: e.javaClass.simpleName)}
+    /**
+     * Delegate browsing to Androids isolated browser process. The old embedded WebView
+     * could stall the guest UI while rendering script-heavy pages.
+     */
     private fun showBrowserWindow(initialUrl:String) {
-        val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(8));setBackgroundColor(Color.rgb(13,18,32))}
-        val bar=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-        val address=EditText(this).apply{isSingleLine=true;textSize=12f;setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setText(initialUrl);setBackgroundColor(Color.rgb(30,39,61));inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI}
-        val web=WebView(this).apply{
-            settings.javaScriptEnabled=false
-            settings.domStorageEnabled=false
-            settings.allowFileAccess=false
-            settings.allowContentAccess=false
-            settings.loadsImagesAutomatically=true
-            if(android.os.Build.VERSION.SDK_INT>=21) settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            webViewClient=object:WebViewClient(){
-                override fun shouldOverrideUrlLoading(view:WebView,request:WebResourceRequest):Boolean {
-                    val u=request.url
-                    return !(u.scheme=="https"||u.scheme=="http") || u.userInfo!=null
-                }
-                @Suppress("DEPRECATION")
-                override fun shouldOverrideUrlLoading(view:WebView,url:String):Boolean = !(url.startsWith("https://")||url.startsWith("http://"))
-                override fun onReceivedError(view:WebView,request:WebResourceRequest,error:WebResourceError){if(request.isForMainFrame)Toast.makeText(this@MainActivity,"Page load failed: "+error.description,Toast.LENGTH_SHORT).show()}
-                override fun onRenderProcessGone(view:WebView,detail:android.webkit.RenderProcessGoneDetail):Boolean { view.destroy();Toast.makeText(this@MainActivity,"Browser renderer stopped safely; desktop is still running.",Toast.LENGTH_LONG).show();return true }
+        try {
+            val uri = URI(initialUrl.trim())
+            require((uri.scheme == "https" || uri.scheme == "http") && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null) {
+                "Enter an HTTP(S) URL without credentials or fragments"
             }
+            startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri.toString())), "Open with browser"))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Browser could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
         }
-        bar.addView(address,LinearLayout.LayoutParams(0,dp(46),1f))
-        val go=btn("Go"){}
-        bar.addView(go,LinearLayout.LayoutParams(dp(64),dp(46)))
-        panel.addView(bar)
-        panel.addView(web,LinearLayout.LayoutParams(-1,dp(420)).apply{topMargin=dp(8)})
-        val dialog=AlertDialog.Builder(this).setTitle("NaNLMind Browser").setView(panel).setPositiveButton("Close",null).setNeutralButton("Back",null).create()
-        fun navigate(){try{val u=URI(address.text.toString().trim());require((u.scheme=="https"||u.scheme=="http")&&!u.host.isNullOrBlank()&&u.userInfo==null&&u.fragment==null);web.loadUrl(u.toString())}catch(e:Exception){Toast.makeText(this,"Enter a valid HTTP(S) URL without credentials or fragments",Toast.LENGTH_LONG).show()}}
-        go.setOnClickListener{navigate()}
-        dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener{if(web.canGoBack())web.goBack()}}
-        dialog.setOnDismissListener{web.stopLoading();web.destroy()}
-        dialog.show()
-        web.loadUrl(initialUrl)
     }
 
     private fun showUnifiedSettings(){
@@ -389,7 +378,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         AlertDialog.Builder(this)
             .setTitle("N16T HTTPS Gateway")
             .setMessage(
-                "N16T binary protocol endpoint: POST /n16t (canonical). GET /portal is the human-readable portal page. " +
+                "N16T binary protocol endpoint: POST /n16t (canonical). GET /portal is the human-readable portal page. Entering /portal here routes the binary handshake to /n16t. " +
                     "Connect the persistent NaN16 guest for HELLO/CAPABILITIES. " +
                     "Corpus upload and merge are not enabled in this Android client yet. " +
                     "No GitHub token is requested or stored."
@@ -416,7 +405,9 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         // The Koyeb service accepts the N16T binary handshake on /portal and /n16t.
         // Keep the requested portal URL visible and send it unchanged.
-        val endpoint = entered
+        val endpoint = if (entered.path.trimEnd('/') == "/portal") {
+            URI("https", entered.userInfo, entered.host, entered.port, "/n16t", entered.query, null)
+        } else entered
 
         val generation = remoteConnectGeneration + 1
         remoteConnectGeneration = generation
