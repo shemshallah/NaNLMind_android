@@ -251,6 +251,21 @@ my $settings_hotkey = join "\n",
     'MOVI r1,73', 'PUTC r1', 'MOVI r1,78', 'PUTC r1',
     'MOVI r1,71', 'PUTC r1', 'MOVI r1,83', 'PUTC r1',
     'MOVI r1,10', 'PUTC r1', 'JMP @gk_ret';
+my $wifi_hotkey = join "\n",
+    'MOVI r1,78', 'PUTC r1', 'MOVI r1,49', 'PUTC r1',
+    'MOVI r1,54', 'PUTC r1', 'MOVI r1,72', 'PUTC r1',
+    'MOVI r1,79', 'PUTC r1', 'MOVI r1,83', 'PUTC r1',
+    'MOVI r1,84', 'PUTC r1', 'MOVI r1,58', 'PUTC r1',
+    'MOVI r1,87', 'PUTC r1', 'MOVI r1,73', 'PUTC r1',
+    'MOVI r1,70', 'PUTC r1', 'MOVI r1,73', 'PUTC r1',
+    'MOVI r1,10', 'PUTC r1', 'JMP @gk_ret';
+my $f6 = join "\n", 'gk_n5:', 'MOVI r2,0x106', 'CMP r1,r2',
+    'JMP[NE] @gk_n6', 'MOVI r1,5', 'CALL @gui_single', 'JMP @gk_ret';
+$gui = replace_once($gui, $f6,
+    join("\n", 'gk_n5:', 'MOVI r2,0x106', 'CMP r1,r2',
+         'JMP[NE] @gk_n6', $wifi_hotkey),
+    "F6 opens the same live Android NANNET manager as the n command");
+
 my $f7 = join "\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7', 'MOVI r1,6';
 $gui = replace_once($gui, $f7,
     join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2', 'JMP[NE] @gk_n7', $settings_hotkey),
@@ -270,6 +285,9 @@ die "NSH full-command parser missing nannet-training\n"
     unless index($gui, "tk_check_training:") >= 0;
 die "NSH exit no longer closes only its child window\n"
     unless index($gui, join("\n", 'tm_quit:', 'LD r1,r0,@tm_id', 'CALL @wm_close')) >= 0;
+die "F6 does not open the live NANNET manager\n"
+    unless index($gui, join("\\n", 'gk_n5:', 'MOVI r2,0x106', 'CMP r1,r2',
+        'JMP[NE] @gk_n6', 'MOVI r1,78', 'PUTC r1')) >= 0;
 die "F7 does not open the unified Settings window\n"
     unless index($gui, join("\n", 'gk_n6:', 'MOVI r2,0x107', 'CMP r1,r2',
         'JMP[NE] @gk_n7', 'MOVI r1,78', 'PUTC r1')) >= 0;
