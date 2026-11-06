@@ -63,16 +63,16 @@ internal class N16RemoteSession(
 
     @Synchronized
     fun connectionSummary(): String = buildString {
-        append("STATUS: CONNECTED\\n")
-        append("ENDPOINT: ").append(transport.endpointText).append('\\n')
-        append("HTTP: ").append(transport.lastHttpStatus).append('\\n')
+        append("STATUS: CONNECTED\n")
+        append("ENDPOINT: ").append(transport.endpointText).append('\n')
+        append("HTTP: ").append(transport.lastHttpStatus).append('\n')
         lastRoute?.let {
             append("N16T ROUTE: gateway=0x").append(it.gateway.toString(16).uppercase())
                 .append(" interface=").append(it.interfaceId)
-                .append(" logical-point=0x").append(it.logicalPoint.toString(16).uppercase()).append('\\n')
+                .append(" logical-point=0x").append(it.logicalPoint.toString(16).uppercase()).append('\n')
         }
-        append("SESSION FINGERPRINT (SHA-256/64): ").append(guest.sessionFingerprint()).append('\\n')
-        append("TLS CIPHER: ").append(transport.lastCipherSuite).append('\\n')
+        append("SESSION FINGERPRINT (SHA-256/64): ").append(guest.sessionFingerprint()).append('\n')
+        append("TLS CIPHER: ").append(transport.lastCipherSuite).append('\n')
         append("SERVER PUBLIC KEY SHA-256/96: ").append(transport.lastPeerKeyFingerprint)
     }
 
