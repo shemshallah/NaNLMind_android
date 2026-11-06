@@ -46,6 +46,7 @@ class MainActivity : Activity(), NanLoop.Listener {
     private var wifiResultsView: LinearLayout? = null
     private var wifiWindow: View? = null
     private var wifiScanAfterPermission = false
+    private var defaultNetworkCallback: android.net.ConnectivityManager.NetworkCallback? = null
     private val log = StringBuilder()
     private val reqImage = 1
     private val reqDisk = 2
@@ -177,6 +178,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         root.addView(desktopSurface, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(keyRow(), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         setContentView(root)
+        watchDefaultNetwork()
         view.requestFocus()
         loop.start(); beeper.start()
     }
@@ -288,6 +290,29 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
         windowDock.visibility = if (hidden.isEmpty()) View.GONE else View.VISIBLE
         if (windowDock.visibility == View.VISIBLE) windowDock.bringToFront()
+    }
+
+    private fun watchDefaultNetwork() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            private fun refresh() {
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) wifiStatusView?.text = WifiBridge.status(this@MainActivity)
+                }
+            }
+            override fun onAvailable(network: android.net.Network) = refresh()
+            override fun onLost(network: android.net.Network) = refresh()
+            override fun onCapabilitiesChanged(
+                network: android.net.Network,
+                networkCapabilities: android.net.NetworkCapabilities
+            ) = refresh()
+        }
+        try {
+            cm.registerDefaultNetworkCallback(callback)
+            defaultNetworkCallback = callback
+        } catch (e: Exception) {
+            Log.w("nan0s", "default network callback unavailable", e)
+        }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -1042,6 +1067,13 @@ class MainActivity : Activity(), NanLoop.Listener {
         wifiStatusView?.text = WifiBridge.status(this)
     }
     override fun onDestroy() {
+        defaultNetworkCallback?.let { callback ->
+            try {
+                (getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager)
+                    .unregisterNetworkCallback(callback)
+            } catch (_: Exception) { }
+        }
+        defaultNetworkCallback = null
         super.onDestroy()
         remoteConnectGeneration++
         remoteSession?.close()
