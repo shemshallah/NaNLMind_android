@@ -593,16 +593,30 @@ class MainActivity : Activity(), NanLoop.Listener {
         }
     }
 
-    private fun showUnifiedSettings(){
-        val items=arrayOf("Display / guest window settings","NaNNet / Wi-Fi / cellular","NaNNet training","N16T gateway","Viewport fit / scale")
-        AlertDialog.Builder(this).setTitle("NaNLMind Desktop Settings")
-            .setItems(items){_,which->when(which){
-                0->{vm.keyEvent(0x105,true);vm.keyEvent(0x105,false);loop.poke()}
-                1->showWifi()
-                2->showTrainingSuite()
-                3->showRemoteGateway()
-                4->{view.resetZoom();view.integerScale=!view.integerScale;view.invalidate()}
-            }}.setNegativeButton("Close",null).show()
+    private fun showUnifiedSettings() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "One settings surface for desktop display, NaNNet, training, and N16T."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+            setPadding(0, 0, 0, dp(8))
+        })
+        panel.addView(btn("DISPLAY / GUEST SETTINGS") {
+            vm.keyEvent(0x105, true); vm.keyEvent(0x105, false); loop.poke()
+        })
+        panel.addView(btn("NANNET / WI-FI / CELLULAR") { showWifi() })
+        panel.addView(btn("NANNET TRAINING") { showTrainingSuite() })
+        panel.addView(btn("N16T GATEWAY") { showRemoteGateway() })
+        panel.addView(btn("FIT DESKTOP VIEWPORT") { view.resetZoom(); view.invalidate() })
+        panel.addView(btn("TOGGLE INTEGER SCALING") {
+            view.integerScale = !view.integerScale
+            view.invalidate()
+        })
+        showDesktopWindow("NaNLMind Desktop Settings", panel, 350)
     }
 
     private fun showRemoteGateway() {
