@@ -149,7 +149,17 @@ jobs:
           p.write_text(s)
           PY
           sh tools/build.sh
-          sh tools/browser_gate.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          gui = Path("src/exhibits/gui_cart.nas").read_text()
+          browser = gui[gui.index("br_show:"):gui.index("br_init:")]
+          assert "term_draw" not in browser, "browser redraw must not invoke terminal full-screen redraw"
+          assert "MOVI r1,0\\nCALL @gui_open_new" not in gui, "Android desktop must not boot a second guest CLI"
+          assert "CALL @pci_scan" not in gui[gui.index("nn_init:"):gui.index("nn_nic:")], "Android NaNNet must not probe guest PCI"
+          shell = Path("src/museum/shell.nas").read_text()
+          assert "JMP[NE] @sh_run" in shell[shell.index("sh_after_prog:"):shell.index("sh_curator:")], "Android shell must relaunch desktop instead of showing museum"
+          print("Android desktop/NSH/browser/NaNNet boot invariants: PASS")
+          PY
           mkdir -p ../aarch64/android/app/src/main/assets
           cp aarch64/android/app/src/main/assets/nan0s.img ../aarch64/android/app/src/main/assets/nan0s.img
           test "$(wc -c < ../aarch64/android/app/src/main/assets/nan0s.img)" -eq 1474560
