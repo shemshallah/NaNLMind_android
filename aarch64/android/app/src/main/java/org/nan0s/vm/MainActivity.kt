@@ -351,7 +351,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             setPadding(0, 0, 0, dp(10))
         })
         val sessionStatus = TextView(this).apply {
-            text = remoteSession?.connectionSummary() ?: "STATUS: DISCONNECTED\\nNo negotiated session yet."
+            text = remoteSession?.connectionSummary() ?: "STATUS: DISCONNECTED\nNo negotiated session yet."
             setTextColor(Color.rgb(142, 224, 205))
             textSize = 11f
             typeface = android.graphics.Typeface.MONOSPACE
@@ -427,7 +427,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                 session.close()
                 runOnUiThread {
                     if (generation == remoteConnectGeneration) {
-                        gatewayStatusView?.text = "STATUS: FAILED\\n${e.message}"
+                        gatewayStatusView?.text = "STATUS: FAILED\n${e.message}"
                         Toast.makeText(this, "N16T gateway handshake failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -448,7 +448,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             try { active.closeRemote() } catch (_: Exception) { }
             active.close()
             runOnUiThread {
-                gatewayStatusView?.text = "STATUS: DISCONNECTED\\nSession closed."
+                gatewayStatusView?.text = "STATUS: DISCONNECTED\nSession closed."
                 Toast.makeText(this, "N16T session disconnected", Toast.LENGTH_SHORT).show()
             }
         }.start()
