@@ -27,8 +27,10 @@ sub replace_once {
 
 my $shell_path = 'src/museum/shell.nas';
 my $shell = read_file($shell_path);
-$shell =~ s/^sh_after_prog:\n.*?^JMP \@sh_redraw$/sh_after_prog:\nLA r10,\@boot_rec\nLD r1,r10,0\nCMP r1,r0\nJMP[EQ] \@sh_after_menu\nJMP \@sh_run\nsh_after_menu:\nMOVI r13,1\nJMP \@sh_redraw/ms
-    or die "Android desktop boot patch target missing\n";
+$shell =~ s/^sh_after_prog:\n.*?^JMP \@sh_redraw$/sh_after_prog:\nLA r10,\@boot_rec\nJMP \@sh_run/ms
+    or die "Android desktop return patch target missing\n";
+my $cold = "LA r10,\@boot_rec\nLD r1,r10,0\nCMP r1,r0\nJMP[EQ] \@sh_redraw\nJMP \@sh_run";
+$shell = replace_once($shell, $cold, "LA r10,\@boot_rec\nJMP \@sh_run", "disable museum menu cold-boot fallback");
 write_file($shell_path, $shell);
 
 my $gui_path = 'src/exhibits/gui_cart.nas';
@@ -119,5 +121,7 @@ write_file($gui_path, $gui);
 
 my $check_shell = read_file($shell_path);
 die "Android shell can still fall into museum menu\n"
-    unless $check_shell =~ /sh_after_prog:.*?JMP \@sh_run/s;
+    unless $check_shell =~ /sh_after_prog:\nLA r10,\@boot_rec\nJMP \@sh_run/s;
+die "Android cold boot still branches to museum menu\n"
+    if $check_shell =~ /JMP\[EQ\] \@sh_redraw/;
 print "Android NaN16 desktop/NSH/browser/NaNNet patch invariants: PASS\n";
