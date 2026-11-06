@@ -91,7 +91,7 @@ $gui = replace_once($gui, "CALL \@term_fit\nMOVI r1,0\nST r1,r0,\@br_tab",
 my $loop_exit = join "\n", "LD r1,r0,\@wm_zn", "CMP r1,r0", "JMP[EQ] \@g_exit", "CALL \@kbd_poll";
 $gui = replace_once($gui, $loop_exit, "CALL \@kbd_poll", "keep desktop alive when no windows remain");
 my $old_nsh = join "\n", "tm_nsh:", "MOVI r1,4800", "MOVI r2,10", "ST r2,r1,0", "MOVI r1,1", "ST r1,r0,\@g_quit";
-my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_open_new";
+my $new_nsh = join "\n", "tm_nsh:", "MOVI r1,0", "CALL \@gui_single";
 $gui = replace_once($gui, $old_nsh, $new_nsh, "route NSH to desktop terminal child");
 $gui = replace_once($gui, '.str "TERMINAL"', '.str "NSH TERMINAL"', "NSH window title");
 $gui = replace_once($gui, '.str "MHZ"', '.str "MIPS"', "label VM instruction throughput honestly");
@@ -117,6 +117,12 @@ my $insert = join "\n",
     "MOVI r1,3", "CALL \@gui_single", "JMP \@gk_ret",
     "gk_f5:", "MOVI r2,0x105";
 $gui = replace_once($gui, $marker, $insert, "desktop global app hotkeys");
+
+my $f7 = join "\n", "gk_n7:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_notf3", "MOVI r1,6";
+$gui = replace_once($gui, $f7,
+    join("\n", "gk_n7:", "MOVI r2,0x107", "CMP r1,r2", "JMP[NE] \@gk_notf3", "MOVI r1,4"),
+    "F7 opens the guest desktop settings window");
+
 write_file($gui_path, $gui);
 
 my $check_shell = read_file($shell_path);
