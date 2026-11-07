@@ -54,3 +54,24 @@ On an allow result, the wrapper writes a ten-word receipt in NaN16 memory:
 The Android adapter reads this mailbox only after the guest halts. It verifies that the receipt status matches the return status and that the epoch and all eight digest words exactly match both the submitted candidate and authoritative rule descriptors. A mismatch is treated as an internal guest/descriptor integrity error, never as an allow. Denials carry only their status and no reusable rule receipt.
 
 This receipt binds the successful guest decision to the exact rule snapshot used for that call. It is correlation evidence, not a cryptographic signature and not by itself an ACL grant or NMP lease. Candidate ID, math snapshot ID, ruleset snapshot ID, and downstream packet/lease binding remain separate fields owned by the NMP integration.
+
+## Raw guest receipt and NMP serialization
+
+The guest now emits a fixed 14-word receipt only when `mth_admit` returns ALLOW:
+
+- magic `NA16`, receipt ABI version, guest status;
+- selected program ID echoed from its fixed mailbox;
+- candidate rule epoch and authoritative rule epoch;
+- all eight words of the authoritative 256-bit rule digest.
+
+The same NaN16 receipt-emission subroutine is included by the Android guest and
+its native regression fixture. The regression checks the complete allow record,
+then clears the mailbox and verifies that a stale-epoch denial emits no receipt.
+
+The Android adapter checks every raw field against the submitted candidate and
+rule descriptors. Its `Decision.toNmpAdmissionReceipt` serializes the validated
+raw receipt into the canonical `nanrouter.native-admission-receipt.v1` schema,
+including candidate/input/capability/preflight digests, generation and output
+descriptor digest, program ID, guest source/image digests, and the receipt digest.
+These host-side hashes bind data; they are not signatures or execution
+attestation. The NMP service must still validate the schema and lease binding.
