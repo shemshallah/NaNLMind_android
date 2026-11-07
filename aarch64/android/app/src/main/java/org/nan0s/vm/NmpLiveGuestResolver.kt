@@ -30,10 +30,21 @@ internal data class NmpGuestLeafBinding(
  * the same NanVm instance. The caller must serialize modifications to its
  * trusted binding index with this resolve operation.
  */
-internal class NmpLiveGuestResolver(
-    private val vm: NanVm,
-    private val labels: Map<String, Int>
+internal class NmpLiveGuestResolver private constructor(
+    private val labels: Map<String, Int>,
+    private val snapshot: (
+        (((Int, Int) -> ByteArray?) -> NmpResolvedVectorPair)
+    ) -> NmpResolvedVectorPair
 ) {
+    constructor(vm: NanVm, labels: Map<String, Int>) :
+        this(labels, { block -> vm.inspectGuestMemory(block) })
+
+    /** Test-only seam for a deterministic guest memory image. */
+    internal constructor(
+        labels: Map<String, Int>,
+        read: (Int, Int) -> ByteArray?
+    ) : this(labels, { block -> block(read) })
+
     fun resolve(left: NmpGuestLeafBinding, right: NmpGuestLeafBinding): NmpResolvedVectorPair {
         require(left.objectId > 0 && right.objectId > 0 && left.objectId != right.objectId) {
             "live resolver requires distinct registered object IDs"
@@ -51,7 +62,7 @@ internal class NmpLiveGuestResolver(
         val shapesLabel = labels["nmr_shape_table"]
             ?: error("running guest has no canonical nmr_shape_table label")
 
-        return vm.inspectGuestMemory { read ->
+        return snapshot { read ->
             val objects = words(read, objectsLabel, OBJECT_TABLE_WORDS)
             val shapes = words(read, shapesLabel, SHAPE_TABLE_WORDS)
             val lhs = extract(left, objects, shapes, read)
