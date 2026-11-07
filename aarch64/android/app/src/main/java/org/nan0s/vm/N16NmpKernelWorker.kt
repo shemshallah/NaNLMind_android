@@ -222,11 +222,19 @@ internal class N16NmpKernelWorker {
     }
 
     private fun validateInput(item: JSONObject, leafId: String, version: Int, digest: String) {
-        val packetDigest = when {
-            item.has("digest") && !item.isNull("digest") -> item.getString("digest")
-            item.has("content_digest") && !item.isNull("content_digest") -> item.getString("content_digest")
-            else -> throw IllegalArgumentException("NMP input is missing its content digest")
+        val hasDigest = item.has("digest") && !item.isNull("digest")
+        val hasContentDigest = item.has("content_digest") && !item.isNull("content_digest")
+        require(hasDigest || hasContentDigest) {
+            "NMP input is missing its content digest"
         }
+        if (hasDigest && hasContentDigest) {
+            require(normalizeDigest(item.getString("digest")) ==
+                normalizeDigest(item.getString("content_digest"))) {
+                "NMP input has conflicting digest aliases"
+            }
+        }
+        val packetDigest =
+            if (hasDigest) item.getString("digest") else item.getString("content_digest")
         require(item.getString("leaf_id") == leafId &&
             item.getInt("version") == version &&
             normalizeDigest(packetDigest) == normalizeDigest(digest)) {
@@ -269,6 +277,14 @@ internal class N16NmpKernelWorker {
                         "NaN16 worker guest denied execution (status=\${result[0]})"
                     }
                     val outputCount = result[4]
+                    val expectedOutputCount =
+                        if (programId == VECTOR_ADD_PROGRAM) input.dimension else 1
+                    check(result[1] == programId &&
+                        result[2] == (if (programId == VECTOR_ADD_PROGRAM) VECTOR_KIND else SCALAR_KIND) &&
+                        result[3] == input.dimension &&
+                        outputCount == expectedOutputCount) {
+                        "NaN16 worker guest returned an invalid output descriptor"
+                    }
                     val output = readWords(vm, labels, "n16_nmp_output_payload", outputCount)
                     return N16NmpGuestExecution(
                         result[1], result[2], result[3], output, vm.steps(),
