@@ -16,7 +16,7 @@
 1. [x] Add NaN16 guest corpus scanner, byte-frequency update table, record counters, and rolling digest.
 2. [x] Add runner gates for host-injected N16TXT, bundled sample, valid multibyte UTF-8, and malformed UTF-8 rejection.
 3. [x] Add strict UTF-8 sequence validation in NaN16 guest code.
-4. [~] Add Unicode normalization/noncharacter policy and fixed initialization/checkpoint ABI. [x] Add deterministic NaN16 epoch-rotation scheduler guest and shared CI regression; Android asset packaging is included in the current PR.
+4. [~] Add Unicode normalization/noncharacter policy and fixed initialization/checkpoint ABI. [x] Add deterministic NaN16 epoch-rotation scheduler guest, shared CI regression, Android asset packaging, and trainer-side schedule audit digest. The current count-based trainer records the deterministic permutation fingerprint; it does not yet reorder records during learning or deduplicate exact duplicates.
 5. [x] Add NaN16 frame validation, CRC-32, session ownership, replay rejection, message-specific payload bounds, state transitions, CLOSE/reset, and overbootstrap route dispatch.
 6. [x] Add bounded C stream framing and NaN16 byte-buffer bridge; keep protocol policy in the guest.
 7. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
