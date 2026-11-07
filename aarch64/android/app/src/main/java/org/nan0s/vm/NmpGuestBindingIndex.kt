@@ -92,11 +92,17 @@ internal class NmpGuestBindingIndex {
 
     @Synchronized
     fun invalidateCommitted(leafId: String, version: Int): Boolean {
+        require(leafId.isNotBlank() && version >= 0) {
+            "invalid canonical invalidation identity"
+        }
         val key = Key(leafId, version)
-        val removed = byLeaf.remove(key) ?: return false
-        byObject.remove(removed.objectId)
+        val removed = byLeaf.remove(key)
+        if (removed != null) byObject.remove(removed.objectId)
+        // Persist a negative decision even when the binding was not locally
+        // present: a delayed ingestion replay must not resurrect this version.
         invalidated.add(key)
-        return true
+        highestVersion[leafId] = maxOf(version, highestVersion[leafId] ?: version)
+        return removed != null
     }
 
     @Synchronized
