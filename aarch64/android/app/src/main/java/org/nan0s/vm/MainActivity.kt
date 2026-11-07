@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.CodingErrorAction
+import org.json.JSONObject
 
 /** Android host boundary: one persistent NaN16 guest, one desktop surface, and native OS services. Guest semantics stay in NaN16 cartridges. */
 class MainActivity : Activity(), NanLoop.Listener {
@@ -480,10 +481,95 @@ class MainActivity : Activity(), NanLoop.Listener {
             connectRemoteGateway(input.text.toString().trim())
         })
         panel.addView(btn("DISCONNECT SESSION") { disconnectRemoteGateway() })
+        panel.addView(btn("NMP PACKET SUBMISSION") { showNmpSubmission() })
         panel.addView(btn("OPEN HUMAN PORTAL") {
             showBrowserWindow("https://deeprepo-qtcl-9c8fea15.apps.mistral.run/portal")
         })
         showDesktopWindow("N16T Gateway", panel, 330)
+    }
+
+    /** Manual transport surface for a canonical packet and receipt produced by NaN16. */
+    private fun showNmpSubmission() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundColor(Color.rgb(17, 22, 42))
+        }
+        panel.addView(TextView(this).apply {
+            text = "Submit a canonical NMP packet produced by the NaN16 guest. The router verifies the native receipt and current server-side admission context. This screen transports a packet; it does not manufacture a receipt or authorize execution."
+            setTextColor(Color.LTGRAY)
+            textSize = 12f
+            setPadding(0, 0, 0, dp(8))
+        })
+        val endpoint = EditText(this).apply {
+            hint = "https://your-nanrouter-service.example"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        val token = EditText(this).apply {
+            hint = "NMP submit bearer token"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        val tick = EditText(this).apply {
+            hint = "NaNClock tick (default 0)"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText("0")
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        val packet = EditText(this).apply {
+            hint = "Paste canonical NMP packet JSON including admission_receipt"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 5
+            maxLines = 10
+            gravity = Gravity.TOP
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        val status = TextView(this).apply {
+            text = "STATUS: READY"
+            setTextColor(Color.rgb(142, 224, 205))
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(0, dp(8), 0, dp(8))
+        }
+        panel.addView(endpoint)
+        panel.addView(token)
+        panel.addView(tick)
+        panel.addView(packet)
+        panel.addView(btn("SUBMIT NMP PACKET") {
+            val endpointText = endpoint.text.toString().trim()
+            val bearer = token.text.toString()
+            val packetText = packet.text.toString()
+            val nowTick = tick.text.toString().toLongOrNull()
+            if (endpointText.isBlank() || bearer.isBlank() || packetText.isBlank() || nowTick == null || nowTick < 0) {
+                status.text = "STATUS: enter an HTTPS origin, submit token, packet JSON and valid tick"
+                return@btn
+            }
+            status.text = "STATUS: SUBMITTING — server-side receipt and admission checks pending"
+            Thread {
+                try {
+                    val client = NmpHttpsClient(URI(endpointText), bearer)
+                    val response = client.submit(JSONObject(packetText), nowTick)
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        status.text = "STATUS: ACCEPTED BY NMP SUBMISSION API\n" + response.toString(2).take(6000)
+                        token.text.clear()
+                    }
+                } catch (failure: Exception) {
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        status.text = "STATUS: REJECTED / UNAVAILABLE\n" + (failure.message ?: "request failed").take(512)
+                        token.text.clear()
+                    }
+                }
+            }.start()
+        })
+        panel.addView(status)
+        showDesktopWindow("NMP Packet Submission", panel, 420)
     }
 
     private fun connectRemoteGateway(raw: String) {
