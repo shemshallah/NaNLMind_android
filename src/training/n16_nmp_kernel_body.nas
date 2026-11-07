@@ -6,6 +6,7 @@
 .include "../nannet/vector_ops.nas"
 
 n16_nmp_kernel_entry:
+  ST r15,r0,@n16_nmp_entry_ret
   MOVI r13,1
 
   ; Select one of the two compiled guest kernels. Program IDs are guest-owned:
@@ -169,6 +170,7 @@ n16_nmp_register_objects:
   LD r8,r0,@n16_nmp_dimension
 n16_nmp_result_ready:
   ST r8,r11,4
+  LD r15,r0,@n16_nmp_entry_ret
   RET
 
 n16_nmp_registry_fail:
@@ -193,6 +195,7 @@ n16_nmp_execute_fail:
   MOVI r8,8
 n16_nmp_kernel_fail:
   ST r8,r0,@n16_nmp_result
+  LD r15,r0,@n16_nmp_entry_ret
   RET
 
 .org 22000
@@ -213,6 +216,8 @@ n16_nmp_right_digest_marker:
 n16_nmp_dimension:
 .word 0
 n16_nmp_operator_id:
+.word 0
+n16_nmp_entry_ret:
 .word 0
 n16_nmp_expected_program:
 .word 0
