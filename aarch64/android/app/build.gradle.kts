@@ -149,7 +149,8 @@ tasks.register("compileMathAdmissionGuest") {
         val requiredLabels = setOf(
             "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
             "n16_math_left", "n16_math_right", "n16_math_contract",
-            "n16_math_capabilities", "n16_math_output", "n16_math_result"
+            "n16_math_capabilities", "n16_math_output", "n16_math_result",
+            "n16_math_left_payload", "n16_math_right_payload", "n16_math_output_payload"
         )
         check(guestLabels.containsAll(requiredLabels)) {
             "NaN16 math admission guest is missing labels: ${requiredLabels - guestLabels}"
