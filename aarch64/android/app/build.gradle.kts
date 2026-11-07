@@ -52,6 +52,25 @@ tasks.register("compileTrainingGuest") {
         }
     }
 }
+// Compile the deterministic sample scheduler as a separately testable NaN16 guest.
+tasks.register("compileScheduleGuest") {
+    val guestSource = file("../../../src/training/n16_schedule.nas")
+    val guestOutput = file("src/main/assets/n16_schedule.nan")
+    inputs.files(guestSource, file("../../../tools/nmk.awk"))
+    outputs.file(guestOutput)
+    doLast {
+        guestOutput.parentFile.mkdirs()
+        guestOutput.outputStream().use { stream ->
+            exec {
+                commandLine("awk", "-f", file("../../../tools/nmk.awk"), "-v", "CMD=emit", guestSource)
+                standardOutput = stream
+            }
+        }
+        check(guestOutput.isFile && guestOutput.length() > 0) {
+            "NaN16 sample scheduler guest was not generated"
+        }
+    }
+}
 // Compile a dedicated persistent protocol VM image and its guest label map.
 tasks.register("compileProtocolGuest") {
     val guestSource = file("../../../src/nannet/n16t_android_guest.nas")
@@ -95,10 +114,10 @@ tasks.register("compileProtocolGuest") {
     }
 }
 tasks.register("verifyRuntimeAssetAllowlist") {
-    dependsOn("compileTrainingGuest", "compileProtocolGuest")
+    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest")
     doLast {
         val allowed = setOf(
-            "nan0s.img", "disk.nanfs", "n16_train.nan",
+            "nan0s.img", "disk.nanfs", "n16_train.nan", "n16_schedule.nan",
             "n16_protocol.nan", "n16_protocol.labels"
         )
         val actual = fileTree("src/main/assets").files.map { it.name }.toSet()
