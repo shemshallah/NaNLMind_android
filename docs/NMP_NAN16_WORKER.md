@@ -75,3 +75,36 @@ trusted internal callers that can provide a verified \`NmpResolvedVectorPair\`
 may invoke this worker. Server-side lease and completion checks remain
 authoritative; a worker result digest is execution evidence, not an independent
 server recomputation of the numeric output.
+
+## Live registry snapshot resolver (follow-up implementation)
+
+`NmpLiveGuestResolver` can now obtain the two registered vector
+objects directly from the memory of an **already-running** `NanVm`. It reads
+the existing `nmr_obj_table` and `nmr_shape_table` through addresses in the
+loaded guest's matching label map, then follows the registry's bound data
+pointers. All reads take place in one `NanVm.inspectGuestMemory` critical
+section, excluding concurrent execution and writes through that VM instance.
+
+The resolver fails closed on absent or duplicate registry IDs, missing shapes,
+non-vector kinds, owner points outside 1–256, non-rank-1 shapes, dimensions
+outside 1–16, non-unit stride, insufficient capacity, mismatched dimensions,
+malformed digest records, and changed payload bytes. For payload integrity
+it recomputes the SHA-256 of the exact little-endian guest words against the
+digest from the trusted object-store index, not a packet-provided digest.
+The registry's 32-bit marker is additionally checked against the trusted
+canonical content digest but is not itself sufficient proof of identity.
+
+`executeAndCompleteFromGuest` now offers the worker a typed path from the
+snapshot resolver into the existing packet, lease, native receipt and completion
+gates. A deterministic memory-image regression exercises successful resolution
+and failure cases without relying on an Android native VM in JVM unit tests.
+
+**Integration still required:** the active desktop guest must actually contain
+these exact registry tables, and their label map must be associated with the
+same loaded image. The canonical object-store ingestion path must publish the
+`NmpGuestLeafBinding` index (leaf ID, version, full content digest,
+registry object ID, and full payload digest), and must serialize updates
+to that index with the VM snapshot operation. Bindings may not be read from
+packet JSON or manually authored projections. The current GUI/manual packet
+workflow has not been wired to this trusted index, so production end-to-end
+automatic resolution is **not yet certified**.
