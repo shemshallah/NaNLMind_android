@@ -101,6 +101,44 @@ n16_nmp_register_objects:
   CMP r3,r0
   JMP[NE] @n16_nmp_shape_fail
 
+  ; Read both immutable shape records back from the registry before dispatch.
+  ; The payload dimension staged by the resolver must agree with each object.
+  MOVI r1,@n16_nmp_left_id
+  LD r1,r1,0
+  CALL @nmr_shape_get
+  CMP r5,r0
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,1
+  CMP r1,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,@n16_nmp_dimension
+  LD r8,r8,0
+  CMP r2,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,1
+  CMP r3,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  CMP r4,r2
+  JMP[LT] @n16_nmp_shape_verify_fail
+
+  MOVI r1,@n16_nmp_right_id
+  LD r1,r1,0
+  CALL @nmr_shape_get
+  CMP r5,r0
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,1
+  CMP r1,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,@n16_nmp_dimension
+  LD r8,r8,0
+  CMP r2,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  MOVI r8,1
+  CMP r3,r8
+  JMP[NE] @n16_nmp_shape_verify_fail
+  CMP r4,r2
+  JMP[LT] @n16_nmp_shape_verify_fail
+
   ; The guest chooses the output kind and program ID from the fixed allowlist.
   MOVI r1,@n16_nmp_operator_id
   LD r1,r1,0
@@ -193,6 +231,9 @@ n16_nmp_mapping_fail:
   JMP @n16_nmp_kernel_fail
 n16_nmp_execute_fail:
   MOVI r8,8
+  JMP @n16_nmp_kernel_fail
+n16_nmp_shape_verify_fail:
+  MOVI r8,9
 n16_nmp_kernel_fail:
   ST r8,r0,@n16_nmp_result
   LD r15,r0,@n16_nmp_entry_ret
