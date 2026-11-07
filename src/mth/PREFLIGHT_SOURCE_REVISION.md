@@ -1,7 +1,7 @@
 # NaN16 MTH admission source pin
 
 Vendored from `shemshallah/NaNROUTER` main at commit
-`a1e033da5ee76680d04a1b9d9fd4cbbab999913d`.
+`8a2e2da163da1a1390787d0954d11be46921723d`.
 
 Files mirrored byte-for-byte:
 - `mth/nan16/mth_preflight_gate.nas`
