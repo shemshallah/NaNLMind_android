@@ -53,7 +53,11 @@ from \`shemshallah/NaN0S\` main at commit
 Gradle compiles these sources with
 \`src/training/n16_nmp_kernel_guest.nas\` and \`tools/nmk.awk\` into a
 separate image, label map, and source digest. The generated runtime assets are
-included in the strict asset allowlist.
+included in the strict asset allowlist. CI also runs the registry-backed
+`math_execute_test.nas` through the native NaN16 CLI; it checks vector add,
+vector dot, immutable object/operation records, derivation provenance, invalid
+dimensions, and unknown-program rejection. The guest-level regression prints
+`PASS` only after both numerical kernels and the fail-closed cases succeed.
 
 ## Remaining integration boundary
 
