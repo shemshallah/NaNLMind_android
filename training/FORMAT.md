@@ -43,7 +43,9 @@ The stream is an internal interchange form, not an executable NaN16 program. The
 
 ## Training determinism
 
-The sample scheduler consumes the canonical record stream in stable record order, removes exact duplicates, then applies deterministic epoch shuffling using the NaN16 policy seed. The seed is derived from the policy version, corpus digest, and epoch. Both runner and Android must produce the same canonical stream and sample-order digest for the same input.
+**Current implementation status:** the NaN16 trainer scans non-empty records in canonical input order and computes a deterministic epoch-rotation permutation fingerprint over the validated record count. The fingerprint is written to candidate metadata at guest word address 8456. The current byte-frequency/bigram-count trainer is order-independent, so this audit proves that the same scheduler is invoked and produces the same order fingerprint on runner and Android; it does not yet reorder the byte updates or deduplicate exact duplicate records.
+
+**Next training milestone:** retain canonical record offsets in a bounded guest index, deduplicate exact records, derive the policy seed from the policy version and canonical corpus digest, and use the scheduler output to visit each indexed record exactly once per epoch. Runner and Android must produce identical canonical-stream and sample-order digests. No claim of shuffled training is made until the indexed record traversal is part of the learning loop.
 
 ## Required conformance vectors
 
