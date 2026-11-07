@@ -87,7 +87,7 @@ internal class N16MathAdmission(context: Context) {
 
     private fun writeWords(vm: NanVm, label: String, words: IntArray) {
         val bytes = ByteBuffer.allocate(words.size * WORD_BYTES).order(ByteOrder.LITTLE_ENDIAN)
-        words.forEach(bytes::putInt)
+        words.forEach { bytes.putInt(it) }
         check(vm.writeBytes(byteAddress(label), bytes.array())) {
             "Could not stage NaN16 words for $label"
         }
