@@ -65,8 +65,8 @@ internal class NmpLiveGuestResolver private constructor(
         return snapshot { read ->
             val objects = words(read, objectsLabel, OBJECT_TABLE_WORDS)
             val shapes = words(read, shapesLabel, SHAPE_TABLE_WORDS)
-            val lhs = extract(left, objects, shapes, read)
-            val rhs = extract(right, objects, shapes, read)
+            val lhs = extract(left, objects, shapes, read, objectsLabel, shapesLabel)
+            val rhs = extract(right, objects, shapes, read, objectsLabel, shapesLabel)
             require(lhs.dimension == rhs.dimension) { "live guest vector dimensions differ" }
             require(lhs.payloadEnd <= rhs.payloadStart || rhs.payloadEnd <= lhs.payloadStart) {
                 "live guest vectors have overlapping payload storage"
@@ -89,7 +89,9 @@ internal class NmpLiveGuestResolver private constructor(
         binding: NmpGuestLeafBinding,
         objects: IntArray,
         shapes: IntArray,
-        read: (Int, Int) -> ByteArray?
+        read: (Int, Int) -> ByteArray?,
+        objectsLabel: Int,
+        shapesLabel: Int
     ): Vector {
         val objectSlot = (0 until OBJECT_SLOTS).singleOrNull {
             objects[it * OBJECT_WORDS] == binding.objectId
@@ -118,6 +120,19 @@ internal class NmpLiveGuestResolver private constructor(
             "live guest vector has unsupported shape or capacity"
         }
 
+        val payloadStart = pointer.toLong() * WORD_BYTES
+        val payloadEnd = (pointer.toLong() + dimension) * WORD_BYTES
+        for ((tableLabel, tableWords) in listOf(
+            objectsLabel to OBJECT_TABLE_WORDS,
+            shapesLabel to SHAPE_TABLE_WORDS
+        )) {
+            val tableStart = tableLabel.toLong() * WORD_BYTES
+            val tableEnd = (tableLabel.toLong() + tableWords) * WORD_BYTES
+            require(payloadEnd <= tableStart || tableEnd <= payloadStart) {
+                "live guest payload overlaps registry metadata"
+            }
+        }
+
         val raw = read(Math.multiplyExact(pointer, WORD_BYTES),
             Math.multiplyExact(dimension, WORD_BYTES))
             ?: error("live guest payload is outside readable memory")
@@ -130,8 +145,8 @@ internal class NmpLiveGuestResolver private constructor(
         val buffer = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN)
         return Vector(
             owner, dimension, IntArray(dimension) { buffer.int },
-            pointer.toLong() * WORD_BYTES,
-            (pointer.toLong() + dimension) * WORD_BYTES
+            payloadStart,
+            payloadEnd
         )
     }
 
