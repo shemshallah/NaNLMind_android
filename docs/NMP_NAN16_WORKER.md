@@ -35,7 +35,11 @@ NaN0S guest state. Before guest execution, the worker checks:
   vector dimension.
 
 The worker returns output words, their SHA-256 digest, the resolved program
-ID, guest step count, and the worker guest image/source digests. The
+ID, guest step count, and the worker guest image/source digests. The upstream
+registry stores a 32-bit digest marker rather than a full cryptographic hash;
+the full 256-bit input digest is compared at the Android resolver boundary and
+bound into the native admission receipt. The marker is not treated as a
+standalone integrity proof. The
 \`executeAndComplete\` path submits the output digest against the exact lease
 returned by the router.
 
