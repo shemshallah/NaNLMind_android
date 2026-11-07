@@ -69,11 +69,12 @@ class MainActivity : Activity(), NanLoop.Listener {
         right: IntArray,
         contract: IntArray,
         availableCapabilities: Int,
+        programId: Int,
         leftPayload: IntArray,
         rightPayload: IntArray,
         output: IntArray
     ): N16MathAdmission.Decision = mathAdmission.evaluate(
-        candidate, rule, left, right, contract, availableCapabilities,
+        candidate, rule, left, right, contract, availableCapabilities, programId,
         leftPayload, rightPayload, output
     )
     private val autosave get() = File(filesDir, "autosave.nan1")
