@@ -118,6 +118,7 @@ internal class N16NmpKernelWorker {
         }
         val receipt = packet.getJSONObject("admission_receipt")
         require(receipt.getString("schema") == RECEIPT_SCHEMA &&
+            receipt.getString("packet_id") == packetId &&
             receipt.getInt("guest_status") == 0 &&
             receipt.getInt("program_id") == programId) {
             "native admission receipt does not authorize this NaN16 kernel"
@@ -186,9 +187,14 @@ internal class N16NmpKernelWorker {
     }
 
     private fun validateInput(item: JSONObject, leafId: String, version: Int, digest: String) {
+        val packetDigest = when {
+            item.has("digest") && !item.isNull("digest") -> item.getString("digest")
+            item.has("content_digest") && !item.isNull("content_digest") -> item.getString("content_digest")
+            else -> throw IllegalArgumentException("NMP input is missing its content digest")
+        }
         require(item.getString("leaf_id") == leafId &&
             item.getInt("version") == version &&
-            normalizeDigest(item.getString("digest")) == normalizeDigest(digest)) {
+            normalizeDigest(packetDigest) == normalizeDigest(digest)) {
             "resolved guest object does not match its canonical NMP input identity"
         }
     }
