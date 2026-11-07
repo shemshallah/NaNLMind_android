@@ -8,8 +8,8 @@ JMP @receipt_test_main
 receipt_test_main:
   MOVI r13,1
   MOVI r12,@receipt_test_scratch
-  MOVI r1,@receipt_test_candidate
-  MOVI r2,@receipt_test_rule
+  MOVI r1,@n16_math_candidate
+  MOVI r2,@n16_math_rule
   MOVI r3,@receipt_test_left
   MOVI r4,@receipt_test_right
   MOVI r5,@receipt_test_contract
@@ -21,7 +21,7 @@ receipt_test_main:
   CALL @n16_math_emit_receipt
 
   ; Verify the complete raw receipt header and eight-word rule digest.
-  MOVI r8,@receipt_test_receipt
+  MOVI r8,@n16_math_receipt
   LD r9,r8,0
   MOVI r10,1312895286
   CMP r9,r10
@@ -78,10 +78,10 @@ receipt_test_main:
   JMP[NE] @receipt_test_fail_digest
 
   ; A stale candidate epoch must deny and leave every receipt word zero.
-  MOVI r8,@receipt_test_candidate
+  MOVI r8,@n16_math_candidate
   MOVI r9,6
   ST r9,r8,9
-  MOVI r8,@receipt_test_receipt
+  MOVI r8,@n16_math_receipt
   MOVI r9,14
   MOVI r10,0
 receipt_test_clear:
@@ -89,8 +89,8 @@ receipt_test_clear:
   ADD r8,r8,r13
   SUB r9,r9,r13
   JMP[NE] @receipt_test_clear
-  MOVI r1,@receipt_test_candidate
-  MOVI r2,@receipt_test_rule
+  MOVI r1,@n16_math_candidate
+  MOVI r2,@n16_math_rule
   MOVI r3,@receipt_test_left
   MOVI r4,@receipt_test_right
   MOVI r5,@receipt_test_contract
@@ -101,7 +101,7 @@ receipt_test_clear:
   CMP r1,r10
   JMP[NE] @receipt_test_fail_deny
   CALL @n16_math_emit_receipt
-  MOVI r8,@receipt_test_receipt
+  MOVI r8,@n16_math_receipt
   MOVI r9,14
 receipt_test_deny_zero:
   LD r10,r8,0
@@ -150,9 +150,9 @@ receipt_test_puts_byte:
   JMP @receipt_test_puts_word
 
 .org 40000
-receipt_test_candidate:
+n16_math_candidate:
 .word 1,7,4,4,3,1,1,3,3,7,1,1,2,1,100,101,102,103,104,105,106,107
-receipt_test_rule:
+n16_math_rule:
 .word 1,7,4,4,3,1,1,1,1,100,101,102,103,104,105,106,107
 receipt_test_left:
 .word 4,1,3,1,1,@receipt_test_left_payload,3,1
@@ -162,9 +162,9 @@ receipt_test_contract:
 .word 4,4,3,1,1,0,1,1,1,0
 receipt_test_output:
 .word 0,0,0,0,0,@receipt_test_output_payload,1,0
-receipt_test_program_id:
+n16_math_program_id:
 .word 900
-receipt_test_receipt:
+n16_math_receipt:
 .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0
 receipt_test_pass:
 .str "NAN16 RAW RECEIPT PASS\n"
