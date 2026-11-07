@@ -108,3 +108,28 @@ to that index with the VM snapshot operation. Bindings may not be read from
 packet JSON or manually authored projections. The current GUI/manual packet
 workflow has not been wired to this trusted index, so production end-to-end
 automatic resolution is **not yet certified**.
+
+## Committed guest-binding index (next integration stage)
+
+`NmpGuestBindingIndex` now provides a synchronized, bounded lookup boundary
+between ordered packet leaf identities and the live NaN16 registry snapshot.
+Canonical ingestion code can publish immutable `NmpGuestLeafBinding` records
+after its own store/guest transaction commits, invalidate removed versions,
+and clear the index when the guest image is reset or reloaded. The index
+rejects duplicate object ownership, conflicting versions, stale versions,
+missing bindings, malformed SHA-256 identities, and contradictory packet digest
+aliases. A packet selects a leaf ID and version but cannot dictate a guest
+object ID or payload digest.
+
+The worker has a new `executeAndCompleteFromIndex` entry point that obtains
+the pair through this index and `NmpLiveGuestResolver` before applying the
+existing lease, admission-receipt, native execution, and completion gates.
+JVM tests cover accepted and rejected bindings and index invalidation.
+
+**Trust boundary still open:** this index is an in-memory mirror, not a new
+canonical object store or proof of ingestion provenance. The real NaN0S
+object-store ingestion owner still must publish verified committed entries,
+coordinate guest mutations with the index monitor, associate registry labels
+with the running guest image, and call `clearForGuestReload` on every reset
+or reload. The manual packet workflow does not establish that provenance.
+No production automatic resolution or end-to-end execution is claimed.
