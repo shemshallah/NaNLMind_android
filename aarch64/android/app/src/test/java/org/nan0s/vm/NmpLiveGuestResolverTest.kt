@@ -75,6 +75,29 @@ class NmpLiveGuestResolverTest {
         }
     }
 
+
+    @Test fun rejectsPayloadOverlappingObjectRegistry() {
+        val a = leaf(1401, 0, obj + 30, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        try {
+            resolver().resolve(a, b)
+            throw AssertionError("expected registry overlap rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("overlaps registry metadata"))
+        }
+    }
+
+    @Test fun rejectsPayloadOverlappingShapeRegistry() {
+        val a = leaf(1401, 0, shape + 30, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        try {
+            resolver().resolve(a, b)
+            throw AssertionError("expected shape table overlap rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("overlaps registry metadata"))
+        }
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
