@@ -186,6 +186,21 @@ class NmpLiveGuestResolverTest {
         }
     }
 
+    @Test fun committedIndexDoesNotRollBackAfterDeletingNewerVersion() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        val newer = a.copy(version = 2)
+        index.publishCommitted(newer)
+        assertTrue(index.invalidateCommitted(newer.leafId, newer.version))
+        try {
+            index.publishCommitted(a)
+            throw AssertionError("expected version rollback rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("stale canonical"))
+        }
+    }
+
     @Test fun committedIndexInvalidationAndGuestReloadClearBindings() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
@@ -199,7 +214,15 @@ class NmpLiveGuestResolverTest {
         } catch (expected: IllegalStateException) {
             assertTrue(expected.message!!.contains("no committed canonical"))
         }
+        try {
+            index.publishCommitted(a)
+            throw AssertionError("expected invalidation tombstone to prevent resurrection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("cannot be republished"))
+        }
+        index.clearForGuestReload()
         index.publishCommitted(a)
+        index.publishCommitted(b)
         index.clearForGuestReload()
         try {
             index.resolve(packetInputs(a, b), resolver())
