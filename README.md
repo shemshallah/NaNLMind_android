@@ -67,3 +67,24 @@ It never includes raw prompt/response content, correctness claims, head deltas,
 or a GitHub token. A successful HTTP 202 means the observation is queued as
 unverified evidence, not that it has trained or changed the canonical model.
 The six-runner ring must retrieve, validate, fold, and acknowledge it.
+
+
+## NaNROUTER NMP control-plane client
+
+The Android app now includes a bounded HTTPS client for the NMP-aware NaNROUTER
+routes: POST /v1/nmp/packets, POST /v1/nmp/lease, and POST /v1/nmp/complete.
+The N16T binary gateway remains a separate protocol and is not treated as an
+NMP submission path.
+
+The NMP Packet Submission desktop window accepts a canonical packet JSON record
+produced by the NaN16 guest, including its native admission receipt, and sends it
+with a submit-role bearer token. The bearer token is not persisted in
+SharedPreferences. The client requires an HTTPS service origin, disables
+redirect following, applies request/response size limits, and does not decode
+or reinterpret packet admission semantics.
+
+The Android transport also exposes worker lease and completion methods, but
+this change does not claim that Android has a complete local NMP execution
+worker or that the guest currently generates the canonical NMP packet/receipt
+for this screen. Server-side NMP admission context must be configured in
+NaNROUTER; otherwise the routes return HTTP 503.
