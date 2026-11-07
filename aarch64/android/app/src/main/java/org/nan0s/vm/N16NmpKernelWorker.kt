@@ -221,6 +221,7 @@ internal class N16NmpKernelWorker {
             writeWords(vm, labels, "n16_nmp_left_payload", input.leftPayload)
             writeWords(vm, labels, "n16_nmp_right_payload", input.rightPayload)
             writeWords(vm, labels, "n16_nmp_output_payload", IntArray(input.dimension))
+            vm.setRegister(15, labels.getValue("n16_nmp_kernel_halt"))
             vm.setProgramCounter(labels.getValue("n16_nmp_kernel_entry"))
             var remaining = MAX_CALL_STEPS
             while (remaining > 0) {
@@ -305,7 +306,7 @@ internal class N16NmpKernelWorker {
             "math.vector.dot.v1" to VECTOR_DOT_PROGRAM
         )
         private val REQUIRED_LABELS = setOf(
-            "n16_nmp_kernel_entry", "n16_nmp_operation", "n16_nmp_left_id",
+            "n16_nmp_kernel_entry", "n16_nmp_kernel_halt", "n16_nmp_operation", "n16_nmp_left_id",
             "n16_nmp_right_id", "n16_nmp_left_owner", "n16_nmp_right_owner",
             "n16_nmp_left_digest_marker", "n16_nmp_right_digest_marker",
             "n16_nmp_dimension", "n16_nmp_left_payload", "n16_nmp_right_payload",
