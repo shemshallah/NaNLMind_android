@@ -215,6 +215,23 @@ internal class N16NmpKernelWorker {
     ): Pair<N16NmpKernelResult, JSONObject> =
         executeAndComplete(client, leaseResponse, resolver.resolve(left, right), nowTick)
 
+    /**
+     * Index-backed leased execution. The packet selects committed leaf identities
+     * but cannot supply guest object IDs, memory addresses or payload digests.
+     * The canonical ingestion owner must populate/index bindings before use.
+     */
+    fun executeAndCompleteFromIndex(
+        client: NmpHttpsClient,
+        leaseResponse: JSONObject,
+        resolver: NmpLiveGuestResolver,
+        index: NmpGuestBindingIndex,
+        nowTick: Long
+    ): Pair<N16NmpKernelResult, JSONObject> {
+        val inputs = leaseResponse.getJSONObject("packet").getJSONArray("inputs")
+        val resolved = index.resolve(inputs, resolver)
+        return executeAndComplete(client, leaseResponse, resolved, nowTick)
+    }
+
     private fun validatePacketInputs(inputs: JSONArray, resolved: NmpResolvedVectorPair) {
         require(inputs.length() == 2) { "NaN16 vector kernels require exactly two packet inputs" }
         validateInput(inputs.getJSONObject(0), resolved.leftLeafId, resolved.leftVersion, resolved.leftDigest)
