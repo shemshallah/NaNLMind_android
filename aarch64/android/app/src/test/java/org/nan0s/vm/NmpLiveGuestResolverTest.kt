@@ -98,6 +98,117 @@ class NmpLiveGuestResolverTest {
         }
     }
 
+
+    private fun packetInputs(a: NmpGuestLeafBinding, b: NmpGuestLeafBinding) =
+        org.json.JSONArray()
+            .put(org.json.JSONObject()
+                .put("leaf_id", a.leafId)
+                .put("version", a.version)
+                .put("digest", a.contentDigest))
+            .put(org.json.JSONObject()
+                .put("leaf_id", b.leafId)
+                .put("version", b.version)
+                .put("content_digest", b.contentDigest))
+
+    @Test fun committedIndexResolvesOnlyTrustedGuestRecords() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.publishCommitted(b)
+        val output = index.resolve(packetInputs(a, b), resolver())
+        assertEquals(listOf(2, 3), output.leftPayload.toList())
+        assertEquals(listOf(4, 5), output.rightPayload.toList())
+        assertEquals(1401, output.leftObjectId)
+    }
+
+    @Test fun committedIndexRejectsMissingOrForgedPacketIdentity() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("expected missing committed binding")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        index.publishCommitted(b)
+        val inputs = packetInputs(a, b)
+        inputs.getJSONObject(0).put("digest", "f".repeat(64))
+        try {
+            index.resolve(inputs, resolver())
+            throw AssertionError("expected forged packet digest rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("differs from committed"))
+        }
+    }
+
+    @Test fun committedIndexRejectsConflictingDigestAliases() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.publishCommitted(b)
+        val inputs = packetInputs(a, b)
+        inputs.getJSONObject(0).put("content_digest", "f".repeat(64))
+        try {
+            index.resolve(inputs, resolver())
+            throw AssertionError("expected digest alias conflict")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("conflicting canonical digest"))
+        }
+    }
+
+    @Test fun committedIndexPreventsObjectIdHijackingAndStaleVersions() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        try {
+            index.publishCommitted(a.copy(leafId = "other-leaf"))
+            throw AssertionError("expected object ID ownership rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("already assigned"))
+        }
+        val updated = a.copy(version = 2)
+        index.publishCommitted(updated)
+        try {
+            index.publishCommitted(a)
+            throw AssertionError("expected stale-version rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("stale canonical"))
+        }
+        try {
+            index.publishCommitted(updated.copy(payloadSha256 = "f".repeat(64)))
+            throw AssertionError("expected immutable version rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("cannot be rebound"))
+        }
+    }
+
+    @Test fun committedIndexInvalidationAndGuestReloadClearBindings() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.publishCommitted(b)
+        assertTrue(index.invalidateCommitted(a.leafId, a.version))
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("expected invalidated leaf rejection")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        index.publishCommitted(a)
+        index.clearForGuestReload()
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("expected reloaded guest to lack bindings")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
