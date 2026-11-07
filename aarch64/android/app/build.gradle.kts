@@ -152,7 +152,7 @@ tasks.register("compileMathAdmissionGuest") {
             sourceDigest.update(0.toByte())
         }
         sourceDigestOutput.writeText(
-            sourceDigest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) } + "\\n"
+            sourceDigest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) } + "\n"
         )
         val guestLabels = labelsOutput.readLines().mapNotNull { line ->
             line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
