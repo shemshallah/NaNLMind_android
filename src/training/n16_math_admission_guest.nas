@@ -69,6 +69,8 @@ n16_math_scratch:
 .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 n16_math_result:
 .word 0
+n16_math_receipt:
+.word 0,0,0,0,0,0,0,0,0,0
 
 ; Isolated bounded payload windows used by the Android adapter.
 ; Each buffer reserves 65,536 NaN16 words; pointers are rewritten only inside
