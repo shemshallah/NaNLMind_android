@@ -78,14 +78,14 @@ internal class N16MathAdmission(context: Context) {
             val digest = ruleDigestHex ?: error("NaN16 rule digest is missing")
             val digestWords = ruleDigestWords ?: error("NaN16 rule digest words are missing")
             val program = programId ?: error("NaN16 program ID is missing")
-            check(raw.size == RAW_RECEIPT_WORDS &&
+            check(raw.size == RECEIPT_WORDS &&
                 raw[0] == RAW_RECEIPT_MAGIC &&
                 raw[1] == RAW_RECEIPT_VERSION &&
                 raw[2] == 0 &&
                 raw[3] == program &&
                 raw[4] == epoch &&
                 raw[5] == epoch &&
-                raw.copyOfRange(6, RAW_RECEIPT_WORDS).contentEquals(digestWords)) {
+                raw.copyOfRange(6, RECEIPT_WORDS).contentEquals(digestWords)) {
                 "raw NaN16 receipt does not match the returned decision"
             }
             require(packetId.isNotBlank() && candidateId.isNotBlank() && functionId.isNotBlank())
