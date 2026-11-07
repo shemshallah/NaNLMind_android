@@ -3,6 +3,7 @@ package org.nan0s.vm
 import android.content.Context
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.security.MessageDigest
 
 /**
  * Runs the composed MTH admission gate in a fresh NaN16 VM.
@@ -14,7 +15,9 @@ internal class N16MathAdmission(context: Context) {
         val outputDescriptor: IntArray,
         val guestSteps: Long,
         val ruleEpoch: Int? = null,
-        val ruleDigestWords: IntArray? = null
+        val ruleDigestWords: IntArray? = null,
+        val guestSourceDigest: String = "",
+        val guestImageDigest: String = ""
     ) {
         val allowed: Boolean get() = status == 0
         val ruleDenial: Int? get() = if (status in 17..25) status - 16 else null
@@ -24,6 +27,9 @@ internal class N16MathAdmission(context: Context) {
     }
 
     private val image = context.assets.open(IMAGE_ASSET).use { it.readBytes() }
+    private val guestSourceDigest = context.assets.open(SOURCE_DIGEST_ASSET)
+        .bufferedReader(Charsets.UTF_8).use { it.readText().trim() }
+    private val guestImageDigest = sha256Hex(image)
     private val labels: Map<String, Int> = context.assets.open(LABEL_ASSET)
         .bufferedReader(Charsets.UTF_8).use { reader ->
             reader.lineSequence().mapNotNull { line ->
@@ -34,6 +40,12 @@ internal class N16MathAdmission(context: Context) {
         }
 
     init {
+        check(guestSourceDigest.matches(Regex("[0-9a-f]{64}"))) {
+            "NaN16 math-admission source digest is malformed"
+        }
+        check(guestImageDigest.matches(Regex("[0-9a-f]{64}"))) {
+            "NaN16 math-admission image digest is malformed"
+        }
         REQUIRED_LABELS.forEach { name ->
             check(labels.containsKey(name)) { "Missing NaN16 math-admission label: $name" }
         }
@@ -100,7 +112,11 @@ internal class N16MathAdmission(context: Context) {
                     check(receipt[0] == status) { "NaN16 result and receipt status disagree" }
                     val updatedOutput = readWords(vm, "n16_math_output", LEAF_WORDS)
                     updatedOutput[5] = output[5]
-                    if (status != 0) return Decision(status, updatedOutput, vm.steps())
+                    if (status != 0) return Decision(
+                        status, updatedOutput, vm.steps(),
+                        guestSourceDigest = guestSourceDigest,
+                        guestImageDigest = guestImageDigest
+                    )
                     val epoch = receipt[1]
                     val digest = receipt.copyOfRange(2, RECEIPT_WORDS)
                     check(epoch == candidate[1] && epoch == rule[1]) {
@@ -110,7 +126,10 @@ internal class N16MathAdmission(context: Context) {
                         digest.contentEquals(rule.copyOfRange(9, 17))) {
                         "NaN16 receipt digest does not match the complete 256-bit rule snapshot"
                     }
-                    return Decision(status, updatedOutput, vm.steps(), epoch, digest)
+                    return Decision(
+                        status, updatedOutput, vm.steps(), epoch, digest,
+                        guestSourceDigest, guestImageDigest
+                    )
                 }
                 check(result == NanVm.BUDGET) {
                     "NaN16 math admission stopped unexpectedly (result=$result, trap=${vm.trap()})"
@@ -140,9 +159,14 @@ internal class N16MathAdmission(context: Context) {
     private fun byteAddress(label: String): Int =
         Math.multiplyExact(labels.getValue(label), WORD_BYTES)
 
+    private fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
     companion object {
         private const val IMAGE_ASSET = "n16_math_admission.nan"
         private const val LABEL_ASSET = "n16_math_admission.labels"
+        private const val SOURCE_DIGEST_ASSET = "n16_math_admission.source.sha256"
         private const val WORD_BYTES = 4
         private const val CANDIDATE_WORDS = 22
         private const val RULE_WORDS = 17
