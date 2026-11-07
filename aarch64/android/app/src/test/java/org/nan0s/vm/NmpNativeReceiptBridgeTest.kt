@@ -41,9 +41,11 @@ class NmpNativeReceiptBridgeTest {
         .put("admission_verdict", "VALID")
         .put("preflight_digest", "e".repeat(64))
         .put("ruleset_snapshot_id", "rules:" + "c".repeat(64))
-        .put("capability_set", JSONArray().put(JSONObject()
-            .put("required", "vector.dot").put("workspace", 256).put("precision", "float32")))
-        .put("capability_set_digest", "202dedb12832162fd48a0321f1409b495bcf638dcac4249ac60dc0e9c21c1d6e")
+        .put("capability_set", JSONArray()
+            .put(JSONObject().put("required", "math.native_verified"))
+            .put(JSONObject().put("required", "vector.dot")
+                .put("workspace", 256).put("precision", "float32")))
+        .put("capability_set_digest", "3b75826676de40e026ed35f98b4c3248830e002f80b3c036feb0027761c3300e")
         .put("inputs", JSONArray()
             .put(JSONObject().put("leaf_id", "nml:U0:vector:1")
                 .put("version", 1).put("digest", "1".repeat(64)))
@@ -72,8 +74,23 @@ class NmpNativeReceiptBridgeTest {
         assertEquals(900, prepared.getJSONObject("admission_receipt").getInt("program_id"))
         assertEquals("196d2fa4908293a127768140d38700528bdf18a9401d9185643adfd835c74c4e",
             prepared.getJSONObject("admission_receipt").getString("input_digest"))
+        assertEquals("3b75826676de40e026ed35f98b4c3248830e002f80b3c036feb0027761c3300e",
+            prepared.getJSONObject("admission_receipt").getString("capability_digest"))
         assertTrue(prepared.getJSONObject("admission_receipt").has("receipt_digest"))
         assertFalse(proposed.has("admission_receipt"))
+    }
+
+
+    @Test
+    fun capabilityDigestMustMatchServerCanonicalSet() {
+        val proposed = packet().put("capability_set_digest", "0".repeat(64))
+        val bridge = NmpNativeReceiptBridge { allowedDecision() }
+        try {
+            bridge.preparePacket(proposed, input())
+            throw AssertionError("Expected canonical capability digest rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("does not match"))
+        }
     }
 
     @Test
