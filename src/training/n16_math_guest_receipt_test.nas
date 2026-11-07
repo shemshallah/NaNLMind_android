@@ -35,7 +35,7 @@ receipt_test_main:
   CMP r9,r0
   JMP[NE] @receipt_test_fail_header
   LD r9,r8,3
-  MOVI r10,900
+  MOVI r10,901
   CMP r9,r10
   JMP[NE] @receipt_test_fail_header
   LD r9,r8,4
@@ -164,7 +164,7 @@ receipt_test_contract:
 receipt_test_output:
 .word 0,0,0,0,0,@receipt_test_output_payload,1,0
 n16_math_program_id:
-.word 900
+.word 901
 n16_math_receipt:
 .word 0,0,0,0,0,0,0,0,0,0,0,0,0,0
 receipt_test_pass:
