@@ -57,6 +57,11 @@ internal class NmpNativeReceiptBridge {
         } else {
             packet.getInt("base_generation")
         }
+        val capabilitySet = packet.getJSONArray("capability_set")
+        val capabilityDigest = sha256(canonicalJson(capabilitySet))
+        require(capabilityDigest == packet.getString("capability_set_digest")) {
+            "capability_set_digest does not match the canonical capability_set"
+        }
         val receipt = decision.toNmpAdmissionReceipt(
             packetId = packet.getString("packet_id"),
             candidateId = packet.getString("candidate_id"),
@@ -65,7 +70,7 @@ internal class NmpNativeReceiptBridge {
             snapshotId = packet.getString("snapshot_id"),
             rulesetSnapshotId = packet.getString("ruleset_snapshot_id"),
             inputDigest = inputDigest(packet.getJSONArray("inputs")),
-            capabilityDigest = packet.getString("capability_set_digest"),
+            capabilityDigest = capabilityDigest,
             preflightDigest = packet.getString("preflight_digest"),
             generation = generation
         )
