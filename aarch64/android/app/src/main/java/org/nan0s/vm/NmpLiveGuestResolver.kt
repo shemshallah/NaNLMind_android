@@ -68,6 +68,9 @@ internal class NmpLiveGuestResolver private constructor(
             val lhs = extract(left, objects, shapes, read)
             val rhs = extract(right, objects, shapes, read)
             require(lhs.dimension == rhs.dimension) { "live guest vector dimensions differ" }
+            require(lhs.payloadEnd <= rhs.payloadStart || rhs.payloadEnd <= lhs.payloadStart) {
+                "live guest vectors have overlapping payload storage"
+            }
             NmpResolvedVectorPair(
                 left.leafId, left.version, hexDigest(left.contentDigest),
                 right.leafId, right.version, hexDigest(right.contentDigest),
@@ -77,7 +80,10 @@ internal class NmpLiveGuestResolver private constructor(
         }
     }
 
-    private data class Vector(val owner: Int, val dimension: Int, val payload: IntArray)
+    private data class Vector(
+        val owner: Int, val dimension: Int, val payload: IntArray,
+        val payloadStart: Long, val payloadEnd: Long
+    )
 
     private fun extract(
         binding: NmpGuestLeafBinding,
@@ -122,7 +128,11 @@ internal class NmpLiveGuestResolver private constructor(
             "live guest payload differs from the trusted object-store payload digest"
         }
         val buffer = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN)
-        return Vector(owner, dimension, IntArray(dimension) { buffer.int })
+        return Vector(
+            owner, dimension, IntArray(dimension) { buffer.int },
+            pointer.toLong() * WORD_BYTES,
+            (pointer.toLong() + dimension) * WORD_BYTES
+        )
     }
 
     private fun words(
