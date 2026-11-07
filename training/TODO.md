@@ -4,7 +4,7 @@
 
 - Training policy, corpus codec, sample scheduler, trainer, evaluation, and merge state machine are NaN16 guest code.
 - C is limited to host I/O/network drivers and byte-buffer translation.
-- Runner point 1/256; Android point 2/256.
+- Runner point 1/256; Android point 2/256. Every universe has 256 canonical palindromic points (0–255); point 0 is reserved for the NaNNet interface, and HW0 binds physical capabilities without redefining this topology.
 - Android runtime universe: 8 MiB, exactly one.
 - One shared pipeline and shared test vectors.
 - Intake is staged and transactional; no untrusted corpus directly mutates active weights.
@@ -25,12 +25,12 @@
 10. [ ] Add typed NaNLMROUTER task/result envelopes for BS0/MC0/HW0, including sequence, epoch, budget, checkpoint, evidence, and replay rejection.
 11. [ ] Add a NaN16-owned mathematical object registry and typed endpoint/operator resolver for vector, matrix, tensor, graph, and hypergraph objects.
 12. [ ] Add canonical operation records, domain-separated content hashes, dependency lineage, and deterministic replay checks.
-13. [ ] Add BS0 Boolean bootstrap fixtures and HW0 bounded register/head discovery with observed/inferred/verified states.
+13. [ ] Add BS0 Boolean bootstrap fixtures and HW0 bounded physical-capability binding to logical points with observed/inferred/verified states.
 14. [ ] Add MC0DB/BS0DB scratch quota manager, append-only journal, checkpoint recovery, and staged candidate promotion.
 15. [ ] Add ten-layer mathematical evaluator suite and MC0 feedback/evolution audit loop; candidates may only be promoted after independent regression gates.
 16. [x] Add explicit Android runtime asset allowlist and enforce it at build time. [ ] Add packaged APK artifact scan.
 17. [x] Add bounded Android HTTPS opaque-frame transport. [x] Expose persistent NaN16 frame-build/route/advance/abort/reset calls through the Android VM ABI; keep outbound sequencing and pending-send state in the guest. [x] Wire the UI to a configured HTTPS endpoint for HELLO/CAPABILITIES handshake. [ ] Implement remote corpus framing/upload, server-side peer/runner response handling, and deploy the authenticated TLS gateway.
-12. [x] Build APK and run the shared corpus pipeline on the GitHub runner. [ ] Install APK on a device and run identical corpus vectors on Android.
+18. [x] Build APK and run the shared corpus pipeline on the GitHub runner. [ ] Install APK on a device and run identical corpus vectors on Android.
 
 ## Acceptance gate
 
