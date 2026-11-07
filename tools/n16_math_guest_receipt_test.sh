@@ -5,6 +5,6 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 make -s -C "$root/aarch64/android" nan_cli
 awk -f "$root/tools/nmk.awk" -v CMD=emit src/training/n16_math_guest_receipt_test.nas > "$tmp/receipt.nan"
-"$root/aarch64/android/nan_cli" --img "$tmp/receipt.nan" --steps 2000000 --serial --peek 40030:14 > "$tmp/out" 2>&1
+"$root/aarch64/android/nan_cli" --img "$tmp/receipt.nan" --steps 2000000 --serial > "$tmp/out" 2>&1
 cat "$tmp/out"
 grep -qx 'NAN16 RAW RECEIPT PASS' "$tmp/out"
