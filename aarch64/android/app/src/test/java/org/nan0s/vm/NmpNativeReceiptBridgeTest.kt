@@ -41,7 +41,9 @@ class NmpNativeReceiptBridgeTest {
         .put("admission_verdict", "VALID")
         .put("preflight_digest", "e".repeat(64))
         .put("ruleset_snapshot_id", "rules:" + "c".repeat(64))
-        .put("capability_set_digest", "d".repeat(64))
+        .put("capability_set", JSONArray().put(JSONObject()
+            .put("required", "vector.dot").put("workspace", 256).put("precision", "float32")))
+        .put("capability_set_digest", "202dedb12832162fd48a0321f1409b495bcf638dcac4249ac60dc0e9c21c1d6e")
         .put("inputs", JSONArray()
             .put(JSONObject().put("leaf_id", "nml:U0:vector:1")
                 .put("version", 1).put("digest", "1".repeat(64)))
@@ -68,6 +70,8 @@ class NmpNativeReceiptBridgeTest {
         assertEquals("nanrouter.native-admission-receipt.v1",
             prepared.getJSONObject("admission_receipt").getString("schema"))
         assertEquals(900, prepared.getJSONObject("admission_receipt").getInt("program_id"))
+        assertEquals("196d2fa4908293a127768140d38700528bdf18a9401d9185643adfd835c74c4e",
+            prepared.getJSONObject("admission_receipt").getString("input_digest"))
         assertTrue(prepared.getJSONObject("admission_receipt").has("receipt_digest"))
         assertFalse(proposed.has("admission_receipt"))
     }
