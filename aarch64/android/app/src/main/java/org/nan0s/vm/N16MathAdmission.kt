@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
 private fun n16JsonQuote(value: String): String {
-    val out = StringBuilder("\\"")
+    val out = StringBuilder("\"")
     value.forEach { ch ->
         when (ch) {
             '\\' -> out.append("\\\\")
