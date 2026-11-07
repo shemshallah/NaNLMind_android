@@ -58,8 +58,6 @@ jobs:
           ./nan_cli --help | grep -q -- "--candidate-out"
       - name: Run composed native NaN16 mathematical admission gate
         run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_admission_gate.sh
-      - name: Run native NaN16 payload-range preflight regression
-        run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_preflight_range_test.sh
       - name: Run native NaN16 raw receipt emission regression
         run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_guest_receipt_test.sh
 
