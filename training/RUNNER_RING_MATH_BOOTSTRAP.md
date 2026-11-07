@@ -40,7 +40,7 @@ Exhaustively generate all 16 two-input Boolean truth tables from the NaN word cl
 
 Use the NaN0S corpus as source material, preserving raw machine words and source provenance. Separate legal instruction words and opcode/operand structure; data words and literal bit patterns; malformed words and trap cases; NaN16 source programs and assembled instruction streams. The trainer parses instruction structure, executes only inside the NaN16 guest, compares results against reference fixtures, and retains byte/word-level lineage. Corpus text is data unless an explicitly selected NaN16 compilation task says otherwise.
 
-### B2 — Register and head discovery (HW0-led)
+### B2 — Logical-point and physical-capability mapping (HW0-led)
 
 The logical topology has exactly 256 palindromic points, numbered 0–255, in every universe. Point 0 is reserved for the NaNNet interface; points 1–255 are the remaining canonical logical points. BS0 owns this invariant and it is never redefined by hardware discovery. HW0 maps physical hardware/runner capabilities onto these canonical points and reports each binding as verified, unavailable, reserved, or unknown. A logical point exists even when no physical register backs it. For each physical binding, record width, access mode, reset value, read/write behavior, alias candidates, mirror partner, runner/architecture, and confidence. Probe one variable at a time, with canary regions and before/after snapshots. Never probe reserved or unmapped hardware by speculative writes.
 
