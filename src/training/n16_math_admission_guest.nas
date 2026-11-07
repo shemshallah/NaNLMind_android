@@ -19,6 +19,33 @@ n16_math_admission_entry:
   MOVI r7,@n16_math_output
   CALL @mth_admit
   ST r1,r0,@n16_math_result
+  ST r1,r0,@n16_math_receipt
+  CMP r1,r0
+  JMP[NE] @n16_math_admission_done
+
+  ; Publish the exact rule snapshot that passed both guest gates:
+  ; receipt[1] = epoch; receipt[2..9] = all eight digest words.
+  MOVI r8,@n16_math_candidate
+  LD r9,r8,1
+  MOVI r10,@n16_math_receipt
+  ST r9,r10,1
+  LD r9,r8,14
+  ST r9,r10,2
+  LD r9,r8,15
+  ST r9,r10,3
+  LD r9,r8,16
+  ST r9,r10,4
+  LD r9,r8,17
+  ST r9,r10,5
+  LD r9,r8,18
+  ST r9,r10,6
+  LD r9,r8,19
+  ST r9,r10,7
+  LD r9,r8,20
+  ST r9,r10,8
+  LD r9,r8,21
+  ST r9,r10,9
+n16_math_admission_done:
   HALT
 
 .org 40000
