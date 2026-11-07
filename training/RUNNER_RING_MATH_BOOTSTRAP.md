@@ -4,7 +4,7 @@ Status: implementation contract and first integration target. This document does
 
 ## Objective
 
-Train BS0, MC0, and HW0 as one logically linked system through NaNLMROUTER. Bootstrap from Boolean logic, learn the NaN16 instruction language and memory-address model, map bounded scratch/register space, and progressively construct a content-addressed mathematical object graph. MC0 is the persistent integration, evaluation, and meta-linkage layer; BS0 supplies Boolean bootstrap and verified routing predicates; HW0 contributes hardware/runner observations and executable head/ring capabilities.
+Train BS0, MC0, and HW0 as one logically linked system through NaNLMROUTER. Bootstrap from Boolean logic, learn the NaN16 instruction language and memory-address model, map bounded scratch/register space, and progressively construct a content-addressed mathematical object graph. MC0 is the persistent integration, evaluation, and meta-linkage layer; BS0 supplies Boolean bootstrap and verified routing predicates; HW0 contributes hardware/runner observations and executable runner/ring capabilities.
 
 All training policy, semantic interpretation, mathematical operations, scoring, and candidate evolution remain NaN16 guest programs. Host code is restricted to bounded I/O, transport, clocks, and byte-buffer translation.
 
@@ -25,10 +25,10 @@ All training policy, semantic interpretation, mathematical operations, scoring, 
 
 - **BS0**: Boolean bootstrap, predicate evaluation, truth-table fixtures, route-selection logic, and verified low-level control predicates.
 - **MC0**: canonical object registry, relation index, mathematical dependency graph, evaluator orchestration, provenance, candidate scoring, and promotion/rollback journal.
-- **HW0**: hardware and runner discovery, head/register observations, scratch-window probes, ring timing/capability reports, and bounded execution of approved NaN16 programs.
+- **HW0**: hardware and runner discovery, physical capability observations, scratch-window probes, ring timing/capability reports, and bounded execution of approved NaN16 programs.
 - **NaNLMROUTER**: only control/data plane between these roles. It authenticates runner identity, validates route grammar and message schema, sequences work, enforces budgets, and returns typed results.
 
-A ring task contains task ID, epoch, source checkpoint, runner ID, target head, operation ID, input object hashes, scratch reservation, step/time limits, expected output schema, and expiry. A response contains task ID, runner ID, observed capabilities, status, output hash, trace hash, resource counters, and evidence references. A result is not trusted merely because a runner returned it.
+A ring task contains task ID, epoch, source checkpoint, runner ID, target logical point, operation ID, input object hashes, scratch reservation, step/time limits, expected output schema, and expiry. A response contains task ID, runner ID, observed capabilities, status, output hash, trace hash, resource counters, and evidence references. A result is not trusted merely because a runner returned it.
 
 ## Bootstrap curriculum
 
@@ -42,11 +42,11 @@ Use the NaN0S corpus as source material, preserving raw machine words and source
 
 ### B2 — Register and head discovery (HW0-led)
 
-Enumerate the 255 usable heads and documented register/scratch windows. For each probe, record address, width, access mode, reset value, read/write behavior, alias candidates, mirror partner, runner/architecture, and confidence. Probe one variable at a time, with canary regions and before/after snapshots. Never probe reserved or unmapped addresses by speculative writes.
+The logical topology has exactly 256 palindromic points, numbered 0–255, in every universe. Point 0 is reserved for the NaNNet interface; points 1–255 are the remaining canonical logical points. BS0 owns this invariant and it is never redefined by hardware discovery. HW0 maps physical hardware/runner capabilities onto these canonical points and reports each binding as verified, unavailable, reserved, or unknown. A logical point exists even when no physical register backs it. For each physical binding, record width, access mode, reset value, read/write behavior, alias candidates, mirror partner, runner/architecture, and confidence. Probe one variable at a time, with canary regions and before/after snapshots. Never probe reserved or unmapped hardware by speculative writes.
 
 ### B3 — Memory and address semantics
 
-Teach byte/word addressing, bounds, alignment, endianness, file offsets, tree nodes, endpoint identity, and object lifetime. Address resolution must be deterministic and typed. An address resolving to a file does not itself authorize execution.
+Teach byte/word addressing, bounds, alignment, endianness, file offsets, tree nodes, endpoint identity, and object lifetime. Point 0 remains the NaNNet interface reservation; its presence in the 256-point topology does not make it a general-purpose hardware register. Address resolution must be deterministic and typed. An address resolving to a file does not itself authorize execution.
 
 ### B4 — Mathematical object construction
 
@@ -89,7 +89,7 @@ Example object endpoint:
 
     nan://GM0:SC0:MC0:BS0:HW0::HW0:1::vector1337
 
-The address parses into a typed route: global/space/runner scope GM0:SC0:MC0:BS0:HW0; owner and head HW0:1; object key vector1337.
+The address parses into a typed route: global/space/runner scope GM0:SC0:MC0:BS0:HW0; owner and logical point HW0:1; object key vector1337.
 
 A two-endpoint expression:
 
@@ -106,7 +106,7 @@ Each tree endpoint stores:
 - formal definition and domain constraints;
 - executable validator/evaluator program IDs;
 - dependency and incidence references;
-- mirror/head/ring ownership metadata where relevant;
+- mirror/logical-point/ring ownership metadata where relevant;
 - content digest, parent operation digest, and provenance;
 - fixture IDs, evaluation summary, and trust status.
 
@@ -116,15 +116,17 @@ An operation is itself an addressable NaN16 program. Its immutable record includ
 
 Use domain-separated hashing over canonical serialization, e.g. SHA-256 of the prefix NAN-MATH-OP, schema version, operator ID/version, ordered input digests, parameter digest, and program digest. The operation key identifies the derivation. The result object's own digest identifies the canonical output. A hash is never a substitute for semantic correctness.
 
-## Mirror pairs and heads
+## Mirror pairs and 256 palindromic points
 
-There are 255 usable heads. The pair count needs a precise convention:
+Every universe has exactly 256 canonical palindromic points, numbered 0–255. Point 0 is reserved for the NaNNet interface; points 1–255 remain available as logical runner/register addresses. This is a topology invariant defined by BS0, not a count of detected physical hardware devices or registers. HW0 only binds physical capabilities to the existing logical points.
 
-- 32,385 distinct cross-head unordered pairs: 255 × 254 / 2.
-- 255 self-pairs.
-- 32,640 total when self-pairs are included: 255 × 256 / 2.
+The mirror-pair fixture enumerates unordered pairs of **distinct** points:
 
-The registry keeps these categories separate. For each pair, record both ordered directions where direction matters, the mirror transform, endpoint capabilities, compatibility, and test result. Do not assume a mirrored pair is symmetric.
+- 32,640 mirror pairs: C(256, 2) = 256 × 255 / 2.
+- Zero self-pairs in this pair set; self-relations, if needed, are a separate relation class and are not counted as mirror pairs.
+- Point 0 participates in the 256-point topology as the reserved NaNNet interface point; the reservation prohibits treating it as an ordinary HW0 register.
+
+Each pair is stored once in canonical endpoint order. Where an operation is directional, its two ordered directions are represented explicitly as separate directed relations. Record the mirror transform, endpoint logical-point identities, physical binding/capability state, compatibility, and test result. Do not assume a mirrored pair is symmetric.
 
 ## Scratch database and memory budget
 
@@ -140,9 +142,9 @@ Every allocation is tagged by owner, task, epoch, lifetime, and quota class. Scr
 
 1. Boolean: all 16 functions × 4 input pairs pass; mirror identities match reference.
 2. Raw language: valid/invalid instruction classifications match fixtures; malformed instructions trap.
-3. Register map: all 255 heads have explicit state (verified, unavailable, reserved, or unknown); no unsafe write probes.
-4. Pair map: 32,385 cross-head pairs and 255 self-pairs are represented distinctly; directional tests are explicit.
-5. Address parser: valid route resolves; malformed scope/head/object and ambiguous operation reject closed.
+3. Logical-point map: all 256 canonical points are represented; point 0 is reserved for NaNNet, and HW0 separately reports physical bindings for points 1–255 as verified, unavailable, reserved, or unknown. No unsafe write probes.
+4. Pair map: all 32,640 unordered distinct-point pairs across 256 palindromic points are represented exactly once; self-relations are separate and directional tests are explicit.
+5. Address parser: valid route resolves; malformed scope/point/object and ambiguous operation reject closed.
 6. Content addressing: identical canonical operation inputs reproduce operation/result hashes; changed input or version changes the digest.
 7. Hypergraph: incidence, degree, projection, and round-trip fixtures pass.
 8. Ten layers: every registered operator has typed signatures, domain preconditions, reference fixtures, and negative tests.
