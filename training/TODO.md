@@ -22,10 +22,10 @@
 7. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
 8. [x] Add manual GitHub Runner CPU Ring workflow using the same guest and corpus format.
 9. [ ] Add candidate evaluator, contribution accounting, and transactional merge.
-10. [ ] Add typed NaNLMROUTER task/result envelopes for BS0/MC0/HW0, including sequence, epoch, budget, checkpoint, evidence, and replay rejection.
-11. [ ] Add a NaN16-owned mathematical object registry and typed endpoint/operator resolver for vector, matrix, tensor, graph, and hypergraph objects.
+10. [ ] Extend the NaN0S NaN16 task-ledger prototype into full NaNLMROUTER task/result envelopes for BS0/MC0/HW0: authenticated runner identity, sequence/replay protection, expiry enforcement, budget accounting, checkpoint binding, evidence references, and routed dispatch.
+11. [ ] Extend the NaN0S NaN16 object/operator registry prototype with canonical serialization, full digests, MC0DB persistence, typed endpoint/operator resolution, and vector/matrix/tensor/graph/hypergraph schemas.
 12. [ ] Add canonical operation records, domain-separated content hashes, dependency lineage, and deterministic replay checks.
-13. [ ] Add BS0 Boolean bootstrap fixtures and HW0 bounded physical-capability binding to logical points with observed/inferred/verified states.
+13. [ ] Validate the new BS0 16-function × 4-input NaN16 Boolean fixture in CI; then add composition/mirror/property tests and HW0 bounded physical-capability binding to logical points with observed/inferred/verified states.
 14. [ ] Add MC0DB/BS0DB scratch quota manager, append-only journal, checkpoint recovery, and staged candidate promotion.
 15. [ ] Add ten-layer mathematical evaluator suite and MC0 feedback/evolution audit loop; candidates may only be promoted after independent regression gates.
 16. [x] Add explicit Android runtime asset allowlist and enforce it at build time. [ ] Add packaged APK artifact scan.
