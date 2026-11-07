@@ -28,13 +28,13 @@ All training policy, semantic interpretation, mathematical operations, scoring, 
 - **HW0**: hardware and runner discovery, physical capability observations, scratch-window probes, ring timing/capability reports, and bounded execution of approved NaN16 programs.
 - **NaNLMROUTER**: only control/data plane between these roles. It authenticates runner identity, validates route grammar and message schema, sequences work, enforces budgets, and returns typed results.
 
-A ring task contains task ID, epoch, source checkpoint, runner ID, target logical point, operation ID, input object hashes, scratch reservation, step/time limits, expected output schema, and expiry. A response contains task ID, runner ID, observed capabilities, status, output hash, trace hash, resource counters, and evidence references. A result is not trusted merely because a runner returned it.
+A ring task contains task ID, epoch, source checkpoint, runner ID, target logical point, operation ID, input object hashes, scratch reservation, step/time limits, expected output schema, and expiry. The current NaN16 task-ledger prototype stores these fields and enforces unique task IDs, point 1–255, runner/epoch ownership, one-time claim, and one-time completion. Expiry-clock enforcement, authenticated runner identity, output-schema validation, durable persistence, and actual BS0/MC0/HW0 routing remain follow-on work. A response contains task ID, runner ID, observed capabilities, status, output hash, trace hash, resource counters, and evidence references. A result is not trusted merely because a runner returned it.
 
 ## Bootstrap curriculum
 
 ### B0 — Boolean foundations (BS0-led)
 
-Exhaustively generate all 16 two-input Boolean truth tables from the NaN word class nibble. Verify each of four input combinations, composition, mirror/byte-swap behavior, and the 32-lane constants. Train NOT, AND, OR, XOR, NAND, NOR, implication, equivalence, constants, and conditional predicates. Truth-table fixtures are the first hard acceptance gate.
+Exhaustively generate all 16 two-input Boolean truth tables from the NaN word class nibble. Verify each of four input combinations, composition, mirror/byte-swap behavior, and the 32-lane constants. Train NOT, AND, OR, XOR, NAND, NOR, implication, equivalence, constants, and conditional predicates. Truth-table fixtures are the first hard acceptance gate. A NaN16 fixture now enumerates all 16 two-input truth-table opcodes and checks all four input combinations (64 assertions); CI status is the completion criterion. The NaN0S branch also contains a bounded task-ledger prototype for enqueue → owner/epoch claim → completion, with duplicate-ID, reserved-point, wrong-runner, wrong-epoch, and replay rejection checks. This ledger is a scratch prototype, not yet authenticated network dispatch or durable MC0DB storage.
 
 ### B1 — Raw NaN16 language
 
@@ -155,4 +155,4 @@ Every allocation is tagged by owner, task, epoch, lifetime, and quota class. Scr
 
 ## First implementation slice
 
-Implement the address parser and operation registry first, then the Boolean bootstrap fixture set and ring task/result envelope. These create the safety and determinism foundation for later mathematical programs. Add a runnable NaN16 guest test for every operator as it is introduced. The existing N16TXT corpus scanner is an intake primitive, not yet a semantic trainer or mathematical memory engine.
+Implement the address parser and operation registry first, then the Boolean bootstrap fixture set and ring task/result envelope. Initial executable slices now exist in NaN0S: `src/nannet/boolean_bootstrap_test.nas`, `src/nannet/math_registry.nas`, and `src/nannet/runner_task.nas`, each with guest test coverage and CI gates. They are bounded prototypes; the complete router, persistent registries, and mathematical training curriculum are not yet complete. These create the safety and determinism foundation for later mathematical programs. Add a runnable NaN16 guest test for every operator as it is introduced. The existing N16TXT corpus scanner is an intake primitive, not yet a semantic trainer or mathematical memory engine.
