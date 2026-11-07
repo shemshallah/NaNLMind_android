@@ -162,3 +162,24 @@ This is not yet a 10 GiB physical allocation, not durable storage, and not crash
 ## 9. What is implemented versus planned
 
 Implemented prototypes in the current branch family include the canonical single-object route parser, initial vector/hypergraph key decoding, small object/operator registry, bounded task ledger, an in-memory BS0DB/MC0DB scratch quota manager with reserve/release/stats regression coverage, an MC0 candidate lifecycle kernel, and typed two-endpoint operator resolution. The candidate kernel records parent checkpoint, required passing-evidence count, pass/fail evidence, staged/rejected/promoted state, blocks promotion when evidence is insufficient or any evaluation fails, and rejects repeated promotion. Scratch-quota, candidate-lifecycle, and typed mathematical-dispatch guest regressions now pass the NaN0S core CI gate. They are not yet the complete persistent databases, full SHA-256 object store, ten-layer evaluator, or authenticated network-dispatched runner ring. CI is the authority for whether the new quota regression actually passes.
+
+
+## 8. Implemented NaN16 execution slice (2026-11-06)
+
+The companion NaN0S branch now has a tested, bounded first operation execution path beyond type resolution:
+
+- Object records have a fifth field for a guest-memory payload pointer. The existing immutable object identity remains keyed by object ID, kind, owner point and digest marker; binding the memory pointer is a separate operation.
+- `nmr_obj_bind_data` currently accepts vector objects only. It binds a nonzero guest word address once, accepts an identical rebind idempotently, and rejects a different address rather than silently redirecting an object.
+- `nmr_obj_get` returns the bound data pointer in an additional result register. `nmr_resolve` returns both endpoint data pointers together with the output kind and program ID after validating the registered ordered type signature.
+- Program ID 78 dispatches to NaN16 `vector.add.i32.v1`. Its direct-call ABI is left pointer, right pointer, dimension, output pointer; it accepts dimensions 1–16 and performs word-wise addition modulo (2^{32}). The implementation is a guest NaN16 routine, not a host-side math callback.
+- The end-to-end test registers two vector endpoints and an immutable operator, binds the payload addresses, resolves the operator, takes the two addresses from the resolver (not caller-supplied guesses), dispatches program 78, and checks the result `[11,22,33,44]`. It also checks idempotent binding, conflicting rebinding, zero/oversized dimensions, and unknown program IDs.
+- `tools/math_execute_gate.sh` is part of the NaN0S Android workflow. GitHub Actions run `42332779973` passed the core-tests job, including all NaN toolchain gates with this execution test.
+
+**Scope limits:** the object and operator tables are still bounded in-memory bootstrap structures. The payload pointer is a guest-memory address, not a durable content-addressed object location. Digest values are test markers, not SHA-256. There is no persistent MC0DB journal, crash recovery, general bounds-aware object allocator, or arbitrary indirect program execution. The dispatcher is an explicit allowlist and rejects unknown program IDs.
+
+### Next mathematical execution increments
+
+1. Add a second exact vector operator (dot product) using only documented NaN16 integer/Boolean operations, with overflow semantics stated explicitly and an independent reference fixture.
+2. Add typed scalar result-object publication and derivation provenance; do not overwrite either input object.
+3. Add vector shape/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
+4. Extend the same pattern to matrices and graph/hypergraph operations only after independent evaluator tests exist.
