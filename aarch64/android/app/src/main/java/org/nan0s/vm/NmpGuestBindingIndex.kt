@@ -20,6 +20,8 @@ internal class NmpGuestBindingIndex {
     private data class Key(val leafId: String, val version: Int)
     private val byLeaf = mutableMapOf<Key, NmpGuestLeafBinding>()
     private val byObject = mutableMapOf<Int, Key>()
+    private val highestVersion = mutableMapOf<String, Int>()
+    private val invalidated = mutableSetOf<Key>()
 
     @Synchronized
     fun publishCommitted(binding: NmpGuestLeafBinding) {
@@ -31,7 +33,8 @@ internal class NmpGuestBindingIndex {
             normalize(binding.payloadSha256).isNotEmpty()) {
             "canonical binding requires full SHA-256 digests"
         }
-        require(byLeaf.keys.none { it.leafId == key.leafId && it.version > key.version }) {
+        require(key !in invalidated) { "invalidated canonical leaf version cannot be republished" }
+        require(key.version >= (highestVersion[key.leafId] ?: key.version)) {
             "cannot publish a stale canonical leaf version"
         }
         val old = byLeaf[key]
@@ -54,6 +57,7 @@ internal class NmpGuestBindingIndex {
         }
         byLeaf[key] = binding
         byObject[binding.objectId] = key
+        highestVersion[key.leafId] = key.version
     }
 
     @Synchronized
@@ -61,6 +65,7 @@ internal class NmpGuestBindingIndex {
         val key = Key(leafId, version)
         val removed = byLeaf.remove(key) ?: return false
         byObject.remove(removed.objectId)
+        invalidated.add(key)
         return true
     }
 
@@ -68,6 +73,8 @@ internal class NmpGuestBindingIndex {
     fun clearForGuestReload() {
         byLeaf.clear()
         byObject.clear()
+        highestVersion.clear()
+        invalidated.clear()
     }
 
     /**
