@@ -42,6 +42,7 @@ internal data class N16NmpKernelResult(
     val functionId: String,
     val programId: Int,
     val outputKind: Int,
+    val dimension: Int,
     val outputWords: IntArray,
     val resultDigest: String,
     val guestSteps: Long,
@@ -153,7 +154,7 @@ internal class N16NmpKernelWorker {
         val resultDigest = digestWords(execution.outputWords)
         return N16NmpKernelResult(
             packetId, jobId, leaseOwner, leaseEpoch, functionId, programId,
-            expectedKind, execution.outputWords.copyOf(), resultDigest,
+            expectedKind, resolved.dimension, execution.outputWords.copyOf(), resultDigest,
             execution.guestSteps, execution.guestImageDigest, execution.guestSourceDigest
         )
     }
@@ -168,6 +169,20 @@ internal class N16NmpKernelWorker {
         val result = execute(leaseResponse, resolved)
         val packet = leaseResponse.getJSONObject("packet")
         val lease = leaseResponse.getJSONObject("lease")
+        val evidence = JSONObject()
+            .put("schema", "nanrouter.native-kernel-execution.v1")
+            .put("packet_id", result.packetId)
+            .put("function_id", result.functionId)
+            .put("program_id", result.programId)
+            .put("output_kind", result.outputKind)
+            .put("dimension", result.dimension)
+            .put("output_count", result.outputWords.size)
+            .put("output_digest", result.resultDigest)
+            .put("guest_steps", result.guestSteps)
+            .put("guest_image_digest", result.guestImageDigest)
+            .put("guest_source_digest", result.guestSourceDigest)
+            .put("lease_epoch", result.leaseEpoch)
+            .put("lease_owner", result.leaseOwner)
         val completion = client.complete(
             packet = packet,
             jobId = result.jobId,
@@ -175,7 +190,8 @@ internal class N16NmpKernelWorker {
             leaseEpoch = result.leaseEpoch,
             leaseOwner = result.leaseOwner,
             resultDigest = result.resultDigest,
-            nowTick = nowTick
+            nowTick = nowTick,
+            executionEvidence = evidence
         )
         return result to completion
     }
