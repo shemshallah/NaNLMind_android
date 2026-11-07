@@ -22,7 +22,7 @@
 7. [x] Add Android GUI entry and CLI --nannet-train launch path to the shared guest.
 8. [x] Add manual GitHub Runner CPU Ring workflow using the same guest and corpus format.
 9. [ ] Add candidate evaluator, contribution accounting, and transactional merge.
-10. [ ] Extend the NaN0S NaN16 task-ledger prototype into full NaNLMROUTER task/result envelopes for BS0/MC0/HW0: authenticated runner identity, signed envelope, sequence/replay protection, wall-clock/timebase binding for expiry epochs, budget accounting, checkpoint binding, evidence references, and routed dispatch.
+10. [x] Add NaN16 guest integration test: task ledger claim → typed mathematical operator resolution → task completion. [ ] Extend the NaN0S NaN16 task-ledger prototype into full NaNLMROUTER task/result envelopes for BS0/MC0/HW0: authenticated runner identity, signed envelope, sequence/replay protection, wall-clock/timebase binding for expiry epochs, budget accounting, checkpoint binding, evidence references, and routed dispatch.
 11. [ ] Extend the NaN0S NaN16 object/operator registry prototype with canonical serialization, full digests, MC0DB persistence, typed endpoint/operator resolution, and vector/matrix/tensor/graph/hypergraph schemas.
 12. [ ] Add canonical operation records, domain-separated content hashes, dependency lineage, and deterministic replay checks.
 13. [ ] Validate the new BS0 16-function × 4-input NaN16 Boolean fixture in CI; then add composition/mirror/property tests and HW0 bounded physical-capability binding to logical points with observed/inferred/verified states.
