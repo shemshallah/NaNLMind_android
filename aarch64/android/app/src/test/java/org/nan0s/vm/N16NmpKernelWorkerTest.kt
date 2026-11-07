@@ -87,6 +87,15 @@ class N16NmpKernelWorkerTest {
         assertEquals(3L, result.leaseEpoch)
         assertEquals(64, result.resultDigest.length)
         assertEquals(4096L, result.guestSteps)
+        val evidence = result.toExecutionEvidence()
+        assertEquals("nanrouter.native-kernel-execution.v1", evidence.getString("schema"))
+        assertEquals("nmp:packet:worker:1", evidence.getString("packet_id"))
+        assertEquals(78, evidence.getInt("program_id"))
+        assertEquals(4, evidence.getInt("output_kind"))
+        assertEquals(2, evidence.getInt("output_count"))
+        assertEquals(result.resultDigest, evidence.getString("output_digest"))
+        assertEquals(3L, evidence.getLong("lease_epoch"))
+        assertEquals("worker-1", evidence.getString("lease_owner"))
     }
 
     @Test
