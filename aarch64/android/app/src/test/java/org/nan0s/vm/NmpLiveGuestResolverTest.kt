@@ -286,6 +286,25 @@ class NmpLiveGuestResolverTest {
         }
     }
 
+    @Test fun absentInvalidationCreatesTombstoneAndVersionHighWatermark() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val index = NmpGuestBindingIndex()
+        assertTrue(!index.invalidateCommitted(a.leafId, 4))
+        try {
+            index.publishCommitted(a.copy(version = 4))
+            throw AssertionError("expected invalidated absent record rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("cannot be republished"))
+        }
+        try {
+            index.publishCommitted(a.copy(version = 3))
+            throw AssertionError("expected earlier version rollback rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("stale canonical"))
+        }
+        index.publishCommitted(a.copy(version = 5))
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
