@@ -186,7 +186,7 @@ The companion NaN0S branch now has a tested, bounded first operation execution p
 
 - Added a canonical binary expression grammar: `<left-route>::op:<decimal-id>::<right-route>`. The route parser now recognizes only the exact `::op:` delimiter; the expression guest parses a bounded decimal operator ID, resolves both canonical endpoints through key/type/owner checks, asks the typed operator registry for the program and endpoint payload pointers, then dispatches the NaN16 program. It supports one binary operation per expression; nested expressions are rejected.
 - Added `nmr_expr_execute` and an end-to-end expression fixture for a dot product. The caller currently supplies the vector dimension and output word pointer; automatic shape-derived dimensions, general expression trees, and automatic durable result publication remain future work.
-- The expression regression rejects missing `::op:`, malformed operator IDs, unknown operators and endpoints routed from the wrong logical point. GitHub Actions run `42333595887` passed the core-tests job including `NaN canonical math expression gate: PASS`. Temporary internal stage diagnostics were removed in the following cleanup commits; that cleanup's CI is being rerun.
+- The expression regression rejects missing `::op:`, malformed operator IDs, unknown operators and endpoints routed from the wrong logical point. GitHub Actions run `42333678205` passed the core-tests job on the cleanup commit, including `NaN canonical math expression gate: PASS`; temporary internal stage diagnostics are removed. The Android APK job for that run was still in progress at the time of this update.
 
 ### Next mathematical execution increments
 
