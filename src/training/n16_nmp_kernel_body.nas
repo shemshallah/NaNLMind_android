@@ -195,7 +195,7 @@ n16_nmp_kernel_fail:
   ST r8,r0,@n16_nmp_result
   RET
 
-.org 12000
+.org 22000
 n16_nmp_operation:
 .word 0
 n16_nmp_left_id:
@@ -224,13 +224,13 @@ n16_nmp_resolved_right:
 .word 0
 n16_nmp_result:
 .word 0,0,0,0,0
-.org 13000
+.org 23000
 n16_nmp_left_payload:
-.org 14000
+.org 24000
 n16_nmp_right_payload:
-.org 15000
+.org 25000
 n16_nmp_output_payload:
 
-.org 16000
+.org 26000
 n16_nmp_kernel_halt:
   HALT
