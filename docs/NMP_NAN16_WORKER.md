@@ -133,3 +133,20 @@ coordinate guest mutations with the index monitor, associate registry labels
 with the running guest image, and call `clearForGuestReload` on every reset
 or reload. The manual packet workflow does not establish that provenance.
 No production automatic resolution or end-to-end execution is claimed.
+
+### Atomic canonical binding publication
+
+Canonical ingestion may call `publishBatchCommitted(bindings)` to publish
+1–32 verified bindings as one index transaction. The method validates the
+entire batch against a detached copy of the current index, including
+intra-batch object ownership conflicts, immutable versions, invalidation
+tombstones and version high-watermarks. A rejected entry leaves every
+preexisting index mapping unchanged and publishes none of the batch.
+Single-record `publishCommitted` remains available for committed individual
+records.
+
+**This is index atomicity, not object-store or VM transaction atomicity.**
+The trusted ingestion owner must first verify source provenance and coordinate
+guest installation and index publication under the same external transaction
+lock. Guest reloads must clear the mirror, and a live resolve must not race
+with canonical writes. No NMP lease packet can authorize publication.
