@@ -50,6 +50,23 @@ internal data class N16NmpKernelResult(
     val guestSourceDigest: String
 )
 
+
+internal fun N16NmpKernelResult.toExecutionEvidence(): JSONObject =
+    JSONObject()
+        .put("schema", "nanrouter.native-kernel-execution.v1")
+        .put("packet_id", packetId)
+        .put("function_id", functionId)
+        .put("program_id", programId)
+        .put("output_kind", outputKind)
+        .put("dimension", dimension)
+        .put("output_count", outputWords.size)
+        .put("output_digest", resultDigest)
+        .put("guest_steps", guestSteps)
+        .put("guest_image_digest", guestImageDigest)
+        .put("guest_source_digest", guestSourceDigest)
+        .put("lease_epoch", leaseEpoch)
+        .put("lease_owner", leaseOwner)
+
 /**
  * Executes the allowlisted vector kernel inside a dedicated NaN16 guest.
  *
@@ -169,20 +186,7 @@ internal class N16NmpKernelWorker {
         val result = execute(leaseResponse, resolved)
         val packet = leaseResponse.getJSONObject("packet")
         val lease = leaseResponse.getJSONObject("lease")
-        val evidence = JSONObject()
-            .put("schema", "nanrouter.native-kernel-execution.v1")
-            .put("packet_id", result.packetId)
-            .put("function_id", result.functionId)
-            .put("program_id", result.programId)
-            .put("output_kind", result.outputKind)
-            .put("dimension", result.dimension)
-            .put("output_count", result.outputWords.size)
-            .put("output_digest", result.resultDigest)
-            .put("guest_steps", result.guestSteps)
-            .put("guest_image_digest", result.guestImageDigest)
-            .put("guest_source_digest", result.guestSourceDigest)
-            .put("lease_epoch", result.leaseEpoch)
-            .put("lease_owner", result.leaseOwner)
+        val evidence = result.toExecutionEvidence()
         val completion = client.complete(
             packet = packet,
             jobId = result.jobId,
