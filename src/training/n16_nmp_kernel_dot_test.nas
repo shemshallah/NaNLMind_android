@@ -4,9 +4,9 @@ JMP @n16_nmp_kernel_dot_test_entry
 
 n16_nmp_kernel_dot_test_entry:
   MOVI r13,1
-  MOVI r8,1
+  MOVI r8,2
   ST r8,r0,@n16_nmp_operation
-  MOVI r8,2401
+  MOVI r8,1501
   ST r8,r0,@n16_nmp_left_id
   MOVI r8,1502
   ST r8,r0,@n16_nmp_right_id
@@ -78,11 +78,11 @@ n16_nmp_kernel_dot_test_entry:
   PUTC r1
   MOVI r1,32
   PUTC r1
-  MOVI r1,65
+  MOVI r1,68
   PUTC r1
   MOVI r1,79
   PUTC r1
-  MOVI r1,79
+  MOVI r1,84
   PUTC r1
   MOVI r1,32
   PUTC r1
