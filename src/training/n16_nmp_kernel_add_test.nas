@@ -1,8 +1,4 @@
 .org 0
-JMP @n16_nmp_kernel_add_test_entry
-.include "n16_nmp_kernel_body.nas"
-
-n16_nmp_kernel_add_test_entry:
   MOVI r13,1
   MOVI r8,1
   ST r8,r0,@n16_nmp_operation
@@ -120,3 +116,5 @@ n16_nmp_add_fail:
   MOVI r1,10
   PUTC r1
   HALT
+
+.include "n16_nmp_kernel_body.nas"
