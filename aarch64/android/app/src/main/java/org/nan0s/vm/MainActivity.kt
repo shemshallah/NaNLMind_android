@@ -563,6 +563,7 @@ class MainActivity : Activity(), NanLoop.Listener {
                     runOnUiThread {
                         if (isFinishing || isDestroyed) return@runOnUiThread
                         status.text = "STATUS: REJECTED / UNAVAILABLE\n" + (failure.message ?: "request failed").take(512)
+                        token.text.clear()
                     }
                 }
             }.start()
