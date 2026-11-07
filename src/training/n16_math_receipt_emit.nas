@@ -12,7 +12,7 @@ n16_math_emit_receipt:
   LD r11,r10,1
   MOVI r12,@n16_math_receipt
 
-  MOVI r7,1312895286
+  LA r7,1312895286
   ST r7,r12,0
   MOVI r7,1
   ST r7,r12,1
