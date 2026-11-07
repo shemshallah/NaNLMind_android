@@ -80,6 +80,24 @@ internal class NmpHttpsClient(
         nowTick: Long,
         resultGeneration: Long? = null,
         executionEvidence: JSONObject? = null
+    ): JSONObject = post(
+        "/v1/nmp/complete",
+        buildCompletionBody(
+            packet, jobId, leaseToken, leaseEpoch, leaseOwner, resultDigest,
+            nowTick, resultGeneration, executionEvidence
+        )
+    )
+
+    internal fun buildCompletionBody(
+        packet: JSONObject,
+        jobId: String,
+        leaseToken: String,
+        leaseEpoch: Long,
+        leaseOwner: String,
+        resultDigest: String,
+        nowTick: Long,
+        resultGeneration: Long? = null,
+        executionEvidence: JSONObject? = null
     ): JSONObject {
         require(jobId.isNotBlank() && leaseToken.isNotBlank() && leaseOwner.isNotBlank())
         require(leaseEpoch > 0 && nowTick >= 0)
@@ -87,7 +105,7 @@ internal class NmpHttpsClient(
             "result digest must be SHA-256 hex"
         }
         val body = JSONObject()
-            .put("packet", packet)
+            .put("packet", JSONObject(packet.toString()))
             .put("job_id", jobId)
             .put("lease_token", leaseToken)
             .put("lease_epoch", leaseEpoch)
@@ -101,7 +119,7 @@ internal class NmpHttpsClient(
         if (executionEvidence != null) {
             body.put("execution_evidence", JSONObject(executionEvidence.toString()))
         }
-        return post("/v1/nmp/complete", body)
+        return body
     }
 
     private fun post(path: String, body: JSONObject): JSONObject {
