@@ -84,7 +84,7 @@ tasks.register("compileProtocolGuest") {
         file("../../../src/nannet/n16t_android_abi.nas"),
         file("../../../tools/nmk.awk")
     )
-    outputs.files(guestOutput, labelsOutput)
+    outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
     doLast {
         guestOutput.parentFile.mkdirs()
         guestOutput.outputStream().use { guest ->
@@ -118,6 +118,7 @@ tasks.register("compileMathAdmissionGuest") {
     val guestSource = file("../../../src/training/n16_math_admission_guest.nas")
     val guestOutput = file("src/main/assets/n16_math_admission.nan")
     val labelsOutput = file("src/main/assets/n16_math_admission.labels")
+    val sourceDigestOutput = file("src/main/assets/n16_math_admission.source.sha256")
     val guestSources = listOf(
         guestSource,
         file("../../../src/mth/mth_preflight_gate.nas"),
@@ -143,6 +144,16 @@ tasks.register("compileMathAdmissionGuest") {
         check(labelsOutput.isFile && labelsOutput.length() > 0) {
             "NaN16 math admission guest label map was not generated"
         }
+        val sourceDigest = java.security.MessageDigest.getInstance("SHA-256")
+        guestSources.forEach { source ->
+            sourceDigest.update(source.name.toByteArray(Charsets.UTF_8))
+            sourceDigest.update(0.toByte())
+            sourceDigest.update(source.readBytes())
+            sourceDigest.update(0.toByte())
+        }
+        sourceDigestOutput.writeText(
+            sourceDigest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) } + "\\n"
+        )
         val guestLabels = labelsOutput.readLines().mapNotNull { line ->
             line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
         }.toSet()
@@ -162,7 +173,7 @@ tasks.register("verifyRuntimeAssetAllowlist") {
     doLast {
         val allowed = setOf(
             "nan0s.img", "disk.nanfs", "n16_train.nan", "n16_schedule.nan",
-            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels"
+            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels", "n16_math_admission.source.sha256"
         )
         val actual = fileTree("src/main/assets").files.map { it.name }.toSet()
         val unexpected = actual - allowed
