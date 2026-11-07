@@ -74,3 +74,32 @@ The developer guide says the admission-rule section mirrors the canonical `plugi
 ## Current evidence boundary
 
 The NaN0S / NaNLMind Android repositories are public GitHub repositories and their current project branches can be inspected. That alone does not establish plugin compatibility, security-scanner cleanliness, dependency compatibility, capability accuracy, or catalog eligibility. No Hermes CLI validation was run because there is not yet a loadable plugin package to validate.
+
+## Supplemental plugin-developer contract (checked against the live developer guide)
+
+The catalog guide is not the whole implementation spec. The current general plugin guide adds these package/runtime checks, which must be covered before calling the package ready:
+
+- **Choose the correct extension surface first.** Native Python `plugin.yaml` + `__init__.py` + `register(ctx)` is for custom tools/hooks/commands; Desktop uses the Desktop SDK; portable Agent Plugins use root `plugin.json` plus fixed component paths such as `skills/*/SKILL.md` and `mcp.json`. Provider, memory, platform, dashboard, browser, voice and other integrations have their own specific contracts. Do not pretend a generic package is a provider plugin.
+- **Loadability is mandatory.** Native directory plugins need `plugin.yaml` and a recognized entrypoint beside it (normally `__init__.py` exporting `register(ctx)`; supported alternatives include Desktop `desktop/plugin.js` and portable `plugin.json`). A manifest without loadable code is rejected. Portable packages are a compatibility adapter and do not provide the same registration surface as native plugins.
+- **Native manifest versioning:** current manifest schema supports additive `manifest_version: 2`; it is independent of `api_version`. No global `PLUGIN_API_VERSION` is required. Use documented public APIs and additive hook payloads; new callbacks should accept `**kwargs`. Persisted/wire formats need their own versioning and migration compatibility.
+- **Native manifest declarations:** enumerate every registered tool and hook; declare privileged `capabilities`; declare `requires_env`, `requires_auth`, OAuth, `config_schema`, and `config_keys` only where actually needed. `config_schema` is for plugin-owned settings; `config_keys` is only for core config paths the plugin reads. Validate declarations against actual registration.
+- **Tool contracts:** schemas need precise names, descriptions and parameter definitions. Handlers should accept `args` plus `**kwargs`, return JSON strings on both success and error, and handle exceptions without crashing the host. Do not expose arbitrary code execution as an expression evaluator.
+- **Dependencies:** prefer a `pyproject.toml` beside `plugin.yaml`; it takes precedence over manifest dependency lists. Pin compatible ranges with upper bounds, keep within Hermes' exact core pins, review lockfile bumps, and run an author-owned release-age quarantine (for example `uv --exclude-newer "3 days"`). Direct-URL dependencies are not managed by Hermes' normal dependency admission.
+- **Credentials:** `requires_env` is for user-provided variables; secrets must be read through Hermes secret scope. Use Hermes' provider/OAuth helpers. Never scrape files, another app's tokens, or host credential stores. OAuth origins and declared hosts are HTTPS-only and host-restricted.
+- **Portable MCP package safety:** `mcp.json` values are package data, not secret storage. Use `"${NAME}"` forwarding only for variables the user deliberately supplies. Portable packages execute with the user's full-trust posture; they are not a sandbox. For write-capable servers, set the Hermes extension trust to `untrusted` so calls require approval and fail closed in unattended contexts. Never put credentials in `mcp.json`.
+- **Durable state:** never write mutable runtime state into the plugin install tree. Use Hermes' profile-scoped plugin data directory/database APIs so data survives updates/removal and follows the active profile.
+- **Doctor validation:** in addition to catalog validation, run `hermes plugins doctor <path> --ci` on trusted plugin code. It exercises discovery, manifest parsing, import/registration and tool/hook registries with a temporary `HERMES_HOME`. It is not a sandbox; do not run it on untrusted plugin code.
+- **Clean package shape:** native directory package typically includes `plugin.yaml`, `__init__.py`, schemas and handlers; portable package uses `plugin.json`, optional `mcp.json`, and fixed skill directories. Keep runtime data, credentials, generated binaries and build outputs out of the install package.
+
+### Preferred integration direction to evaluate (not yet implemented)
+
+Because NaNLMind's core execution semantics are NaN16 and the Android application is not itself a Hermes plugin, evaluate a **thin portable Agent Plugin + MCP adapter** first if it can invoke a separately installed, user-approved NaN16 runner safely. This avoids putting model/runtime semantics in Python and keeps the guest implementation in NaN16. The adapter must still declare exact MCP commands/arguments, be source-reviewable, use explicit trust gating for write operations, disclose network/filesystem/shell behavior, and fail closed when the runner is unavailable. If Hermes needs richer typed tool registration than portable MCP supports, use a minimal native wrapper only as the host boundary and keep all mathematical/training logic in NaN16. This is a design candidate, not a compliance pass.
+
+Additional local validation commands to include in the eventual CI/release record:
+
+```sh
+hermes plugins doctor /path/to/plugin --ci
+hermes plugins validate /path/to/plugin --install-deps
+```
+
+Record both outputs against the same full pinned SHA. A passing Doctor does not replace catalog validation; a passing catalog validator does not replace human review.
