@@ -172,12 +172,72 @@ tasks.register("compileMathAdmissionGuest") {
         }
     }
 }
+
+ // Compile a dedicated NaN16 worker guest with registry-owned dispatch and
+ // the two currently allowlisted vector kernels (add and dot).
+tasks.register("compileNmpKernelGuest") {
+    val guestSource = file("../../../src/training/n16_nmp_kernel_guest.nas")
+    val registrySource = file("../../../src/nannet/math_registry.nas")
+    val vectorSource = file("../../../src/nannet/vector_ops.nas")
+    val assembler = file("../../../tools/nmk.awk")
+    val guestOutput = file("src/main/assets/n16_nmp_kernel.nan")
+    val labelsOutput = file("src/main/assets/n16_nmp_kernel.labels")
+    val sourceDigestOutput = file("src/main/assets/n16_nmp_kernel.source.sha256")
+    val guestSources = listOf(guestSource, registrySource, vectorSource, assembler)
+    inputs.files(guestSources)
+    outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
+    doLast {
+        guestOutput.parentFile.mkdirs()
+        guestOutput.outputStream().use { guest ->
+            exec {
+                commandLine(
+                    "awk", "-f", assembler,
+                    "-v", "CMD=emit",
+                    "-v", "LABELS=${labelsOutput.absolutePath}",
+                    guestSource
+                )
+                standardOutput = guest
+            }
+        }
+        check(labelsOutput.isFile && labelsOutput.length() > 0) {
+            "NaN16 NMP kernel guest label map was not generated"
+        }
+        val sourceDigest = MessageDigest.getInstance("SHA-256")
+        guestSources.forEach { source ->
+            sourceDigest.update(source.name.toByteArray(Charsets.UTF_8))
+            sourceDigest.update(0.toByte())
+            sourceDigest.update(source.readBytes())
+            sourceDigest.update(0.toByte())
+        }
+        sourceDigestOutput.writeText(
+            sourceDigest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) } + "\n"
+        )
+        val guestLabels = labelsOutput.readLines().mapNotNull { line ->
+            line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
+        }.toSet()
+        val requiredLabels = setOf(
+            "n16_nmp_kernel_entry", "n16_nmp_operation", "n16_nmp_left_id",
+            "n16_nmp_right_id", "n16_nmp_left_owner", "n16_nmp_right_owner",
+            "n16_nmp_left_digest_marker", "n16_nmp_right_digest_marker",
+            "n16_nmp_dimension", "n16_nmp_left_payload",
+            "n16_nmp_right_payload", "n16_nmp_output_payload", "n16_nmp_result"
+        )
+        check(guestLabels.containsAll(requiredLabels)) {
+            "NaN16 NMP kernel guest is missing labels: ${requiredLabels - guestLabels}"
+        }
+        check(guestOutput.isFile && guestOutput.length() > 0) {
+            "NaN16 NMP kernel guest image was not generated"
+        }
+    }
+}
+
 tasks.register("verifyRuntimeAssetAllowlist") {
-    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest", "compileMathAdmissionGuest")
+    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest", "compileMathAdmissionGuest", "compileNmpKernelGuest")
     doLast {
         val allowed = setOf(
             "nan0s.img", "disk.nanfs", "n16_train.nan", "n16_schedule.nan",
-            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels", "n16_math_admission.source.sha256"
+            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels", "n16_math_admission.source.sha256",
+            "n16_nmp_kernel.nan", "n16_nmp_kernel.labels", "n16_nmp_kernel.source.sha256"
         )
         val actual = fileTree("src/main/assets").files.map { it.name }.toSet()
         val unexpected = actual - allowed
