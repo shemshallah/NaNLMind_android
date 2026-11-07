@@ -9,7 +9,8 @@ n16_math_emit_receipt:
   MOVI r10,@n16_math_rule
   LD r11,r10,1
   MOVI r12,@n16_math_receipt
-  MOVI r7,1312895286
+  MOVI r7,@n16_math_receipt_magic
+  LD r7,r7,0
   ST r7,r12,0
   MOVI r7,1
   ST r7,r12,1
@@ -38,3 +39,6 @@ n16_math_emit_receipt:
   ST r7,r12,13
 n16_math_emit_receipt_return:
   RET
+
+n16_math_receipt_magic:
+.word 1312895286
