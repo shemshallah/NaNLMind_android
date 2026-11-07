@@ -144,7 +144,7 @@ tasks.register("compileMathAdmissionGuest") {
             "NaN16 math admission guest label map was not generated"
         }
         val guestLabels = labelsOutput.readLines().mapNotNull { line ->
-            line.trim().split(Regex("\\\\s+")).takeIf { it.size == 2 }?.first()
+            line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
         }.toSet()
         val requiredLabels = setOf(
             "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
