@@ -4,12 +4,27 @@ import android.content.Context
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
-import org.json.JSONObject
+private fun n16JsonQuote(value: String): String {
+    val out = StringBuilder("\\"")
+    value.forEach { ch ->
+        when (ch) {
+            '\\' -> out.append("\\\\")
+            '"' -> out.append("\\\"")
+            '\\b' -> out.append("\\b")
+            '\\u000c' -> out.append("\\f")
+            '\\n' -> out.append("\\n")
+            '\\r' -> out.append("\\r")
+            '\\t' -> out.append("\\t")
+            else -> if (ch.code < 0x20) out.append("\\u%04x".format(ch.code)) else out.append(ch)
+        }
+    }
+    return out.append('"').toString()
+}
 
 private fun n16CanonicalJson(fields: Map<String, Any>): String =
     fields.toSortedMap().entries.joinToString(prefix = "{", postfix = "}", separator = ",") { (key, value) ->
-        val encoded = if (value is String) JSONObject.quote(value) else value.toString()
-        "${JSONObject.quote(key)}:$encoded"
+        val encoded = if (value is String) n16JsonQuote(value) else value.toString()
+        "${n16JsonQuote(key)}:$encoded"
     }
 
 private fun n16CanonicalJsonArray(words: IntArray): String =
