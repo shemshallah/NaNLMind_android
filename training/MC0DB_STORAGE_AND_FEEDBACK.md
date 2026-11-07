@@ -177,13 +177,13 @@ The companion NaN0S branch now has a tested, bounded first operation execution p
 
 **Scope limits:** the object and operator tables are still bounded in-memory bootstrap structures. The payload pointer is a guest-memory address, not a durable content-addressed object location. Digest values are test markers, not SHA-256. There is no persistent MC0DB journal, crash recovery, general bounds-aware object allocator, or arbitrary indirect program execution. The dispatcher is an explicit allowlist and rejects unknown program IDs.
 
+- Added program ID 79, `vector.dot.u32.v1`. It computes each 32-bit product using a 32-round NaN16 shift/add multiplier (bit selection via the NaN16 Boolean AND truth table), then accumulates the dot product. Both each product and the final sum are explicitly modulo (2^{32}); this is bit-pattern arithmetic, not floating-point or an unbounded integer claim.
+- The operator registry fixture maps `dot.v1` to program 79; the execution gate checks `[1,2,3,4] · [10,20,30,40] = 300`. The same test verifies vector addition and rejects invalid dimensions and unknown program IDs.
+- GitHub Actions run `42332928741` passed the core-tests job with both vector addition and dot-product execution enabled. The Android APK build for that run was still in progress at the time of this note.
+
 ### Next mathematical execution increments
 
-1. Add a second exact vector operator (dot product) using only documented NaN16 integer/Boolean operations, with overflow semantics stated explicitly and an independent reference fixture.
-2. Add typed scalar result-object publication and derivation provenance; do not overwrite either input object.
-3. Add vector shape/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
+1. Add typed scalar result-object publication and derivation provenance; do not overwrite either input object.
+2. Add vector shape/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
+3. Add independent reference, property, overflow, aliasing, and metamorphic tests for the vector kernels.
 4. Extend the same pattern to matrices and graph/hypergraph operations only after independent evaluator tests exist.
-
-- Added program ID 79, `vector.dot.u32.v1`. It computes each 32-bit product using a 32-round NaN16 shift/add multiplier (bit selection via the NaN16 Boolean AND truth table), then accumulates the dot product. Both each product and the final sum are explicitly modulo (2^{32}); this is bit-pattern arithmetic, not floating-point or an unbounded integer claim.
-- The operator registry fixture now maps `dot.v1` to program 79 and the execution gate checks the result of `[1,2,3,4] · [10,20,30,40]` equals 300. The same test continues to verify the vector-add result and rejects invalid dimensions and unknown program IDs.
-- GitHub Actions run `42332928741` passed the core-tests job with both vector addition and dot-product execution enabled. The Android APK build for that run was still in progress at the time of this note.
