@@ -113,12 +113,55 @@ tasks.register("compileProtocolGuest") {
         }
     }
 }
+// Compile the composed rule + typed-object admission gate for Android VM calls.
+tasks.register("compileMathAdmissionGuest") {
+    val guestSource = file("../../../src/training/n16_math_admission_guest.nas")
+    val guestOutput = file("src/main/assets/n16_math_admission.nan")
+    val labelsOutput = file("src/main/assets/n16_math_admission.labels")
+    val guestSources = listOf(
+        guestSource,
+        file("../../../src/mth/mth_preflight_gate.nas"),
+        file("../../../src/mth/mth_preflight.nas"),
+        file("../../../src/mth/mth_admission.nas"),
+        file("../../../tools/nmk.awk")
+    )
+    inputs.files(guestSources)
+    outputs.files(guestOutput, labelsOutput)
+    doLast {
+        guestOutput.parentFile.mkdirs()
+        guestOutput.outputStream().use { guest ->
+            exec {
+                commandLine(
+                    "awk", "-f", file("../../../tools/nmk.awk"),
+                    "-v", "CMD=emit",
+                    "-v", "LABELS=${labelsOutput.absolutePath}",
+                    guestSource
+                )
+                standardOutput = guest
+            }
+        }
+        check(labelsOutput.isFile && labelsOutput.length() > 0) {
+            "NaN16 math admission guest label map was not generated"
+        }
+        val guestLabels = labelsOutput.readLines().mapNotNull { line ->
+            line.trim().split(Regex("\\\\s+")).takeIf { it.size == 2 }?.first()
+        }.toSet()
+        val requiredLabels = setOf(
+            "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
+            "n16_math_left", "n16_math_right", "n16_math_contract",
+            "n16_math_capabilities", "n16_math_output", "n16_math_result"
+        )
+        check(guestLabels.containsAll(requiredLabels)) {
+            "NaN16 math admission guest is missing labels: ${requiredLabels - guestLabels}"
+        }
+    }
+}
 tasks.register("verifyRuntimeAssetAllowlist") {
-    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest")
+    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest", "compileMathAdmissionGuest")
     doLast {
         val allowed = setOf(
             "nan0s.img", "disk.nanfs", "n16_train.nan", "n16_schedule.nan",
-            "n16_protocol.nan", "n16_protocol.labels"
+            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels"
         )
         val actual = fileTree("src/main/assets").files.map { it.name }.toSet()
         val unexpected = actual - allowed
