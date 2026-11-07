@@ -175,15 +175,18 @@ The companion NaN0S branch now has a tested, bounded first operation execution p
 - The end-to-end test registers two vector endpoints and an immutable operator, binds the payload addresses, resolves the operator, takes the two addresses from the resolver (not caller-supplied guesses), dispatches program 78, and checks the result `[11,22,33,44]`. It also checks idempotent binding, conflicting rebinding, zero/oversized dimensions, and unknown program IDs.
 - `tools/math_execute_gate.sh` is part of the NaN0S Android workflow. GitHub Actions run `42332779973` passed the core-tests job, including all NaN toolchain gates with this execution test.
 
-**Scope limits:** the object and operator tables are still bounded in-memory bootstrap structures. The payload pointer is a guest-memory address, not a durable content-addressed object location. Digest values are test markers, not SHA-256. There is no persistent MC0DB journal, crash recovery, general bounds-aware object allocator, or arbitrary indirect program execution. The dispatcher is an explicit allowlist and rejects unknown program IDs.
-
-- Added program ID 79, `vector.dot.u32.v1`. It computes each 32-bit product using a 32-round NaN16 shift/add multiplier (bit selection via the NaN16 Boolean AND truth table), then accumulates the dot product. Both each product and the final sum are explicitly modulo (2^{32}); this is bit-pattern arithmetic, not floating-point or an unbounded integer claim.
+- Added program ID 79, `vector.dot.u32.v1`. It computes each 32-bit product using a 32-round NaN16 shift/add multiplier (bit selection via the NaN16 Boolean AND truth table), then accumulates the dot product. Each product and the final sum are explicitly modulo (2^{32}); this is bit-pattern arithmetic, not floating-point or an unbounded-integer claim.
 - The operator registry fixture maps `dot.v1` to program 79; the execution gate checks `[1,2,3,4] · [10,20,30,40] = 300`. The same test verifies vector addition and rejects invalid dimensions and unknown program IDs.
-- GitHub Actions run `42332928741` passed the core-tests job with both vector addition and dot-product execution enabled. The Android APK build for that run was still in progress at the time of this note.
+- Added scalar result publication using scalar-kind 3 objects. A result binds to the guest output word without modifying either input object.
+- Added `nmr_derivation_put`, an append-only 16-record bootstrap ledger. Before accepting a derivation it re-resolves the ordered typed inputs and operator, checks the program ID, validates the result object's output kind, digest marker and bound data pointer, then records operation ID, input IDs, operator ID, output ID, program ID and digest marker. Exact replay is idempotent; reusing an operation ID with altered output provenance is rejected.
+- The derivation ID and digest are currently test markers, not SHA-256 content addresses. This ledger is in-memory and is not yet a durable, crash-safe provenance journal.
+- GitHub Actions run `42333123678` passed the core-tests job: native tests, seals, ASan/UBSan and all NaN toolchain gates, including vector add, dot product, scalar publication and derivation replay/conflict checks. The Android APK job for that run was queued at the time of this note.
+
+**Scope limits:** object, operator and derivation tables are bounded in-memory bootstrap structures. Payload pointers are guest-memory word addresses, not durable content-addressed object locations. Digest values are test markers, not SHA-256. There is no persistent MC0DB journal, crash recovery, general bounds-aware object allocator, independent mathematical evaluator, or arbitrary indirect program execution. The dispatcher is an explicit allowlist and rejects unknown program IDs.
 
 ### Next mathematical execution increments
 
-1. Add typed scalar result-object publication and derivation provenance; do not overwrite either input object.
-2. Add vector shape/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
-3. Add independent reference, property, overflow, aliasing, and metamorphic tests for the vector kernels.
-4. Extend the same pattern to matrices and graph/hypergraph operations only after independent evaluator tests exist.
+1. Add vector shape/stride/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
+2. Add independent reference, property, overflow, aliasing, and metamorphic tests for vector kernels.
+3. Add a durable, checksummed derivation journal and recovery/replay rules without weakening immutable object IDs.
+4. Extend the same pattern to matrices and graph/hypergraph operations only after independent evaluator suites exist.
