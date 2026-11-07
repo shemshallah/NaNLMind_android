@@ -154,11 +154,11 @@ This is not yet a 10 GiB physical allocation, not durable storage, and not crash
 4. Extend object records from small integer digest markers to canonical byte serialization and full SHA-256.
 5. Add explicit operator selector parsing to the two-endpoint route grammar.
 6. Add an operation execution ABI: resolve → reserve → dispatch → validate → hash → journal → publish.
-7. Add the first exact vector operations (copy, add, scale, dot) with dimension/domain negative tests.
+7. Implement the two-endpoint `::op:<id>::` expression parser and operation execution ABI; then add exact vector operations (copy, add, scale, dot) with dimension/domain negative tests.
 8. Add hypergraph incidence and projection fixtures.
 9. Add MC0 full-tree audit and staged tombstone/promotion records.
 10. Expand the ten-layer suite only when the previous layer's regression root is frozen.
 
 ## 9. What is implemented versus planned
 
-Implemented prototypes in the current branch family include the canonical single-object route parser, initial vector/hypergraph key decoding, small object/operator registry, bounded task ledger, an in-memory BS0DB/MC0DB scratch quota manager with reserve/release/stats regression coverage, and an MC0 candidate lifecycle kernel. The candidate kernel records parent checkpoint, required passing-evidence count, pass/fail evidence, staged/rejected/promoted state, blocks promotion when evidence is insufficient or any evaluation fails, and rejects repeated promotion. Both scratch-quota and candidate-lifecycle guest regressions now pass the NaN0S CI gate. They are not yet the complete persistent databases, full SHA-256 object store, ten-layer evaluator, or authenticated network-dispatched runner ring. CI is the authority for whether the new quota regression actually passes.
+Implemented prototypes in the current branch family include the canonical single-object route parser, initial vector/hypergraph key decoding, small object/operator registry, bounded task ledger, an in-memory BS0DB/MC0DB scratch quota manager with reserve/release/stats regression coverage, an MC0 candidate lifecycle kernel, and typed two-endpoint operator resolution. The candidate kernel records parent checkpoint, required passing-evidence count, pass/fail evidence, staged/rejected/promoted state, blocks promotion when evidence is insufficient or any evaluation fails, and rejects repeated promotion. Scratch-quota, candidate-lifecycle, and typed mathematical-dispatch guest regressions now pass the NaN0S core CI gate. They are not yet the complete persistent databases, full SHA-256 object store, ten-layer evaluator, or authenticated network-dispatched runner ring. CI is the authority for whether the new quota regression actually passes.
