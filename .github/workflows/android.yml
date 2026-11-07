@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: shemshallah/NaNROUTER
-          ref: 8a2e2da163da1a1390787d0954d11be46921723d
+          ref: 3aea7dfc64e1ad10433fb7640a9a465477aa1c1c
           path: .nanrouter-upstream
       - name: Verify vendored NaN16 admission sources
         run: |
@@ -78,7 +78,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: shemshallah/NaNROUTER
-          ref: 8a2e2da163da1a1390787d0954d11be46921723d
+          ref: 3aea7dfc64e1ad10433fb7640a9a465477aa1c1c
           path: .nanrouter-upstream
       - name: Verify vendored NaN16 admission sources
         run: |
