@@ -23,7 +23,8 @@ receipt_test_main:
   ; Verify the complete raw receipt header and eight-word rule digest.
   MOVI r8,@n16_math_receipt
   LD r9,r8,0
-  MOVI r10,1312895286
+  MOVI r10,@n16_math_receipt_magic
+  LD r10,r10,0
   CMP r9,r10
   JMP[NE] @receipt_test_fail_header
   LD r9,r8,1
