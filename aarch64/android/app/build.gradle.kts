@@ -28,6 +28,7 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
 
 // Optional: refresh the bundled image from the x86 build (sh x86/tools/mkall.sh -> x86/build/nan0s.img). This project lives at <repo>/aarch64/android/.
