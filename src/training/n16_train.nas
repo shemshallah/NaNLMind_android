@@ -260,6 +260,29 @@ MOVI r12,8448
 ST r5,r12,0
 ST r6,r12,1
 ST r8,r12,2
+; The count-based byte model is order-independent. Record the exact guest
+; epoch-1 sample permutation as candidate metadata so runner and Android
+; can verify the same schedule before a future order-sensitive trainer uses it.
+MOVI r9,0
+MOVI r8,5381
+schedule_audit_loop:
+CMP r9,r6
+JMP[GE] @schedule_audit_done
+ADDI r1,r6,0
+MOVI r2,1
+ADDI r3,r9,0
+CALL @schedule_index
+CMP r5,r0
+JMP[NE] @reject
+MOVI r10,5
+SHL r10,r8,5
+ADD r8,r10,r8
+ADD r8,r8,r4
+ADDI r9,r9,1
+JMP @schedule_audit_loop
+schedule_audit_done:
+MOVI r12,8456
+ST r8,r12,0
 ; Clear the original corpus bytes before any candidate checkpoint is exported.
 MOVI r2,49152
 clear_corpus:
@@ -337,6 +360,22 @@ PUTC r1
 MOVI r1,10
 PUTC r1
 HALT
+
+; Deterministic epoch rotation: a complete permutation of [0,count).
+schedule_index:
+MOVI r5,0
+CMP r1,r0
+JMP[EQ] @schedule_invalid
+CMP r3,r1
+JMP[GE] @schedule_invalid
+MODU r4,r2,r1
+ADD r4,r4,r3
+MODU r4,r4,r1
+RET
+schedule_invalid:
+MOVI r5,1
+MOVI r4,0
+RET
 .org 8192
 freq:
 .word 0
