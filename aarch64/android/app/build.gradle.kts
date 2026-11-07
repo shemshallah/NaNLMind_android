@@ -177,13 +177,14 @@ tasks.register("compileMathAdmissionGuest") {
  // the two currently allowlisted vector kernels (add and dot).
 tasks.register("compileNmpKernelGuest") {
     val guestSource = file("../../../src/training/n16_nmp_kernel_guest.nas")
+    val guestBody = file("../../../src/training/n16_nmp_kernel_body.nas")
     val registrySource = file("../../../src/nannet/math_registry.nas")
     val vectorSource = file("../../../src/nannet/vector_ops.nas")
     val assembler = file("../../../tools/nmk.awk")
     val guestOutput = file("src/main/assets/n16_nmp_kernel.nan")
     val labelsOutput = file("src/main/assets/n16_nmp_kernel.labels")
     val sourceDigestOutput = file("src/main/assets/n16_nmp_kernel.source.sha256")
-    val guestSources = listOf(guestSource, registrySource, vectorSource, assembler)
+    val guestSources = listOf(guestSource, guestBody, registrySource, vectorSource, assembler)
     inputs.files(guestSources)
     outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
     doLast {
@@ -216,7 +217,7 @@ tasks.register("compileNmpKernelGuest") {
             line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
         }.toSet()
         val requiredLabels = setOf(
-            "n16_nmp_kernel_entry", "n16_nmp_operation", "n16_nmp_left_id",
+            "n16_nmp_kernel_entry", "n16_nmp_kernel_halt", "n16_nmp_operation", "n16_nmp_left_id",
             "n16_nmp_right_id", "n16_nmp_left_owner", "n16_nmp_right_owner",
             "n16_nmp_left_digest_marker", "n16_nmp_right_digest_marker",
             "n16_nmp_dimension", "n16_nmp_left_payload",
