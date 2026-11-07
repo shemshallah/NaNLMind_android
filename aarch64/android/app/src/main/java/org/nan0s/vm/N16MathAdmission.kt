@@ -10,11 +10,11 @@ private fun n16JsonQuote(value: String): String {
         when (ch) {
             '\\' -> out.append("\\\\")
             '"' -> out.append("\\\"")
-            '\\b' -> out.append("\\b")
-            '\\u000c' -> out.append("\\f")
-            '\\n' -> out.append("\\n")
-            '\\r' -> out.append("\\r")
-            '\\t' -> out.append("\\t")
+            '\b' -> out.append("\\b")
+            '\u000C' -> out.append("\\f")
+            '\n' -> out.append("\\n")
+            '\r' -> out.append("\\r")
+            '\t' -> out.append("\\t")
             else -> if (ch.code < 0x20) out.append("\\u%04x".format(ch.code)) else out.append(ch)
         }
     }
