@@ -57,8 +57,7 @@ internal class NmpNativeReceiptBridge {
         } else {
             packet.getInt("base_generation")
         }
-        val capabilitySet = packet.getJSONArray("capability_set")
-        val capabilityDigest = sha256(canonicalJson(capabilitySet))
+        val capabilityDigest = capabilitySetDigest(packet.getJSONArray("capability_set"))
         require(capabilityDigest == packet.getString("capability_set_digest")) {
             "capability_set_digest does not match the canonical capability_set"
         }
@@ -95,6 +94,22 @@ internal class NmpNativeReceiptBridge {
         client: NmpHttpsClient, proposedPacket: JSONObject,
         input: NmpNativeAdmissionInput, nowTick: Long
     ): JSONObject = client.submit(preparePacket(proposedPacket, input), nowTick)
+
+
+    /** Match NaNROUTER's order-independent capability-set canonicalization. */
+    private fun capabilitySetDigest(capabilities: JSONArray): String {
+        val entries = ArrayList<JSONObject>(capabilities.length())
+        for (index in 0 until capabilities.length()) {
+            val entry = capabilities.get(index)
+            entries += when (entry) {
+                is String -> JSONObject().put("required", entry)
+                is JSONObject -> JSONObject(entry.toString())
+                else -> error("capability_set entries must be objects or strings")
+            }
+        }
+        val canonicalEntries = entries.map { canonicalJson(it) }.sorted()
+        return sha256("[" + canonicalEntries.joinToString(",") + "]")
+    }
 
     private fun inputDigest(inputs: JSONArray): String {
         val identities = ArrayList<String>(inputs.length())
