@@ -219,6 +219,7 @@ tasks.register("compileNmpKernelGuest") {
         val requiredLabels = setOf(
             "n16_nmp_kernel_entry", "n16_nmp_kernel_halt", "n16_nmp_operation", "n16_nmp_left_id",
             "n16_nmp_right_id", "n16_nmp_left_owner", "n16_nmp_right_owner",
+            "n16_nmp_entry_ret",
             "n16_nmp_left_digest_marker", "n16_nmp_right_digest_marker",
             "n16_nmp_dimension", "n16_nmp_left_payload",
             "n16_nmp_right_payload", "n16_nmp_output_payload", "n16_nmp_result"
