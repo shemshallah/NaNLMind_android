@@ -12,11 +12,15 @@ internal class N16MathAdmission(context: Context) {
     data class Decision(
         val status: Int,
         val outputDescriptor: IntArray,
-        val guestSteps: Long
+        val guestSteps: Long,
+        val ruleEpoch: Int? = null,
+        val ruleDigestWords: IntArray? = null
     ) {
         val allowed: Boolean get() = status == 0
         val ruleDenial: Int? get() = if (status in 17..25) status - 16 else null
         val typedDenial: Int? get() = if (status in 33..41) status - 32 else null
+        val ruleDigestHex: String?
+            get() = ruleDigestWords?.joinToString("") { "%08x".format(it.toLong() and 0xffff_ffffL) }
     }
 
     private val image = context.assets.open(IMAGE_ASSET).use { it.readBytes() }
@@ -92,9 +96,21 @@ internal class N16MathAdmission(context: Context) {
                 remaining -= slice
                 if (result == NanVm.HALTED) {
                     val status = readWords(vm, "n16_math_result", 1)[0]
+                    val receipt = readWords(vm, "n16_math_receipt", RECEIPT_WORDS)
+                    check(receipt[0] == status) { "NaN16 result and receipt status disagree" }
                     val updatedOutput = readWords(vm, "n16_math_output", LEAF_WORDS)
                     updatedOutput[5] = output[5]
-                    return Decision(status, updatedOutput, vm.steps())
+                    if (status != 0) return Decision(status, updatedOutput, vm.steps())
+                    val epoch = receipt[1]
+                    val digest = receipt.copyOfRange(2, RECEIPT_WORDS)
+                    check(epoch == candidate[1] && epoch == rule[1]) {
+                        "NaN16 receipt epoch does not match the admitted rule snapshot"
+                    }
+                    check(digest.contentEquals(candidate.copyOfRange(14, 22)) &&
+                        digest.contentEquals(rule.copyOfRange(9, 17))) {
+                        "NaN16 receipt digest does not match the complete 256-bit rule snapshot"
+                    }
+                    return Decision(status, updatedOutput, vm.steps(), epoch, digest)
                 }
                 check(result == NanVm.BUDGET) {
                     "NaN16 math admission stopped unexpectedly (result=$result, trap=${vm.trap()})"
@@ -132,13 +148,14 @@ internal class N16MathAdmission(context: Context) {
         private const val RULE_WORDS = 17
         private const val LEAF_WORDS = 8
         private const val CONTRACT_WORDS = 10
+        private const val RECEIPT_WORDS = 10
         private const val MAX_PAYLOAD_WORDS = 65_536
         private const val CALL_SLICE = 250_000
         private const val MAX_CALL_STEPS = 2_000_000
         private val REQUIRED_LABELS = setOf(
             "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
             "n16_math_left", "n16_math_right", "n16_math_contract",
-            "n16_math_capabilities", "n16_math_output", "n16_math_result",
+            "n16_math_capabilities", "n16_math_output", "n16_math_result", "n16_math_receipt",
             "n16_math_left_payload", "n16_math_right_payload", "n16_math_output_payload"
         )
     }
