@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -26,6 +28,7 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
 
 // Optional: refresh the bundled image from the x86 build (sh x86/tools/mkall.sh -> x86/build/nan0s.img). This project lives at <repo>/aarch64/android/.
@@ -113,12 +116,68 @@ tasks.register("compileProtocolGuest") {
         }
     }
 }
+// Compile the composed rule + typed-object admission gate for Android VM calls.
+tasks.register("compileMathAdmissionGuest") {
+    val guestSource = file("../../../src/training/n16_math_admission_guest.nas")
+    val guestOutput = file("src/main/assets/n16_math_admission.nan")
+    val labelsOutput = file("src/main/assets/n16_math_admission.labels")
+    val sourceDigestOutput = file("src/main/assets/n16_math_admission.source.sha256")
+    val guestSources = listOf(
+        guestSource,
+        file("../../../src/mth/mth_preflight_gate.nas"),
+        file("../../../src/mth/mth_preflight.nas"),
+        file("../../../src/mth/mth_admission.nas"),
+        file("../../../src/training/n16_math_receipt_emit.nas"),
+        file("../../../tools/nmk.awk")
+    )
+    inputs.files(guestSources)
+    outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
+    doLast {
+        guestOutput.parentFile.mkdirs()
+        guestOutput.outputStream().use { guest ->
+            exec {
+                commandLine(
+                    "awk", "-f", file("../../../tools/nmk.awk"),
+                    "-v", "CMD=emit",
+                    "-v", "LABELS=${labelsOutput.absolutePath}",
+                    guestSource
+                )
+                standardOutput = guest
+            }
+        }
+        check(labelsOutput.isFile && labelsOutput.length() > 0) {
+            "NaN16 math admission guest label map was not generated"
+        }
+        val sourceDigest = MessageDigest.getInstance("SHA-256")
+        guestSources.forEach { source ->
+            sourceDigest.update(source.name.toByteArray(Charsets.UTF_8))
+            sourceDigest.update(0.toByte())
+            sourceDigest.update(source.readBytes())
+            sourceDigest.update(0.toByte())
+        }
+        sourceDigestOutput.writeText(
+            sourceDigest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) } + "\n"
+        )
+        val guestLabels = labelsOutput.readLines().mapNotNull { line ->
+            line.trim().split(Regex("\\s+")).takeIf { it.size == 2 }?.first()
+        }.toSet()
+        val requiredLabels = setOf(
+            "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
+            "n16_math_left", "n16_math_right", "n16_math_contract",
+            "n16_math_capabilities", "n16_math_program_id", "n16_math_output", "n16_math_result", "n16_math_receipt",
+            "n16_math_left_payload", "n16_math_right_payload", "n16_math_output_payload"
+        )
+        check(guestLabels.containsAll(requiredLabels)) {
+            "NaN16 math admission guest is missing labels: ${requiredLabels - guestLabels}"
+        }
+    }
+}
 tasks.register("verifyRuntimeAssetAllowlist") {
-    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest")
+    dependsOn("compileTrainingGuest", "compileScheduleGuest", "compileProtocolGuest", "compileMathAdmissionGuest")
     doLast {
         val allowed = setOf(
             "nan0s.img", "disk.nanfs", "n16_train.nan", "n16_schedule.nan",
-            "n16_protocol.nan", "n16_protocol.labels"
+            "n16_protocol.nan", "n16_protocol.labels", "n16_math_admission.nan", "n16_math_admission.labels", "n16_math_admission.source.sha256"
         )
         val actual = fileTree("src/main/assets").files.map { it.name }.toSet()
         val unexpected = actual - allowed
