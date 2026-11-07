@@ -184,13 +184,17 @@ The companion NaN0S branch now has a tested, bounded first operation execution p
 
 **Scope limits:** object, operator and derivation tables are bounded in-memory bootstrap structures. Payload pointers are guest-memory word addresses, not durable content-addressed object locations. Digest values are test markers, not SHA-256. There is no persistent MC0DB journal, crash recovery, general bounds-aware object allocator, independent mathematical evaluator, or arbitrary indirect program execution. The dispatcher is an explicit allowlist and rejects unknown program IDs.
 
-- Added a canonical binary expression grammar: `<left-route>::op:<decimal-id>::<right-route>`. The route parser now recognizes only the exact `::op:` delimiter; the expression guest parses a bounded decimal operator ID, resolves both canonical endpoints through key/type/owner checks, asks the typed operator registry for the program and endpoint payload pointers, then dispatches the NaN16 program. It supports one binary operation per expression; nested expressions are rejected.
-- Added `nmr_expr_execute` and an end-to-end expression fixture for a dot product. The caller currently supplies the vector dimension and output word pointer; automatic shape-derived dimensions, general expression trees, and automatic durable result publication remain future work.
-- The expression regression rejects missing `::op:`, malformed operator IDs, unknown operators and endpoints routed from the wrong logical point. GitHub Actions run `42333678205` passed the core-tests job on the cleanup commit, including `NaN canonical math expression gate: PASS`; temporary internal stage diagnostics are removed. The Android APK job for that run was still in progress at the time of this update.
+- Added a canonical binary expression grammar: `<left-route>::op:<decimal-id>::<right-route>`. The route parser recognizes only the exact `::op:` delimiter; the expression guest parses a bounded decimal operator ID, resolves both canonical endpoints through key/type/owner checks, asks the typed operator registry for the program and endpoint payload pointers, then dispatches the NaN16 program. It supports one binary operation per expression; nested expressions are rejected.
+- Added an immutable 32-slot vector shape table keyed by object ID: rank, dimension (1–16), stride and capacity in words. Registration validates `capacity >= (dimension-1)*stride+1`, is idempotent for exact repeats, and rejects conflicting metadata. It only attaches to registered vector-kind objects.
+- The expression resolver now requires shape metadata for both endpoints, rank 1, matching dimensions, unit stride and sufficient capacity. Missing shapes, unequal dimensions and non-unit stride fail closed. The `nmr_expr_execute` ABI now derives the dimension from endpoint metadata; the caller supplies only the expression and output word pointer.
+- The regression covers shape get/put, exact replay, conflicting shape, unequal dimensions, non-unit stride and missing shape, as well as malformed/unknown operators and wrong-owner endpoints. The canonical dot-product expression still evaluates to 300.
+- GitHub Actions run `42333876642` passed the complete core-tests job, including native tests, seals, ASan/UBSan and `NaN canonical math expression gate: PASS`. The Android APK job for that run was still in progress at the time of this update.
+
+**Remaining shape/bounds limitation:** capacity is caller-declared metadata, not yet checked against a general guest-memory allocator or reserved MC0DB scratch extent. v1 expression kernels require contiguous unit-stride vectors; non-unit stride is represented but deliberately rejected.
 
 ### Next mathematical execution increments
 
-1. Add vector shape/stride/bounds metadata and scratch reservations to the execution contract before allowing non-fixture payloads.
-2. Add independent reference, property, overflow, aliasing, and metamorphic tests for vector kernels.
+1. Bind shape capacity to an actual bounds-checked guest-memory/scratch reservation and prevent aliasing across task owners.
+2. Add independent reference, property, overflow, aliasing and metamorphic tests for vector kernels.
 3. Add a durable, checksummed derivation journal and recovery/replay rules without weakening immutable object IDs.
 4. Extend the same pattern to matrices and graph/hypergraph operations only after independent evaluator suites exist.
