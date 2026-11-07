@@ -124,10 +124,11 @@ tasks.register("compileMathAdmissionGuest") {
         file("../../../src/mth/mth_preflight_gate.nas"),
         file("../../../src/mth/mth_preflight.nas"),
         file("../../../src/mth/mth_admission.nas"),
+        file("../../../src/training/n16_math_receipt_emit.nas"),
         file("../../../tools/nmk.awk")
     )
     inputs.files(guestSources)
-    outputs.files(guestOutput, labelsOutput)
+    outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
     doLast {
         guestOutput.parentFile.mkdirs()
         guestOutput.outputStream().use { guest ->
@@ -160,7 +161,7 @@ tasks.register("compileMathAdmissionGuest") {
         val requiredLabels = setOf(
             "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
             "n16_math_left", "n16_math_right", "n16_math_contract",
-            "n16_math_capabilities", "n16_math_output", "n16_math_result", "n16_math_receipt",
+            "n16_math_capabilities", "n16_math_program_id", "n16_math_output", "n16_math_result", "n16_math_receipt",
             "n16_math_left_payload", "n16_math_right_payload", "n16_math_output_payload"
         )
         check(guestLabels.containsAll(requiredLabels)) {
