@@ -61,6 +61,7 @@ class N16MathAdmissionTest {
             preflightDigest = "e".repeat(64),
             generation = 7
         )
+        assertTrue(receipt.startsWith("{\"candidate_digest\":"))
         assertTrue(receipt.contains("\"schema\":\"nanrouter.native-admission-receipt.v1\""))
         assertTrue(receipt.contains("\"producer\":\"nan16_guest\""))
         assertTrue(receipt.contains("\"program_id\":900"))
