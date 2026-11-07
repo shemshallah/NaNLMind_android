@@ -59,6 +59,20 @@ class MainActivity : Activity(), NanLoop.Listener {
     @Volatile private var remoteConnectGeneration = 0
     private var trainingState: ByteArray? = null
     private val remotePrefs get() = getSharedPreferences("n16_remote", MODE_PRIVATE)
+    private val mathAdmission by lazy { N16MathAdmission(this) }
+
+    /** Run candidate/rule and typed-leaf admission in the NaN16 guest before NMP submission. */
+    internal fun runMathAdmission(
+        candidate: IntArray,
+        rule: IntArray,
+        left: IntArray,
+        right: IntArray,
+        contract: IntArray,
+        availableCapabilities: Int,
+        output: IntArray
+    ): N16MathAdmission.Decision = mathAdmission.evaluate(
+        candidate, rule, left, right, contract, availableCapabilities, output
+    )
     private val autosave get() = File(filesDir, "autosave.nan1")
     private val candidateFile get() = File(filesDir, "n16_candidate.nan1")
     private val diskFile get() = File(filesDir, "disk.nanfs")
