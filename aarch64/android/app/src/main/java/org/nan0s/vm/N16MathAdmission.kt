@@ -4,6 +4,24 @@ import android.content.Context
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
+import org.json.JSONObject
+
+private fun n16CanonicalJson(fields: Map<String, Any>): String =
+    fields.toSortedMap().entries.joinToString(prefix = "{", postfix = "}", separator = ",") { (key, value) ->
+        val encoded = if (value is String) JSONObject.quote(value) else value.toString()
+        "${JSONObject.quote(key)}:$encoded"
+    }
+
+private fun n16CanonicalJsonArray(words: IntArray): String =
+    words.joinToString(prefix = "[", postfix = "]", separator = ",") { it.toString() }
+
+private fun n16Sha256Hex(bytes: ByteArray): String =
+    MessageDigest.getInstance("SHA-256").digest(bytes)
+        .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
+private fun n16RequireDigest(value: String, label: String) {
+    require(value.matches(Regex("[0-9a-f]{64}"))) { "$label must be a 256-bit lowercase hex digest" }
+}
 
 /**
  * Runs the composed MTH admission gate in a fresh NaN16 VM.
@@ -17,13 +35,89 @@ internal class N16MathAdmission(context: Context) {
         val ruleEpoch: Int? = null,
         val ruleDigestWords: IntArray? = null,
         val guestSourceDigest: String = "",
-        val guestImageDigest: String = ""
+        val guestImageDigest: String = "",
+        val programId: Int? = null,
+        val rawGuestReceipt: IntArray? = null
     ) {
         val allowed: Boolean get() = status == 0
         val ruleDenial: Int? get() = if (status in 17..25) status - 16 else null
         val typedDenial: Int? get() = if (status in 33..41) status - 32 else null
         val ruleDigestHex: String?
             get() = ruleDigestWords?.joinToString("") { "%08x".format(it.toLong() and 0xffff_ffffL) }
+
+        fun toNmpAdmissionReceipt(
+            packetId: String,
+            candidateId: String,
+            functionId: String,
+            functionVersion: Int,
+            snapshotId: String,
+            rulesetSnapshotId: String,
+            inputDigest: String,
+            capabilityDigest: String,
+            preflightDigest: String,
+            generation: Int
+        ): String {
+            check(allowed) { "denied guest results cannot produce an NMP receipt" }
+            val raw = rawGuestReceipt ?: error("NaN16 raw guest receipt is missing")
+            val epoch = ruleEpoch ?: error("NaN16 rule epoch is missing")
+            val digest = ruleDigestHex ?: error("NaN16 rule digest is missing")
+            val program = programId ?: error("NaN16 program ID is missing")
+            check(raw.size == RAW_RECEIPT_WORDS &&
+                raw[0] == RAW_RECEIPT_MAGIC &&
+                raw[1] == RAW_RECEIPT_VERSION &&
+                raw[2] == 0 &&
+                raw[3] == program &&
+                raw[4] == epoch &&
+                raw[5] == epoch &&
+                raw.copyOfRange(6, RAW_RECEIPT_WORDS).contentEquals(ruleDigestWords)) {
+                "raw NaN16 receipt does not match the returned decision"
+            }
+            require(packetId.isNotBlank() && candidateId.isNotBlank() && functionId.isNotBlank())
+            require(snapshotId.isNotBlank() && rulesetSnapshotId.isNotBlank())
+            require(functionVersion > 0 && generation >= 0)
+            n16RequireDigest(inputDigest, "inputDigest")
+            n16RequireDigest(capabilityDigest, "capabilityDigest")
+            n16RequireDigest(preflightDigest, "preflightDigest")
+            n16RequireDigest(guestSourceDigest, "guestSourceDigest")
+            n16RequireDigest(guestImageDigest, "guestImageDigest")
+
+            val candidateDigest = n16Sha256Hex(
+                n16CanonicalJson(
+                    mapOf(
+                        "candidate_id" to candidateId,
+                        "function_id" to functionId,
+                        "function_version" to functionVersion
+                    )
+                ).toByteArray(Charsets.UTF_8)
+            )
+            val outputDescriptorDigest = n16Sha256Hex(
+                n16CanonicalJsonArray(outputDescriptor).toByteArray(Charsets.UTF_8)
+            )
+            val body = mapOf<String, Any>(
+                "schema" to "nanrouter.native-admission-receipt.v1",
+                "packet_id" to packetId,
+                "candidate_digest" to candidateDigest,
+                "snapshot_id" to snapshotId,
+                "ruleset_snapshot_id" to rulesetSnapshotId,
+                "rule_epoch" to epoch,
+                "rule_digest" to digest,
+                "input_digest" to inputDigest,
+                "capability_digest" to capabilityDigest,
+                "preflight_digest" to preflightDigest,
+                "generation" to generation,
+                "output_generation" to generation + 1,
+                "output_descriptor_digest" to outputDescriptorDigest,
+                "program_id" to program,
+                "guest_status" to status,
+                "producer" to "nan16_guest",
+                "guest_source_digest" to guestSourceDigest,
+                "guest_image_digest" to guestImageDigest
+            )
+            val receiptDigest = n16Sha256Hex(
+                n16CanonicalJson(body).toByteArray(Charsets.UTF_8)
+            )
+            return n16CanonicalJson(body + ("receipt_digest" to receiptDigest))
+        }
     }
 
     private val image = context.assets.open(IMAGE_ASSET).use { it.readBytes() }
@@ -59,10 +153,12 @@ internal class N16MathAdmission(context: Context) {
         right: IntArray,
         contract: IntArray,
         availableCapabilities: Int,
+        programId: Int,
         leftPayload: IntArray,
         rightPayload: IntArray,
         output: IntArray
     ): Decision {
+        require(programId > 0) { "program ID must be positive" }
         require(candidate.size == CANDIDATE_WORDS) { "candidate must contain 22 NaN16 words" }
         require(rule.size == RULE_WORDS) { "rule must contain 17 NaN16 words" }
         require(left.size == LEAF_WORDS && right.size == LEAF_WORDS) {
@@ -98,6 +194,7 @@ internal class N16MathAdmission(context: Context) {
             writeWords(vm, "n16_math_output_payload", IntArray(output[6]))
             writeWords(vm, "n16_math_contract", contract)
             writeWords(vm, "n16_math_capabilities", intArrayOf(availableCapabilities))
+            writeWords(vm, "n16_math_program_id", intArrayOf(programId))
             writeWords(vm, "n16_math_output", guestOutput)
 
             vm.setProgramCounter(labels.getValue("n16_math_admission_entry"))
@@ -109,26 +206,37 @@ internal class N16MathAdmission(context: Context) {
                 if (result == NanVm.HALTED) {
                     val status = readWords(vm, "n16_math_result", 1)[0]
                     val receipt = readWords(vm, "n16_math_receipt", RECEIPT_WORDS)
-                    check(receipt[0] == status) { "NaN16 result and receipt status disagree" }
                     val updatedOutput = readWords(vm, "n16_math_output", LEAF_WORDS)
                     updatedOutput[5] = output[5]
-                    if (status != 0) return Decision(
-                        status, updatedOutput, vm.steps(),
-                        guestSourceDigest = guestSourceDigest,
-                        guestImageDigest = guestImageDigest
-                    )
-                    val epoch = receipt[1]
-                    val digest = receipt.copyOfRange(2, RECEIPT_WORDS)
-                    check(epoch == candidate[1] && epoch == rule[1]) {
-                        "NaN16 receipt epoch does not match the admitted rule snapshot"
+                    if (status != 0) {
+                        check(receipt.all { it == 0 }) {
+                            "denied NaN16 admission must not emit a raw receipt"
+                        }
+                        return Decision(
+                            status, updatedOutput, vm.steps(),
+                            guestSourceDigest = guestSourceDigest,
+                            guestImageDigest = guestImageDigest
+                        )
+                    }
+                    check(receipt[0] == RAW_RECEIPT_MAGIC &&
+                        receipt[1] == RAW_RECEIPT_VERSION &&
+                        receipt[2] == status &&
+                        receipt[3] == programId) {
+                        "NaN16 raw receipt header does not match the guest decision"
+                    }
+                    val candidateEpoch = receipt[4]
+                    val epoch = receipt[5]
+                    val digest = receipt.copyOfRange(6, RECEIPT_WORDS)
+                    check(candidateEpoch == candidate[9] && epoch == rule[1] && epoch == candidate[1]) {
+                        "NaN16 raw receipt epochs do not match the admitted rule snapshot"
                     }
                     check(digest.contentEquals(candidate.copyOfRange(14, 22)) &&
                         digest.contentEquals(rule.copyOfRange(9, 17))) {
-                        "NaN16 receipt digest does not match the complete 256-bit rule snapshot"
+                        "NaN16 raw receipt digest does not match the complete 256-bit rule snapshot"
                     }
                     return Decision(
                         status, updatedOutput, vm.steps(), epoch, digest,
-                        guestSourceDigest, guestImageDigest
+                        guestSourceDigest, guestImageDigest, programId, receipt
                     )
                 }
                 check(result == NanVm.BUDGET) {
@@ -159,9 +267,7 @@ internal class N16MathAdmission(context: Context) {
     private fun byteAddress(label: String): Int =
         Math.multiplyExact(labels.getValue(label), WORD_BYTES)
 
-    private fun sha256Hex(bytes: ByteArray): String =
-        MessageDigest.getInstance("SHA-256").digest(bytes)
-            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    private fun sha256Hex(bytes: ByteArray): String = n16Sha256Hex(bytes)
 
     companion object {
         private const val IMAGE_ASSET = "n16_math_admission.nan"
@@ -172,14 +278,16 @@ internal class N16MathAdmission(context: Context) {
         private const val RULE_WORDS = 17
         private const val LEAF_WORDS = 8
         private const val CONTRACT_WORDS = 10
-        private const val RECEIPT_WORDS = 10
+        private const val RECEIPT_WORDS = 14
+        private const val RAW_RECEIPT_MAGIC = 1312895286
+        private const val RAW_RECEIPT_VERSION = 1
         private const val MAX_PAYLOAD_WORDS = 65_536
         private const val CALL_SLICE = 250_000
         private const val MAX_CALL_STEPS = 2_000_000
         private val REQUIRED_LABELS = setOf(
             "n16_math_admission_entry", "n16_math_candidate", "n16_math_rule",
             "n16_math_left", "n16_math_right", "n16_math_contract",
-            "n16_math_capabilities", "n16_math_output", "n16_math_result", "n16_math_receipt",
+            "n16_math_capabilities", "n16_math_program_id", "n16_math_output", "n16_math_result", "n16_math_receipt",
             "n16_math_left_payload", "n16_math_right_payload", "n16_math_output_payload"
         )
     }
