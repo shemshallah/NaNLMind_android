@@ -200,6 +200,21 @@ internal class N16NmpKernelWorker {
         return result to completion
     }
 
+    /**
+     * Live-guest entry point: resolve the registered objects from the running
+     * VM before the existing packet/lease/receipt checks and NaN16 dispatch.
+     * Binding entries must originate from the canonical object-store index.
+     */
+    fun executeAndCompleteFromGuest(
+        client: NmpHttpsClient,
+        leaseResponse: JSONObject,
+        resolver: NmpLiveGuestResolver,
+        left: NmpGuestLeafBinding,
+        right: NmpGuestLeafBinding,
+        nowTick: Long
+    ): Pair<N16NmpKernelResult, JSONObject> =
+        executeAndComplete(client, leaseResponse, resolver.resolve(left, right), nowTick)
+
     private fun validatePacketInputs(inputs: JSONArray, resolved: NmpResolvedVectorPair) {
         require(inputs.length() == 2) { "NaN16 vector kernels require exactly two packet inputs" }
         validateInput(inputs.getJSONObject(0), resolved.leftLeafId, resolved.leftVersion, resolved.leftDigest)
