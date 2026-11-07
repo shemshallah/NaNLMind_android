@@ -45,13 +45,7 @@ queue/lease/execute.
 
 ## Guest-issued rule snapshot receipt
 
-On an allow result, the wrapper writes a ten-word receipt in NaN16 memory:
-
-- word 0: composed admission status (zero only on allow)
-- word 1: admitted rule epoch
-- words 2–9: all eight 32-bit slices of the 256-bit rule digest
-
-The Android adapter reads this mailbox only after the guest halts. It verifies that the receipt status matches the return status and that the epoch and all eight digest words exactly match both the submitted candidate and authoritative rule descriptors. A mismatch is treated as an internal guest/descriptor integrity error, never as an allow. Denials carry only their status and no reusable rule receipt.
+On an allow result, the wrapper writes a fixed 14-word raw receipt in NaN16 memory: magic, ABI version, guest status, program ID, candidate epoch, authoritative rule epoch, and all eight 32-bit slices of the 256-bit rule digest. The Android adapter reads this mailbox only after the guest halts and verifies every field against the returned decision and submitted descriptors. A mismatch is an integrity error, never an allow. Denials carry no reusable receipt.
 
 This receipt binds the successful guest decision to the exact rule snapshot used for that call. It is correlation evidence, not a cryptographic signature and not by itself an ACL grant or NMP lease. Candidate ID, math snapshot ID, ruleset snapshot ID, and downstream packet/lease binding remain separate fields owned by the NMP integration.
 
