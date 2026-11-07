@@ -50,6 +50,31 @@ class NmpLiveGuestResolverTest {
         assertEquals(listOf(4, 5), resolved.rightPayload.toList())
     }
 
+    @Test fun rejectsDistinctObjectsAliasingTheSameLivePayload() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 22000, intArrayOf(2, 3))
+        try {
+            resolver().resolve(a, b)
+            throw AssertionError("expected aliased payload rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("overlapping payload storage"))
+        }
+    }
+
+    @Test fun rejectsPartiallyOverlappingLivePayloads() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 22001, intArrayOf(3, 4))
+        // Rebuild the trusted SHA-256 for the first object's now-overwritten words.
+        val firstPayload = data.copyOfRange(22000 * 4, 22002 * 4)
+        val first = a.copy(payloadSha256 = digest(firstPayload))
+        try {
+            resolver().resolve(first, b)
+            throw AssertionError("expected partially overlapping payload rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("overlapping payload storage"))
+        }
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
