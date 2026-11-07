@@ -232,6 +232,60 @@ class NmpLiveGuestResolverTest {
         }
     }
 
+    @Test fun batchPublicationIsAtomicWhenLaterBindingConflicts() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        try {
+            index.publishBatchCommitted(listOf(a, b.copy(objectId = a.objectId)))
+            throw AssertionError("expected intra-batch object ownership conflict")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("already assigned"))
+        }
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("failed batch must publish no object")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        index.publishBatchCommitted(listOf(a, b))
+        assertEquals(1401, index.resolve(packetInputs(a, b), resolver()).leftObjectId)
+    }
+
+    @Test fun batchPublicationRejectsRollbackWithoutMutatingOtherLeaves() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a.copy(version = 3))
+        try {
+            index.publishBatchCommitted(listOf(b, a.copy(version = 2)))
+            throw AssertionError("expected stale version to abort transaction")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("stale canonical"))
+        }
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("failed batch must not publish unrelated leaf")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        index.publishCommitted(b)
+        assertEquals(1402, index.resolve(packetInputs(a.copy(version = 3), b), resolver()).rightObjectId)
+    }
+
+    @Test fun batchPublicationRejectsEmptyAndOversizedTransactions() {
+        val index = NmpGuestBindingIndex()
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        for (batch in listOf(emptyList(), List(33) { a })) {
+            try {
+                index.publishBatchCommitted(batch)
+                throw AssertionError("expected transaction bound rejection")
+            } catch (expected: IllegalArgumentException) {
+                assertTrue(expected.message!!.contains("1..32"))
+            }
+        }
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
