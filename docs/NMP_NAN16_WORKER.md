@@ -32,7 +32,9 @@ NaN0S guest state. Before guest execution, the worker checks:
   exact function ID;
 - both ordered leaf IDs, versions, and SHA-256 digests match the packet inputs;
 - object IDs and owner points are valid, and payload lengths equal the bounded
-  vector dimension.
+  vector dimension;
+- the NaN16 guest's own shape registry confirms both vectors have the requested
+  rank, dimension, unit stride, and sufficient capacity.
 
 The worker returns output words, their SHA-256 digest, the resolved program
 ID, guest step count, and the worker guest image/source digests. The upstream
