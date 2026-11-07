@@ -46,6 +46,7 @@ class N16NmpKernelWorkerTest {
                     .put("version", 1).put("digest", rightDigest)))
             .put("admission_receipt", JSONObject()
                 .put("schema", "nanrouter.native-admission-receipt.v1")
+                .put("packet_id", "nmp:packet:worker:1")
                 .put("guest_status", 0).put("program_id", programId)))
         .put("job", JSONObject().put("job_id", "nmp:nmp:packet:worker:1"))
         .put("lease", JSONObject()
