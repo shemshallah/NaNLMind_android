@@ -39,7 +39,8 @@ internal class NmpGuestBindingIndex {
             "canonical leaf version cannot be rebound"
         }
         val occupied = byObject[binding.objectId]
-        require(occupied == null || occupied == key) {
+        require(occupied == null || occupied == key ||
+            (occupied.leafId == key.leafId && occupied.version < key.version)) {
             "canonical object ID is already assigned to another leaf"
         }
         // A newer version may replace an older version of the same leaf after
