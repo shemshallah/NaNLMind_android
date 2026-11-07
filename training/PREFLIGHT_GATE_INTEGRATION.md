@@ -1,8 +1,10 @@
 # Android NaN16 mathematical admission integration
 
 **Status:** Android guest-call adapter implemented alongside the canonical
-NaNROUTER NaN16 admission routine. The Android host only stages bounded
-32-bit guest words and reads the returned status/output descriptor.
+NaNROUTER NaN16 admission routine. The Android host stages bounded 32-bit descriptors and payload words into an
+isolated NaN16 VM and reads the returned status/output descriptor. Payload
+pointers are remapped only inside that disposable VM; the caller's original
+descriptor addresses are restored in the returned output metadata.
 
 ## Guest ABI
 
