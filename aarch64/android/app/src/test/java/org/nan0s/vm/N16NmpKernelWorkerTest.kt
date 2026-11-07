@@ -142,6 +142,37 @@ class N16NmpKernelWorkerTest {
         assertEquals(false, called)
     }
 
+
+    @Test
+    fun acceptsContentDigestAliasFromCanonicalPacketInput() {
+        val response = leaseResponse()
+        val inputs = response.getJSONObject("packet").getJSONArray("inputs")
+        val left = inputs.getJSONObject(0)
+        left.put("content_digest", left.getString("digest"))
+        left.remove("digest")
+        val result = fakeWorker().execute(response, resolved())
+        assertEquals(78, result.programId)
+    }
+
+    @Test
+    fun rejectsReceiptBoundToAnotherPacket() {
+        val response = leaseResponse()
+        response.getJSONObject("packet").getJSONObject("admission_receipt")
+            .put("packet_id", "nmp:other-packet")
+        var called = false
+        val worker = N16NmpKernelWorker { _, _ ->
+            called = true
+            error("guest must not run")
+        }
+        try {
+            worker.execute(response, resolved())
+            throw AssertionError("Expected receipt packet binding rejection")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("does not authorize"))
+        }
+        assertEquals(false, called)
+    }
+
     @Test
     fun rejectsUnknownFunctionBeforeGuestDispatch() {
         var called = false
