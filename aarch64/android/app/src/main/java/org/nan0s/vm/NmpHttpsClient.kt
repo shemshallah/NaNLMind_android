@@ -78,7 +78,8 @@ internal class NmpHttpsClient(
         leaseOwner: String,
         resultDigest: String,
         nowTick: Long,
-        resultGeneration: Long? = null
+        resultGeneration: Long? = null,
+        executionEvidence: JSONObject? = null
     ): JSONObject {
         require(jobId.isNotBlank() && leaseToken.isNotBlank() && leaseOwner.isNotBlank())
         require(leaseEpoch > 0 && nowTick >= 0)
@@ -96,6 +97,9 @@ internal class NmpHttpsClient(
         if (resultGeneration != null) {
             require(resultGeneration >= 0)
             body.put("result_generation", resultGeneration)
+        }
+        if (executionEvidence != null) {
+            body.put("execution_evidence", JSONObject(executionEvidence.toString()))
         }
         return post("/v1/nmp/complete", body)
     }
