@@ -165,6 +165,25 @@ class N16NmpKernelWorkerTest {
     }
 
     @Test
+    fun rejectsConflictingPacketDigestAliasesBeforeDispatch() {
+        val response = leaseResponse()
+        val left = response.getJSONObject("packet").getJSONArray("inputs").getJSONObject(0)
+        left.put("content_digest", "e".repeat(64))
+        var called = false
+        val worker = N16NmpKernelWorker { _, _ ->
+            called = true
+            error("guest must not run")
+        }
+        try {
+            worker.execute(response, resolved())
+            throw AssertionError("Expected conflicting digest aliases")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("conflicting digest aliases"))
+        }
+        assertEquals(false, called)
+    }
+
+    @Test
     fun rejectsReceiptBoundToAnotherPacket() {
         val response = leaseResponse()
         response.getJSONObject("packet").getJSONObject("admission_receipt")
