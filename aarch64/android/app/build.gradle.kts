@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -84,7 +86,7 @@ tasks.register("compileProtocolGuest") {
         file("../../../src/nannet/n16t_android_abi.nas"),
         file("../../../tools/nmk.awk")
     )
-    outputs.files(guestOutput, labelsOutput, sourceDigestOutput)
+    outputs.files(guestOutput, labelsOutput)
     doLast {
         guestOutput.parentFile.mkdirs()
         guestOutput.outputStream().use { guest ->
@@ -145,7 +147,7 @@ tasks.register("compileMathAdmissionGuest") {
         check(labelsOutput.isFile && labelsOutput.length() > 0) {
             "NaN16 math admission guest label map was not generated"
         }
-        val sourceDigest = java.security.MessageDigest.getInstance("SHA-256")
+        val sourceDigest = MessageDigest.getInstance("SHA-256")
         guestSources.forEach { source ->
             sourceDigest.update(source.name.toByteArray(Charsets.UTF_8))
             sourceDigest.update(0.toByte())
