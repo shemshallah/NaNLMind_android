@@ -22,6 +22,23 @@ jobs:
           sparse-checkout: |
             aarch64/android/app/src/main/assets/nan0s.img
           sparse-checkout-cone-mode: false
+      - name: Fetch NaN0S assembler and guest runtime
+        uses: actions/checkout@v4
+        with:
+          repository: shemshallah/NaN0S
+          ref: ad2225f2a61a888287a0f5631aca63fe091296f1
+          path: .nan0s-toolchain
+      - name: Fetch pinned NaNROUTER MTH admission sources
+        uses: actions/checkout@v4
+        with:
+          repository: shemshallah/NaNROUTER
+          ref: f4549595a49a6c5dc0a42fa3715eac6944acbe40
+          path: .nanrouter-upstream
+      - name: Verify vendored NaN16 admission sources
+        run: |
+          cmp .nanrouter-upstream/mth/nan16/mth_preflight_gate.nas src/mth/mth_preflight_gate.nas
+          cmp .nanrouter-upstream/mth/nan16/mth_preflight.nas src/mth/mth_preflight.nas
+          cmp .nanrouter-upstream/mth/nan16/mth_admission.nas src/mth/mth_admission.nas
       - name: Stage and verify boot image
         run: |
           mkdir -p aarch64/android/app/src/main/assets
@@ -39,6 +56,8 @@ jobs:
           make seals
           ./nan_cli --help | grep -q "nannet-training"
           ./nan_cli --help | grep -q -- "--candidate-out"
+      - name: Run composed native NaN16 mathematical admission gate
+        run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_admission_gate.sh
 
   apk:
     needs: native-tests
@@ -51,6 +70,17 @@ jobs:
           repository: shemshallah/NaN0S
           ref: ad2225f2a61a888287a0f5631aca63fe091296f1
           path: .nan0s-upstream
+      - name: Fetch pinned NaNROUTER MTH admission sources
+        uses: actions/checkout@v4
+        with:
+          repository: shemshallah/NaNROUTER
+          ref: f4549595a49a6c5dc0a42fa3715eac6944acbe40
+          path: .nanrouter-upstream
+      - name: Verify vendored NaN16 admission sources
+        run: |
+          cmp .nanrouter-upstream/mth/nan16/mth_preflight_gate.nas src/mth/mth_preflight_gate.nas
+          cmp .nanrouter-upstream/mth/nan16/mth_preflight.nas src/mth/mth_preflight.nas
+          cmp .nanrouter-upstream/mth/nan16/mth_admission.nas src/mth/mth_admission.nas
       - name: Build Android desktop-only boot image
         run: |
           sudo apt-get update
