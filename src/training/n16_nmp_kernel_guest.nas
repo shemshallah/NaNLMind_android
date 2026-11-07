@@ -154,14 +154,15 @@ n16_nmp_register_objects:
   CMP r3,r0
   JMP[NE] @n16_nmp_execute_fail
 
+  MOVI r11,@n16_nmp_result
   MOVI r8,0
-  ST r8,r0,@n16_nmp_result
+  ST r8,r11,0
   LD r8,r0,@n16_nmp_expected_program
-  ST r8,r0,@n16_nmp_result+1
+  ST r8,r11,1
   LD r8,r0,@n16_nmp_expected_output_kind
-  ST r8,r0,@n16_nmp_result+2
+  ST r8,r11,2
   LD r8,r0,@n16_nmp_dimension
-  ST r8,r0,@n16_nmp_result+3
+  ST r8,r11,3
   MOVI r8,1
   LD r9,r0,@n16_nmp_expected_program
   MOVI r10,78
@@ -169,7 +170,7 @@ n16_nmp_register_objects:
   JMP[NE] @n16_nmp_result_ready
   LD r8,r0,@n16_nmp_dimension
 n16_nmp_result_ready:
-  ST r8,r0,@n16_nmp_result+4
+  ST r8,r11,4
   HALT
 
 n16_nmp_registry_fail:
