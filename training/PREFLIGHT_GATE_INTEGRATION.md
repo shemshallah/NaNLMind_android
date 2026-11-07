@@ -9,7 +9,7 @@
 2. It serializes the candidate descriptor and authoritative rule descriptor into guest words.
 3. The NaN16 guest invokes `mth_preflight_gate` from the NaNROUTER native MTH image.
 4. Only status `0` may proceed to capability selection and NMP submission.
-5. The NMP packet and resulting lease bind the exact rule epoch and four-word rule digest used by preflight.
+5. The NMP packet and resulting lease bind the exact rule epoch and eight-word (256-bit) rule digest used by preflight.
 6. Any rule update, candidate mutation, or digest mismatch invalidates the authorization and requires a fresh preflight.
 7. NaNLMind records the decision and evidence; it never rewrites a denial into acceptance.
 
@@ -19,7 +19,7 @@ The authoritative ABI and status values are defined in
 `NaNROUTER/mth/nan16/mth_preflight_gate.nas`. Candidate and rule descriptors
 are fixed-width word arrays. The gate checks ABI version, epoch freshness,
 input/output signature, domain, optional equal-dimension shape policy,
-capability subset, minimum proof level, enabled policy, and four digest words.
+capability subset, minimum proof level, enabled policy, and eight digest words.
 
 The gate is intentionally conservative. It does not infer types, prove a
 theorem, grant ACL permissions, or claim a runner is healthy. Those are separate
