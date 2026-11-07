@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: shemshallah/NaNROUTER
-          ref: f4549595a49a6c5dc0a42fa3715eac6944acbe40
+          ref: a1e033da5ee76680d04a1b9d9fd4cbbab999913d
           path: .nanrouter-upstream
       - name: Verify vendored NaN16 admission sources
         run: |
@@ -58,6 +58,8 @@ jobs:
           ./nan_cli --help | grep -q -- "--candidate-out"
       - name: Run composed native NaN16 mathematical admission gate
         run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_admission_gate.sh
+      - name: Run native NaN16 payload-range preflight regression
+        run: NAN16_ROOT=.nan0s-toolchain sh tools/n16_math_preflight_range_test.sh
 
   apk:
     needs: native-tests
@@ -74,7 +76,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: shemshallah/NaNROUTER
-          ref: f4549595a49a6c5dc0a42fa3715eac6944acbe40
+          ref: a1e033da5ee76680d04a1b9d9fd4cbbab999913d
           path: .nanrouter-upstream
       - name: Verify vendored NaN16 admission sources
         run: |
