@@ -89,7 +89,7 @@ Example object endpoint:
 
     nan://GM0:SC0:MC0:BS0:HW0::HW0:1::vector1337
 
-The address parses into a typed route: global/space/runner scope GM0:SC0:MC0:BS0:HW0; owner and logical point HW0:1; object key vector1337. A NaN16 guest parser now validates this canonical scope, decimal point range 1–255, exact `::` endpoint separator, and non-empty printable object key; it rejects point 0, point 256, malformed separators, and empty keys. Its CI gate passes. The initial parser is intentionally strict to this canonical HW0 route form; generalized scopes and typed object-key decoding remain follow-on work.
+The address parses into a typed route: global/space/runner scope GM0:SC0:MC0:BS0:HW0; owner and logical point HW0:1; object key vector1337. A NaN16 guest parser now validates this canonical scope, decimal point range 1–255, exact `::` endpoint separator, and non-empty printable object key; it rejects point 0, point 256, malformed separators, and empty keys. On success it returns both the logical point and the key's byte pointer/length so downstream NaN16 registry lookup can consume the original key without host-side reinterpretation. Its CI gate passes. The initial parser is intentionally strict to this canonical HW0 route form; generalized scopes and typed object-key decoding remain follow-on work.
 
 A two-endpoint expression:
 
