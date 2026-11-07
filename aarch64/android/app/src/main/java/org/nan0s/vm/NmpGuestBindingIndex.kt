@@ -60,6 +60,36 @@ internal class NmpGuestBindingIndex {
         highestVersion[key.leafId] = key.version
     }
 
+    /**
+     * Publish one canonical store transaction as an all-or-nothing index update.
+     *
+     * The caller must already have verified the canonical transaction and
+     * installed the corresponding guest objects under its ingestion lock.
+     * Validation runs against a detached copy, including conflicts *within*
+     * this batch, before the live index is mutated. Packet data is never an
+     * acceptable source of bindings.
+     */
+    @Synchronized
+    fun publishBatchCommitted(bindings: List<NmpGuestLeafBinding>) {
+        require(bindings.isNotEmpty() && bindings.size <= 32) {
+            "canonical binding transaction must contain 1..32 records"
+        }
+        val proposed = NmpGuestBindingIndex()
+        proposed.byLeaf.putAll(byLeaf)
+        proposed.byObject.putAll(byObject)
+        proposed.highestVersion.putAll(highestVersion)
+        proposed.invalidated.addAll(invalidated)
+        bindings.forEach(proposed::publishCommitted)
+        byLeaf.clear()
+        byLeaf.putAll(proposed.byLeaf)
+        byObject.clear()
+        byObject.putAll(proposed.byObject)
+        highestVersion.clear()
+        highestVersion.putAll(proposed.highestVersion)
+        invalidated.clear()
+        invalidated.addAll(proposed.invalidated)
+    }
+
     @Synchronized
     fun invalidateCommitted(leafId: String, version: Int): Boolean {
         val key = Key(leafId, version)
