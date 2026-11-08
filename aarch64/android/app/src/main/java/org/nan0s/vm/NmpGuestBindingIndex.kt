@@ -61,25 +61,40 @@ internal class NmpGuestBindingIndex {
     }
 
     /**
-     * Publish one canonical store transaction as an all-or-nothing index update.
+     * Apply one *verified* canonical store transaction to this in-memory mirror.
+     * The external ingestion owner must coordinate its guest-memory writes and
+     * this update under an independent lock. This method provides index-level
+     * atomicity only: it never authenticates an incoming transaction.
      *
-     * The caller must already have verified the canonical transaction and
-     * installed the corresponding guest objects under its ingestion lock.
-     * Validation runs against a detached copy, including conflicts *within*
-     * this batch, before the live index is mutated. Packet data is never an
-     * acceptable source of bindings.
+     * An invalidation may release an object ID for a new published version in
+     * the same transaction. Conflicts and rollbacks are checked on an isolated
+     * copy; a failed operation changes none of the published index state.
      */
     @Synchronized
-    fun publishBatchCommitted(bindings: List<NmpGuestLeafBinding>) {
-        require(bindings.isNotEmpty() && bindings.size <= 32) {
+    fun applyCommittedTransaction(
+        publications: List<NmpGuestLeafBinding>,
+        invalidations: List<Pair<String, Int>>
+    ) {
+        val count = publications.size + invalidations.size
+        require(count in 1..32) {
             "canonical binding transaction must contain 1..32 records"
+        }
+        val publishedKeys = publications.map { Key(it.leafId, it.version) }
+        val removedKeys = invalidations.map { Key(it.first, it.second) }
+        require(publishedKeys.distinct().size == publishedKeys.size &&
+            removedKeys.distinct().size == removedKeys.size &&
+            publishedKeys.none { it in removedKeys }) {
+            "canonical transaction has duplicated or contradictory leaf identities"
         }
         val proposed = NmpGuestBindingIndex()
         proposed.byLeaf.putAll(byLeaf)
         proposed.byObject.putAll(byObject)
         proposed.highestVersion.putAll(highestVersion)
         proposed.invalidated.addAll(invalidated)
-        bindings.forEach(proposed::publishCommitted)
+        invalidations.forEach { (leafId, version) ->
+            proposed.invalidateCommitted(leafId, version)
+        }
+        publications.forEach(proposed::publishCommitted)
         byLeaf.clear()
         byLeaf.putAll(proposed.byLeaf)
         byObject.clear()
@@ -88,6 +103,12 @@ internal class NmpGuestBindingIndex {
         highestVersion.putAll(proposed.highestVersion)
         invalidated.clear()
         invalidated.addAll(proposed.invalidated)
+    }
+
+    /** Atomic all-publication convenience form for one committed store batch. */
+    @Synchronized
+    fun publishBatchCommitted(bindings: List<NmpGuestLeafBinding>) {
+        applyCommittedTransaction(bindings, emptyList())
     }
 
     @Synchronized
