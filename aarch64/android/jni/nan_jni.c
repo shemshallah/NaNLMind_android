@@ -42,7 +42,9 @@ JNIEXPORT jbyteArray JNICALL FN(readWordsRaw)(JNIEnv *e, jclass c, jlong h,
   size_t bytes = (size_t)wordCount * 8u;
   jbyteArray out = (*e)->NewByteArray(e, (jsize)bytes);
   if (!out) return NULL;
-  if (wordCount == 0) return out;
+  if (wordCount == 0)
+    return nan_read_words_raw(VM(h), (uint32_t)firstWord, NULL, 0) == 0
+               ? out : NULL;
   uint8_t *buffer = (uint8_t *)malloc(bytes);
   if (!buffer) return NULL;
   int rc = nan_read_words_raw(VM(h), (uint32_t)firstWord,
