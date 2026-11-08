@@ -32,6 +32,27 @@ JNIEXPORT jbyteArray JNICALL FN(readBytes)(JNIEnv *e, jclass c, jlong h, jint ad
   free(buf);
   return rc == 0 ? out : NULL;
 }
+/* Read-only full-word transport; do not expose an unchecked bank write.
+   JNI maps word-index/word-count to raw eight-byte NaN16 words, preserving
+   both NaN faces. A kernel/NANNET lease remains mandatory for head writes. */
+JNIEXPORT jbyteArray JNICALL FN(readWordsRaw)(JNIEnv *e, jclass c, jlong h,
+                                             jint firstWord, jint wordCount) {
+  (void)c;
+  if (firstWord < 0 || wordCount < 0 || wordCount > 67838) return NULL;
+  size_t bytes = (size_t)wordCount * 8u;
+  jbyteArray out = (*e)->NewByteArray(e, (jsize)bytes);
+  if (!out) return NULL;
+  if (wordCount == 0) return out;
+  uint8_t *buffer = (uint8_t *)malloc(bytes);
+  if (!buffer) return NULL;
+  int rc = nan_read_words_raw(VM(h), (uint32_t)firstWord,
+                              buffer, (size_t)wordCount);
+  if (rc == 0)
+    (*e)->SetByteArrayRegion(e, out, 0, (jsize)bytes, (const jbyte *)buffer);
+  free(buffer);
+  return rc == 0 ? out : NULL;
+}
+
 JNIEXPORT jboolean JNICALL FN(stageNetworkFrame)(JNIEnv *e, jclass c, jlong h, jint address, jbyteArray data) {
   (void)c; if (!data || address < 0) return JNI_FALSE;
   jsize n = (*e)->GetArrayLength(e, data);
