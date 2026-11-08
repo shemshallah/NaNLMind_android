@@ -22,6 +22,20 @@ class NanVm : AutoCloseable {
     fun reset() = synchronized(lock) { if (h != 0L) NanNative.reset(h) }
     fun writeBytes(address: Int, data: ByteArray): Boolean = synchronized(lock) { h != 0L && NanNative.writeBytes(h, address, data) }
     fun readBytes(address: Int, length: Int): ByteArray? = synchronized(lock) { if (h == 0L) null else NanNative.readBytes(h, address, length) }
+    /**
+     * Runs a bounded read-only guest memory transaction while excluding run(),
+     * load(), reset(), restoreState(), and writes on this NanVm instance.
+     * The supplied reader is valid only inside [inspectGuestMemory].
+     */
+    internal fun <T> inspectGuestMemory(inspect: (read: (Int, Int) -> ByteArray?) -> T): T =
+        synchronized(lock) {
+            check(h != 0L) { "NaN16 guest is closed" }
+            inspect { address, length ->
+                if (address < 0 || length < 0 || length > 4096 ||
+                    address.toLong() + length.toLong() > Int.MAX_VALUE.toLong()) null
+                else NanNative.readBytes(h, address, length)
+            }
+        }
     fun register(index: Int): Int = synchronized(lock) { if (h == 0L) 0 else NanNative.getReg(h, index) }
     fun setRegister(index: Int, value: Int) = synchronized(lock) { if (h != 0L) NanNative.setReg(h, index, value) }
     fun setProgramCounter(pc: Int) = synchronized(lock) { if (h != 0L && pc >= 0) NanNative.setPc(h, pc) }

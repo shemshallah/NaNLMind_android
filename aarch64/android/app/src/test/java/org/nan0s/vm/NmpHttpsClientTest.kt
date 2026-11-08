@@ -46,6 +46,51 @@ class NmpHttpsClientTest {
         }
     }
 
+
+    @Test
+    fun completionBodyCarriesTheNativeKernelEvidenceAndLeaseBinding() {
+        val client = NmpHttpsClient(URI("https://router.example"), token)
+        val packet = JSONObject().put("packet_id", "nmp:packet:complete")
+        val evidence = JSONObject()
+            .put("schema", "nanrouter.native-kernel-execution.v1")
+            .put("packet_id", "nmp:packet:complete")
+            .put("function_id", "math.vector.dot.v1")
+            .put("program_id", 79)
+            .put("output_kind", 3)
+            .put("dimension", 4)
+            .put("output_count", 1)
+            .put("output_digest", "a".repeat(64))
+            .put("guest_steps", 4096)
+            .put("guest_image_digest", "b".repeat(64))
+            .put("guest_source_digest", "c".repeat(64))
+            .put("lease_epoch", 12)
+            .put("lease_owner", "worker-1")
+
+        val body = client.buildCompletionBody(
+            packet = packet,
+            jobId = "nmp:job:complete",
+            leaseToken = "lease-token",
+            leaseEpoch = 12,
+            leaseOwner = "worker-1",
+            resultDigest = "A".repeat(64),
+            nowTick = 500,
+            executionEvidence = evidence
+        )
+
+        assertEquals("nmp:job:complete", body.getString("job_id"))
+        assertEquals("lease-token", body.getString("lease_token"))
+        assertEquals(12L, body.getLong("lease_epoch"))
+        assertEquals("worker-1", body.getString("lease_owner"))
+        assertEquals("a".repeat(64), body.getString("result_digest"))
+        assertEquals(
+            "nanrouter.native-kernel-execution.v1",
+            body.getJSONObject("execution_evidence").getString("schema")
+        )
+        assertEquals(79, body.getJSONObject("execution_evidence").getInt("program_id"))
+        assertEquals("a".repeat(64),
+            body.getJSONObject("execution_evidence").getString("output_digest"))
+    }
+
     @Test
     fun onlyAllowsKnownRoutePaths() {
         val client = NmpHttpsClient(URI("https://router.example"), token)

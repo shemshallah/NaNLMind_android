@@ -37,6 +37,9 @@ jobs:
           make test
           make asan
           make seals
+          cd ../..
+          sh tools/nmp_kernel_gate.sh
+          cd aarch64/android
           ./nan_cli --help | grep -q "nannet-training"
           ./nan_cli --help | grep -q -- "--candidate-out"
 
