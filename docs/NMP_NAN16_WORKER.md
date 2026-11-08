@@ -150,3 +150,22 @@ The trusted ingestion owner must first verify source provenance and coordinate
 guest installation and index publication under the same external transaction
 lock. Guest reloads must clear the mirror, and a live resolve must not race
 with canonical writes. No NMP lease packet can authorize publication.
+
+### Mixed canonical binding transactions
+
+`applyCommittedTransaction(publications, invalidations)` now applies
+a bounded (1–32 records) mixed transaction atomically to the binding mirror.
+It rejects duplicated publication keys, duplicated invalidations, and
+contradictory publication/invalidation of the same leaf version. Invalidations
+are evaluated first so that a newly committed leaf can reuse a registry object
+ID released by a revoked leaf *within the same verified transaction*.
+
+All operations execute on a detached index copy before any live mapping,
+tombstone or high-watermark is changed. Rejected transactions preserve the
+old index unchanged. Regression tests cover ownership transfer, malformed
+publication rollback, duplicated keys and contradictory operations.
+
+This does **not** make VM memory and canonical storage transactional: the
+trusted ingestion owner remains responsible for authenticating source
+transactions, serializing VM writes with live resolution, and maintaining
+crash/reload recovery from its own durable canonical journal.
