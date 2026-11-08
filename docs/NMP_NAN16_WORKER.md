@@ -169,3 +169,18 @@ This does **not** make VM memory and canonical storage transactional: the
 trusted ingestion owner remains responsible for authenticating source
 transactions, serializing VM writes with live resolution, and maintaining
 crash/reload recovery from its own durable canonical journal.
+
+### Invalidation watermarks and replay protection
+
+An invalidation for leaf version `v` now retires any locally indexed version
+of the same leaf at or below `v`, even if version `v` itself is absent from
+the local mirror. This prevents a delayed invalidation for a higher version
+from leaving an older binding readable. A locally committed version greater
+than `v` remains intact. Tombstones and high-watermarks reject subsequent
+publication at or below the revoked version. Tests cover both directions.
+
+**Recovery warning:** `clearForGuestReload()` clears volatile index state,
+including high-watermarks and tombstones. After a guest restart the trusted
+canonical owner must restore the durable canonical journal / invalidation
+watermarks before accepting any new ingestion or leased execution. This index
+is not itself persistent storage and must not be used as replay authority.
