@@ -23,6 +23,17 @@ class NanVm : AutoCloseable {
     fun writeBytes(address: Int, data: ByteArray): Boolean = synchronized(lock) { h != 0L && NanNative.writeBytes(h, address, data) }
     fun readBytes(address: Int, length: Int): ByteArray? = synchronized(lock) { if (h == 0L) null else NanNative.readBytes(h, address, length) }
     /**
+     * Read exact class-bearing NaN16 words without altering any guest state.
+     * Unlike readBytes(), this includes both NaN faces and all eight bytes.
+     * Requests are bounded to one 542704-byte HERMES-sized head bank.
+     * It is a read-only observation, NOT an authenticated MTH receipt.
+     */
+    internal fun readWordsRaw(firstWord: Int, wordCount: Int): ByteArray? =
+        synchronized(lock) {
+            if (h == 0L || firstWord < 0 || wordCount < 0 || wordCount > 67838) null
+            else NanNative.readWordsRaw(h, firstWord, wordCount)
+        }
+    /**
      * Runs a bounded read-only guest memory transaction while excluding run(),
      * load(), reset(), restoreState(), and writes on this NanVm instance.
      * The supplied reader is valid only inside [inspectGuestMemory].

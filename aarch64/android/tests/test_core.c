@@ -347,10 +347,69 @@ static void t_state(void) {
   free(b2); free(buf); nan_destroy(B);
 }
 
+static void t_raw_nan_head_transfer(void) {
+  /* Explicitly protect the four NaN face classes from the old byte API. */
+  begin();
+  const uint32_t base = 16384;
+  uint64_t classes[4];
+  uint8_t raw[32], back[32];
+  for (int n = 0; n < 4; ++n) {
+    classes[n] = nan_mkword(0xAA5500FFu + (uint32_t)n, n * 5);
+    for (int i = 0; i < 8; ++i) raw[n*8+i] = (uint8_t)(classes[n] >> (8*i));
+  }
+  CHECK(nan_write_words_raw(V, base, raw, 4) == 0);
+  CHECK(nan_read_words_raw(V, base, back, 4) == 0);
+  CHECK(memcmp(raw, back, sizeof raw) == 0);
+  for (int n = 0; n < 4; ++n) EQ(nan_word(V, base + n), classes[n]);
+  /* A near/far face must NOT be reconstructed from payload-only bytes. */
+  {
+    uint8_t payload[] = {0xBE,0xBA,0xFE,0xCA};
+    CHECK(nan_write_bytes(V, (base+4)*4, payload, 4) == 0);
+    EQ(nan_near(nan_word(V, base+4)), 0x7FF8);
+    EQ(nan_far(nan_word(V, base+4)), 0x7FF8);
+    CHECK(nan_write_words_raw(V, base+4, raw, 1) == 0);
+    EQ(nan_word(V, base+4), classes[0]);
+  }
+  /* Same exact chart bank geometry as HERMES: 67838 * 8 = 542704 bytes.
+     Memory translation is guest-bank_base, not HERMES chart byte offset. */
+  const size_t words = 67838u, byte_count = words*8u;
+  uint8_t *seed = (uint8_t *)malloc(byte_count);
+  uint8_t *saved = (uint8_t *)malloc(byte_count);
+  CHECK(seed != NULL && saved != NULL);
+  if (seed && saved) {
+    for (size_t k = 0; k < words; ++k) {
+      uint64_t word = nan_mkword((uint32_t)(k*31u + 7u), (int)(k&15u));
+      for (int b=0; b<8; ++b) seed[k*8u+b] = (uint8_t)(word>>(8*b));
+    }
+    CHECK(nan_write_words_raw(V, base, seed, words) == 0);
+    CHECK(nan_read_words_raw(V, base, saved, words) == 0);
+    CHECK(memcmp(seed, saved, byte_count) == 0);
+    EQ(nan_word(V, base), nan_mkword(7u, 0));
+    EQ(nan_word(V, base + (uint32_t)words - 1), nan_mkword((uint32_t)((words-1)*31u+7u), 13));
+    /* The complete span must be rejected before touching the last word. */
+    uint64_t end = nan_word(V, 0x003FFFFFu);
+    CHECK(nan_write_words_raw(V, 0x003FFFFFu, seed, 2) == -1);
+    EQ(nan_word(V, 0x003FFFFFu), end);
+    CHECK(nan_read_words_raw(V, 0x003FFFFFu, saved, 2) == -1);
+    CHECK(nan_write_words_raw(V, 0x00400000u, seed, 1) == -1);
+    CHECK(nan_read_words_raw(V, 0x00400000u, saved, 1) == -1);
+    CHECK(nan_write_words_raw(V, 0xFFFFFFFFu, seed, words) == -1);
+    CHECK(nan_write_words_raw(V, base, NULL, 1) == -1);
+    CHECK(nan_read_words_raw(V, base, NULL, 1) == -1);
+    CHECK(nan_write_words_raw(V, base, NULL, 0) == 0);
+    CHECK(nan_read_words_raw(V, base, NULL, 0) == 0);
+    /* Chart-relative guest offset 0xC8000 is also a valid VM extent. */
+    CHECK(nan_write_words_raw(V, 0xC8000u, seed, words) == 0);
+    CHECK(nan_read_words_raw(V, 0xC8000u, saved, words) == 0);
+    CHECK(memcmp(seed, saved, byte_count) == 0);
+  }
+  free(seed); free(saved);
+}
+
 int main(void) {
   V = nan_create(); if (!V) { puts("nan_create failed"); return 2; }
   struct { const char *n; void (*f)(void); } t[] = {
-    {"words", t_words}, {"loaders", t_loaders}, {"alu", t_alu}, {"div", t_div}, {"predication+traps", t_predication_and_traps}, {"fp", t_fp},
+    {"raw NaN head IO", t_raw_nan_head_transfer}, {"words", t_words}, {"loaders", t_loaders}, {"alu", t_alu}, {"div", t_div}, {"predication+traps", t_predication_and_traps}, {"fp", t_fp},
     {"memory ops", t_memory_ops}, {"display", t_display}, {"dac", t_dac}, {"keyboard", t_keyboard}, {"time+speaker", t_time_and_speaker},
     {"pci", t_pci}, {"ata", t_ata}, {"hooks", t_hooks}, {"state", t_state} };
   for (size_t i = 0; i < sizeof t / sizeof t[0]; i++) { int before = fails; nan_reset(V); t[i].f(); printf("%-18s %s\n", t[i].n, fails == before ? "ok" : "FAILED"); }

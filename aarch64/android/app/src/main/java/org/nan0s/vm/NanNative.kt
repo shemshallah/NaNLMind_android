@@ -9,6 +9,8 @@ object NanNative {
     @JvmStatic external fun load(h: Long, data: ByteArray): String?
     @JvmStatic external fun writeBytes(h: Long, address: Int, data: ByteArray): Boolean
     @JvmStatic external fun readBytes(h: Long, address: Int, length: Int): ByteArray?
+    /** Exact 8-byte NaN16 word inspection (both heads + payload); no guest write. */
+    @JvmStatic external fun readWordsRaw(h: Long, firstWord: Int, wordCount: Int): ByteArray?
     @JvmStatic external fun getReg(h: Long, index: Int): Int
     @JvmStatic external fun setReg(h: Long, index: Int, value: Int)
     @JvmStatic external fun setPc(h: Long, pc: Int)
