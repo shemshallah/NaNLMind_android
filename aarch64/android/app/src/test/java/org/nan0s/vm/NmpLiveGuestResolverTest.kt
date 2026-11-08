@@ -305,6 +305,58 @@ class NmpLiveGuestResolverTest {
         index.publishCommitted(a.copy(version = 5))
     }
 
+    @Test fun mixedTransactionReleasesInvalidatedObjectForNewLeaf() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.applyCommittedTransaction(
+            listOf(b.copy(objectId = a.objectId)),
+            listOf(a.leafId to a.version)
+        )
+        try {
+            index.publishCommitted(a)
+            throw AssertionError("invalidated version resurrected")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("cannot be republished"))
+        }
+        assertTrue(index.invalidateCommitted(b.leafId, b.version))
+    }
+
+    @Test fun failedMixedTransactionRollsBackInvalidationsAndPublications() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        try {
+            index.applyCommittedTransaction(
+                listOf(b.copy(contentDigest = "not-a-digest")),
+                listOf(a.leafId to a.version)
+            )
+            throw AssertionError("expected malformed record to reject transaction")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("SHA-256"))
+        }
+        index.publishCommitted(b)
+        assertEquals(1401, index.resolve(packetInputs(a, b), resolver()).leftObjectId)
+    }
+
+    @Test fun mixedTransactionRejectsContradictoryAndDuplicateKeys() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val index = NmpGuestBindingIndex()
+        val invalidations = listOf(a.leafId to a.version)
+        for (publication in listOf(listOf(a), listOf(a, a))) {
+            try {
+                index.applyCommittedTransaction(publication, invalidations)
+                throw AssertionError("expected contradictory transaction rejection")
+            } catch (expected: IllegalArgumentException) {
+                assertTrue(expected.message!!.contains("duplicated or contradictory"))
+            }
+        }
+        index.publishCommitted(a)
+        assertTrue(index.invalidateCommitted(a.leafId, a.version))
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
