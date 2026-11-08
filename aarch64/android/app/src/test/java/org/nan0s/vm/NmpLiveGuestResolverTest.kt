@@ -357,6 +357,44 @@ class NmpLiveGuestResolverTest {
         assertTrue(index.invalidateCommitted(a.leafId, a.version))
     }
 
+    @Test fun higherInvalidationRetiresOlderLocallyBoundVersion() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.publishCommitted(b)
+        assertTrue(index.invalidateCommitted(a.leafId, 4))
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("older version remained readable after newer invalidation")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        for (version in 1..4) {
+            try {
+                index.publishCommitted(a.copy(version = version))
+                throw AssertionError("revoked version $version was restored")
+            } catch (expected: IllegalArgumentException) {
+                assertTrue(expected.message!!.contains("stale canonical") ||
+                    expected.message!!.contains("cannot be republished"))
+            }
+        }
+        index.publishCommitted(a.copy(version = 5))
+        assertEquals(1401, index.resolve(
+            packetInputs(a.copy(version = 5), b), resolver()
+        ).leftObjectId)
+    }
+
+    @Test fun invalidatingOlderVersionKeepsNewerBoundVersionLive() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3)).copy(version = 5)
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishCommitted(a)
+        index.publishCommitted(b)
+        assertTrue(!index.invalidateCommitted(a.leafId, 3))
+        assertEquals(1401, index.resolve(packetInputs(a, b), resolver()).leftObjectId)
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
