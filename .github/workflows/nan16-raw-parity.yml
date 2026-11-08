@@ -1,0 +1,56 @@
+name: NaN16 raw word cross-repository parity
+on:
+  push:
+    paths:
+      - 'aarch64/android/core/nan16.c'
+      - 'aarch64/android/core/nan16.h'
+      - 'aarch64/android/tests/test_core.c'
+      - 'aarch64/android/jni/nan_jni.c'
+      - 'aarch64/android/app/src/main/java/org/nan0s/vm/NanNative.kt'
+      - 'aarch64/android/app/src/main/java/org/nan0s/vm/NanVm.kt'
+      - '.github/workflows/nan16-raw-parity.yml'
+  pull_request:
+    paths:
+      - 'aarch64/android/core/nan16.c'
+      - 'aarch64/android/core/nan16.h'
+      - 'aarch64/android/tests/test_core.c'
+      - 'aarch64/android/jni/nan_jni.c'
+      - 'aarch64/android/app/src/main/java/org/nan0s/vm/NanNative.kt'
+      - 'aarch64/android/app/src/main/java/org/nan0s/vm/NanVm.kt'
+      - '.github/workflows/nan16-raw-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upstream-abi-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: android
+      - name: Fetch authoritative NaN0S native word ABI
+        uses: actions/checkout@v4
+        with:
+          repository: shemshallah/NaN0S
+          ref: f31143ec9872fa0fa214b4b814ea64ed8f3914d2
+          path: upstream
+          persist-credentials: false
+          sparse-checkout: |
+            aarch64/android/core/nan16.c
+            aarch64/android/core/nan16.h
+          sparse-checkout-cone-mode: false
+      - name: Refuse ABI drift or payload-only head copies
+        run: |
+          cmp upstream/aarch64/android/core/nan16.c android/aarch64/android/core/nan16.c
+          cmp upstream/aarch64/android/core/nan16.h android/aarch64/android/core/nan16.h
+          grep -q 'nan_write_words_raw' android/aarch64/android/tests/test_core.c
+          grep -q 'nan_read_words_raw' android/aarch64/android/tests/test_core.c
+          grep -q 'fun readWordsRaw' android/aarch64/android/app/src/main/java/org/nan0s/vm/NanNative.kt
+          ! grep -q 'external fun writeWordsRaw' android/aarch64/android/app/src/main/java/org/nan0s/vm/NanNative.kt
+      - name: Build and execute native four-class and full-bank regression
+        working-directory: android/aarch64/android
+        run: |
+          make tests/test_core
+          ./tests/test_core
+          make asan
