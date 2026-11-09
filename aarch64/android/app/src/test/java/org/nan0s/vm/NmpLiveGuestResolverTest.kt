@@ -305,6 +305,47 @@ class NmpLiveGuestResolverTest {
         index.publishCommitted(a.copy(version = 5))
     }
 
+    @Test fun unseenNewerInvalidationRevokesOlderResolvableVersion() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        index.publishBatchCommitted(listOf(a, b))
+        assertEquals(1401, index.resolve(packetInputs(a, b), resolver()).leftObjectId)
+
+        // The canonical store revokes version 4 before this worker ever
+        // ingests v4. Version 1 must not remain executable.
+        assertTrue(index.invalidateCommitted(a.leafId, 4))
+        try {
+            index.resolve(packetInputs(a, b), resolver())
+            throw AssertionError("older leaf must be fenced by later revocation")
+        } catch (expected: IllegalStateException) {
+            assertTrue(expected.message!!.contains("no committed canonical"))
+        }
+        for (version in listOf(1, 3, 4)) {
+            try {
+                index.publishCommitted(a.copy(version = version))
+                throw AssertionError("revoked or stale leaf version was republished")
+            } catch (expected: IllegalArgumentException) {
+                assertTrue(expected.message!!.contains("stale canonical") ||
+                    expected.message!!.contains("cannot be republished"))
+            }
+        }
+        // A different leaf's binding remains available after the revocation.
+        val replacement = a.copy(version = 5)
+        index.publishCommitted(replacement)
+        assertEquals(1402, index.resolve(packetInputs(replacement, b), resolver()).rightObjectId)
+    }
+
+    @Test fun olderInvalidationPreservesNewerCommittedVersion() {
+        val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
+        val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
+        val index = NmpGuestBindingIndex()
+        val newer = a.copy(version = 5)
+        index.publishBatchCommitted(listOf(newer, b))
+        assertTrue(!index.invalidateCommitted(a.leafId, 3))
+        assertEquals(1401, index.resolve(packetInputs(newer, b), resolver()).leftObjectId)
+    }
+
     @Test fun rejectsTamperedLivePayload() {
         val a = leaf(1401, 0, 22000, intArrayOf(2, 3))
         val b = leaf(1402, 1, 23000, intArrayOf(4, 5))
