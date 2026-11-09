@@ -12,6 +12,26 @@ class N16HttpsTransportTest {
     }
 
     @Test
+    fun acceptsOptionalScopedBearerTokenWithoutPersistingItInEndpoint() {
+        val transport = N16HttpsTransport(
+            URI("https://gateway.example/n16t"),
+            bearerToken = "scoped-submit-token"
+        )
+        assertTrue(transport.endpointText == "https://gateway.example/n16t")
+        transport.clearCredentials()
+    }
+
+    @Test
+    fun rejectsMalformedBearerToken() {
+        assertIllegalArgument {
+            N16HttpsTransport(URI("https://gateway.example/n16t"), bearerToken = "bad\nvalue")
+        }
+        assertIllegalArgument {
+            N16HttpsTransport(URI("https://gateway.example/n16t"), bearerToken = " ")
+        }
+    }
+
+    @Test
     fun rejectsPlainHttpEndpoint() {
         assertIllegalArgument {
             N16HttpsTransport(URI("http://gateway.example/n16t"))

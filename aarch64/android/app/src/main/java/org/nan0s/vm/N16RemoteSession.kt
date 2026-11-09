@@ -13,7 +13,8 @@ import java.net.URI
  */
 internal class N16RemoteSession(
     context: Context,
-    endpoint: URI
+    endpoint: URI,
+    bearerToken: String? = null
 ) : Closeable {
     data class ExchangeResult(
         val peerFrame: ByteArray,
@@ -21,7 +22,7 @@ internal class N16RemoteSession(
     )
 
     private val guest = N16GuestProtocol(context)
-    private val transport = N16HttpsTransport(endpoint)
+    private val transport = N16HttpsTransport(endpoint, bearerToken = bearerToken)
     private var closed = false
     private var lastRoute: N16GuestProtocol.Route? = null
 
@@ -86,6 +87,7 @@ internal class N16RemoteSession(
     override fun close() {
         if (!closed) {
             closed = true
+            transport.clearCredentials()
             guest.close()
         }
     }

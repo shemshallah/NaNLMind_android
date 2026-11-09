@@ -477,8 +477,16 @@ class MainActivity : Activity(), NanLoop.Listener {
             setHintTextColor(Color.GRAY)
         }
         panel.addView(input, LinearLayout.LayoutParams(-1, -2))
+        val tokenInput = EditText(this).apply {
+            hint = "Short-lived scoped NANNET bearer token (not saved)"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        panel.addView(tokenInput, LinearLayout.LayoutParams(-1, -2))
         panel.addView(btn("CONNECT / HELLO + CAPABILITIES") {
-            connectRemoteGateway(input.text.toString().trim())
+            connectRemoteGateway(input.text.toString().trim(), tokenInput.text.toString())
+            tokenInput.text.clear()
         })
         panel.addView(btn("DISCONNECT SESSION") { disconnectRemoteGateway() })
         panel.addView(btn("NMP PACKET SUBMISSION") { showNmpSubmission() })
@@ -572,7 +580,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         showDesktopWindow("NMP Packet Submission", panel, 420)
     }
 
-    private fun connectRemoteGateway(raw: String) {
+    private fun connectRemoteGateway(raw: String, bearerToken: String) {
         val normalized = raw.trim().let { if (it.startsWith("https://", true)) it else "https://$it" }
         val entered = try { URI(normalized) } catch (e: Exception) {
             Toast.makeText(this, "Invalid gateway URL", Toast.LENGTH_LONG).show()
@@ -593,7 +601,7 @@ class MainActivity : Activity(), NanLoop.Listener {
         remoteConnectGeneration = generation
         remoteSession?.close()
         remoteSession = null
-        val session = try { N16RemoteSession(this, endpoint) } catch (e: Exception) {
+        val session = try { N16RemoteSession(this, endpoint, bearerToken.takeIf { it.isNotBlank() }) } catch (e: Exception) {
             Toast.makeText(this, "Could not initialize NaN16 protocol guest: ${e.message}", Toast.LENGTH_LONG).show()
             return
         }

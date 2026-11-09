@@ -18,8 +18,10 @@ internal class N16HttpsTransport(
     private val endpoint: URI,
     private val connectTimeoutMs: Int = 10_000,
     private val readTimeoutMs: Int = 30_000,
-    private val maxFrameBytes: Int = 65_572
+    private val maxFrameBytes: Int = 65_572,
+    bearerToken: String? = null
 ) {
+    @Volatile private var bearerToken: String? = bearerToken
     @Volatile var lastHttpStatus: Int = 0
         private set
     @Volatile var lastCipherSuite: String = "not negotiated"
@@ -39,6 +41,10 @@ internal class N16HttpsTransport(
         require(connectTimeoutMs in 1..120_000)
         require(readTimeoutMs in 1..120_000)
         require(maxFrameBytes in 36..65_572)
+        require(bearerToken == null || (bearerToken.isNotBlank() && bearerToken.length <= 4096 &&
+            !bearerToken.contains('\r') && !bearerToken.contains('\n'))) {
+            "Bearer token must be a bounded single-line value"
+        }
     }
 
     @Throws(IOException::class)
@@ -53,6 +59,7 @@ internal class N16HttpsTransport(
             connection.instanceFollowRedirects = false
             connection.doOutput = true
             connection.useCaches = false
+            bearerToken?.let { connection.setRequestProperty("Authorization", "Bearer $it") }
             connection.setRequestProperty("Content-Type", MEDIA_TYPE)
             connection.setRequestProperty("Accept", "$MEDIA_TYPE, $LEGACY_MEDIA_TYPE")
             connection.setRequestProperty("Cache-Control", "no-store")
@@ -85,6 +92,9 @@ internal class N16HttpsTransport(
             connection.disconnect()
         }
     }
+
+    /** Drop the session-scoped credential when the remote session closes. */
+    fun clearCredentials() { bearerToken = null }
 
     private fun readBounded(input: java.io.InputStream, limit: Int): ByteArray {
         val output = ByteArrayOutputStream(minOf(limit, 8192))
