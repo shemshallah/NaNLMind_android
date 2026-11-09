@@ -6,6 +6,15 @@ tmp="/tmp/android-n16-predict-$$"
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp"
 make -s -C aarch64/android nan_cli
+# Keep the actual Android GUI and CLI byte transports on the same safe
+# guest corpus address. Static entrypoint check complements native VM tests.
+grep -Fq 'vm.writeBytes(327680, framed + byteArrayOf(0))' \
+    aarch64/android/app/src/main/java/org/nan0s/vm/MainActivity.kt || {
+  echo "Android GUI writes N16TXT to an obsolete guest address"; exit 1;
+}
+test "$(grep -Fc 'nan_write_bytes(v, 327680u,' aarch64/android/tools/nan_cli.c)" -eq 2 || {
+  echo "Android CLI corpus transport addresses diverged"; exit 1;
+}
 
 # Three AB records create A->B, but no cross-record B->A edge.
 printf 'N16TXT/1\nAB\nAB\nAB\n' > "$tmp/tiny.txt"
