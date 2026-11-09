@@ -42,6 +42,8 @@ jobs:
           cd aarch64/android
           ./nan_cli --help | grep -q "nannet-training"
           ./nan_cli --help | grep -q -- "--candidate-out"
+          cd ../..
+          sh tools/n16_completion_gate.sh
 
   apk:
     needs: native-tests

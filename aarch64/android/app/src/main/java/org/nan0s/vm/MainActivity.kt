@@ -772,7 +772,7 @@ class MainActivity : Activity(), NanLoop.Listener {
             val hasCrlfHeader = corpus.size >= crlfHeader.size && corpus.copyOfRange(0, crlfHeader.size).contentEquals(crlfHeader)
             val bodyOffset = if (hasCrlfHeader) crlfHeader.size else if (hasLfHeader) header.size else 0
             val framed = header + corpus.copyOfRange(bodyOffset, corpus.size)
-            if (!vm.writeBytes(49152, framed + byteArrayOf(0))) {
+            if (!vm.writeBytes(327680, framed + byteArrayOf(0))) {
                 throw IllegalStateException("Could not transfer corpus into NaN16 memory")
             }
             var rc = NanVm.BUDGET

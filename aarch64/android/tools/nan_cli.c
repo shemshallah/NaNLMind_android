@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     memcpy(framed, header_lf, header_len);
     memcpy(framed + header_len, raw + body_offset, body_len);
     framed[framed_len] = 0;
-    int wrc = nan_write_bytes(v, 49152u, framed, framed_len + 1);
+    int wrc = nan_write_bytes(v, 327680u, framed, framed_len + 1);
     free(framed); free(raw);
     if (wrc) { fprintf(stderr, "corpus does not fit the NaN16 guest buffer\n"); return 1; }
   } else if (train_mode) {
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
       "NaN16 owns the corpus codec.\n"
       "Runner and Android share one trainer.\n"
       "The intake stages updates before merge.\n";
-    if (nan_write_bytes(v, 49152u, sample, sizeof(sample))) {
+    if (nan_write_bytes(v, 327680u, sample, sizeof(sample))) {
       fprintf(stderr, "built-in sample does not fit the NaN16 guest buffer\n");
       return 1;
     }
