@@ -109,7 +109,8 @@ tasks.register("compileProtocolGuest") {
         }.toSet()
         val requiredLabels = setOf(
             "n16_android_build", "n16_android_route",
-            "n16_android_advance", "n16_android_abort", "n16_android_reset"
+            "n16_android_advance", "n16_android_abort", "n16_android_reset",
+            "n16_server_exchange"
         )
         check(guestLabels.containsAll(requiredLabels)) {
             "NaN16 protocol guest is missing entry points: ${requiredLabels - guestLabels}"
