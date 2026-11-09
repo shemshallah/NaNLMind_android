@@ -96,13 +96,24 @@ internal class NmpGuestBindingIndex {
             "invalid canonical invalidation identity"
         }
         val key = Key(leafId, version)
-        val removed = byLeaf.remove(key)
-        if (removed != null) byObject.remove(removed.objectId)
-        // Persist a negative decision even when the binding was not locally
-        // present: a delayed ingestion replay must not resurrect this version.
+        // A revocation of version N also fences every older version. An unseen
+        // tombstone must never leave an older binding resolvable, even if the
+        // canonical store delivered the revocation before the new payload.
+        val revoked = byLeaf.keys.filter {
+            it.leafId == leafId && it.version <= version
+        }
+        for (candidate in revoked) {
+            val removed = byLeaf.remove(candidate)
+            if (removed != null && byObject[removed.objectId] == candidate) {
+                byObject.remove(removed.objectId)
+            }
+            invalidated.add(candidate)
+        }
+        // Persist the negative decision even when the exact version was not
+        // locally present: delayed replay cannot resurrect it.
         invalidated.add(key)
         highestVersion[leafId] = maxOf(version, highestVersion[leafId] ?: version)
-        return removed != null
+        return revoked.isNotEmpty()
     }
 
     @Synchronized
